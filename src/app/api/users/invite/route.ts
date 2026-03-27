@@ -11,8 +11,8 @@ const createUserSchema = z.object({
   name: z.string().min(2),
   password: z.string().min(6),
   role: z.nativeEnum(UserRole),
-  customerId: z.string().optional(),
-  assignedPortfolioId: z.string().optional(),
+  customerId: z.coerce.number().int().positive().optional(),
+  assignedPortfolioId: z.coerce.number().int().positive().optional(),
 });
 
 export async function POST(request: NextRequest) {

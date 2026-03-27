@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,21 +10,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { ROLE_LABELS } from "@/lib/auth/roles";
+import { UserRowActions } from "@/components/admin/user-row-actions";
+import { Search } from "lucide-react";
 import type { UserRole } from "@prisma/client";
 
 interface UserWithRelations {
-  id: string;
+  id: number;
   email: string;
   name: string;
   role: UserRole;
-  customer: { name: string; rut: string } | null;
-  assignedPortfolio: { name: string } | null;
+  customerId: number | null;
+  assignedPortfolioId: number | null;
+  customer: { id: number; name: string; rut: string } | null;
+  assignedPortfolio: { id: number; name: string } | null;
   createdAt: Date;
 }
 
+interface Option { id: number; name: string }
+
 interface UserTableProps {
   users: UserWithRelations[];
+  customers: Option[];
+  portfolios: Option[];
+  currentUserId: number;
 }
 
 const roleBadgeColors: Record<UserRole, string> = {
@@ -33,9 +44,30 @@ const roleBadgeColors: Record<UserRole, string> = {
   CLIENTE_PERFILADO: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
 };
 
-export function UserTable({ users }: UserTableProps) {
+export function UserTable({ users, customers, portfolios, currentUserId }: UserTableProps) {
+  const [q, setQ] = useState("");
+
+  const filtered = q
+    ? users.filter(
+        (u) =>
+          u.name.toLowerCase().includes(q.toLowerCase()) ||
+          u.email.toLowerCase().includes(q.toLowerCase())
+      )
+    : users;
+
   return (
     <div className="border border-[var(--color-border)] rounded-xl bg-white overflow-hidden">
+      <div className="p-3 border-b border-[var(--color-border)]">
+        <div className="relative max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-muted-foreground)]" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por nombre o email..."
+            className="pl-8 h-8 text-[13px]"
+          />
+        </div>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -43,10 +75,11 @@ export function UserTable({ users }: UserTableProps) {
             <TableHead className="text-[12px]">Email</TableHead>
             <TableHead className="text-[12px]">Rol</TableHead>
             <TableHead className="text-[12px]">Cliente / Portafolio</TableHead>
+            <TableHead className="w-10" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
+          {filtered.map((user) => (
             <TableRow key={user.id}>
               <TableCell className="text-[13px] font-medium">
                 {user.name}
@@ -69,15 +102,23 @@ export function UserTable({ users }: UserTableProps) {
                     ? user.assignedPortfolio.name
                     : "—"}
               </TableCell>
+              <TableCell>
+                <UserRowActions
+                  user={user}
+                  customers={customers}
+                  portfolios={portfolios}
+                  currentUserId={currentUserId}
+                />
+              </TableCell>
             </TableRow>
           ))}
-          {users.length === 0 && (
+          {filtered.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={5}
                 className="text-center text-[13px] text-[var(--color-muted-foreground)] py-8"
               >
-                No hay usuarios registrados
+                {q ? "Sin resultados" : "No hay usuarios registrados"}
               </TableCell>
             </TableRow>
           )}

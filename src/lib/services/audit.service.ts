@@ -2,10 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 export async function logAction(
-  userId: string,
+  userId: number,
   action: string,
   entityType: string,
-  entityId?: string,
+  entityId?: string | number,
   metadata?: Prisma.InputJsonValue
 ) {
   prisma.auditLog
@@ -14,7 +14,7 @@ export async function logAction(
         userId,
         action,
         entityType,
-        entityId,
+        entityId: entityId !== undefined ? String(entityId) : undefined,
         metadata,
       },
     })

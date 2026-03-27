@@ -42,7 +42,7 @@ enum InvoiceStatus {
 // ──────────────────────────────────────
 
 model Portfolio {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   name        String
   description String?
   active      Int      @default(1)
@@ -56,7 +56,7 @@ model Portfolio {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   name      String
   rut       String   @unique
   altName   String?  @map("alt_name")
@@ -72,16 +72,23 @@ model Customer {
 }
 
 model PowerPlant {
-  id          String   @id @default(cuid())
-  name        String
-  portfolioId String   @map("portfolio_id")
-  customerId  String   @map("customer_id")
-  status      String   @default("active")
-  location    String?
-  capacityKw  Float    @map("capacity_kw")
-  active      Int      @default(1)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                 Int       @id @default(autoincrement())
+  name               String
+  portfolioId        Int       @map("portfolio_id")
+  customerId         Int       @map("customer_id")
+  status             String    @default("active")
+  city               String?
+  location           String?
+  capacityKw         Float     @map("capacity_kw")
+  solcorId           String?   @map("solcor_id")
+  distributorCompany String?   @map("distributor_company")
+  tariffId           String?   @map("tariff_id")
+  startDate          DateTime? @map("start_date")
+  durationYears      Float?    @map("duration_years")
+  specificYield      Float?    @map("specific_yield")
+  active             Int       @default(1)
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
   portfolio         Portfolio              @relation(fields: [portfolioId], references: [id])
   customer          Customer               @relation(fields: [customerId], references: [id])
@@ -96,13 +103,13 @@ model PowerPlant {
 }
 
 model User {
-  id                  String   @id @default(cuid())
+  id                  Int      @id @default(autoincrement())
   supabaseId          String   @unique @map("supabase_id")
   email               String   @unique
   name                String
   role                UserRole
-  customerId          String?  @map("customer_id")
-  assignedPortfolioId String?  @map("assigned_portfolio_id")
+  customerId          Int?     @map("customer_id")
+  assignedPortfolioId Int?     @map("assigned_portfolio_id")
   active              Int      @default(1)
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
@@ -119,10 +126,10 @@ model User {
 }
 
 model UserPlantPermission {
-  id           String @id @default(cuid())
-  userId       String @map("user_id")
-  powerPlantId String @map("power_plant_id")
-  active       Int    @default(1)
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  powerPlantId Int      @map("power_plant_id")
+  active       Int      @default(1)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -134,8 +141,8 @@ model UserPlantPermission {
 }
 
 model GenerationReport {
-  id           String   @id @default(cuid())
-  powerPlantId String   @map("power_plant_id")
+  id           Int      @id @default(autoincrement())
+  powerPlantId Int      @map("power_plant_id")
   periodMonth  Int      @map("period_month")
   periodYear   Int      @map("period_year")
   fileUrl      String   @map("file_url")
@@ -154,9 +161,9 @@ model GenerationReport {
 }
 
 model Invoice {
-  id           String        @id @default(cuid())
-  powerPlantId String        @map("power_plant_id")
-  customerId   String        @map("customer_id")
+  id           Int           @id @default(autoincrement())
+  powerPlantId Int           @map("power_plant_id")
+  customerId   Int           @map("customer_id")
   period       String
   amount       Float
   status       InvoiceStatus @default(PENDING)
@@ -176,15 +183,15 @@ model Invoice {
 }
 
 model Contingency {
-  id              String            @id @default(cuid())
-  powerPlantId    String            @map("power_plant_id")
+  id              Int               @id @default(autoincrement())
+  powerPlantId    Int               @map("power_plant_id")
   type            ContingencyType
   description     String
   status          ContingencyStatus @default(OPEN)
   cost            Float?
   provider        String?
   workDescription String?           @map("work_description")
-  createdById     String            @map("created_by_id")
+  createdById     Int               @map("created_by_id")
   closedAt        DateTime?         @map("closed_at")
   active          Int               @default(1)
   createdAt       DateTime          @default(now()) @map("created_at")
@@ -199,8 +206,8 @@ model Contingency {
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String   @map("user_id")
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
   action     String
   entityType String   @map("entity_type")
   entityId   String?  @map("entity_id")

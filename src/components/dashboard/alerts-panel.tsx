@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
 
 interface Alert {
-  id: string;
+  id: number;
   plantName: string;
   type: string;
   description: string;

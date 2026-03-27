@@ -13,16 +13,17 @@ interface Props {
 
 export default async function PowerPlantDetailPage({ params }: Props) {
   const { powerPlantId } = await params;
+  const id = parseInt(powerPlantId);
   const user = await requireAuth();
 
   // Verify access
   const accessibleIds = await getAccessiblePowerPlantIds(user);
-  if (accessibleIds !== "all" && !accessibleIds.includes(powerPlantId)) {
+  if (accessibleIds !== "all" && !accessibleIds.includes(id)) {
     notFound();
   }
 
   const plant = await prisma.powerPlant.findUnique({
-    where: { id: powerPlantId, active: 1 },
+    where: { id, active: 1 },
     include: {
       portfolio: { select: { name: true } },
       customer: { select: { name: true, rut: true } },

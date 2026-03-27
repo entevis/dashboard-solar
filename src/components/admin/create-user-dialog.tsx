@@ -23,13 +23,13 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface Customer {
-  id: string;
+  id: number;
   name: string;
   rut: string;
 }
 
 interface Portfolio {
-  id: string;
+  id: number;
   name: string;
 }
 
@@ -156,7 +156,7 @@ export function CreateUserDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
+                    <SelectItem key={c.id} value={String(c.id)}>
                       {c.name} ({c.rut})
                     </SelectItem>
                   ))}
@@ -174,7 +174,7 @@ export function CreateUserDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {portfolios.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
+                    <SelectItem key={p.id} value={String(p.id)}>
                       {p.name}
                     </SelectItem>
                   ))}

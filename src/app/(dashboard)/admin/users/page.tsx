@@ -1,10 +1,11 @@
-import { requireRole } from "@/lib/auth/guards";
+import { requireRole, requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { UserTable } from "@/components/admin/user-table";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
 
 export default async function AdminUsersPage() {
+  const currentUser = await requireAuth();
   await requireRole([UserRole.MAESTRO]);
 
   const [users, customers, portfolios] = await Promise.all([
@@ -42,7 +43,12 @@ export default async function AdminUsersPage() {
         <CreateUserDialog customers={customers} portfolios={portfolios} />
       </div>
 
-      <UserTable users={users} />
+      <UserTable
+        users={users}
+        customers={customers}
+        portfolios={portfolios}
+        currentUserId={currentUser.id}
+      />
     </div>
   );
 }

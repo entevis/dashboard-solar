@@ -40,7 +40,7 @@ async function getMaestroDashboardData() {
   return { portfolios, totalPlants, openContingencies, totalKwh, totalCo2 };
 }
 
-async function getClienteDashboardData(customerId: string) {
+async function getClienteDashboardData(customerId: number) {
   const [plants, generationReports] = await Promise.all([
     prisma.powerPlant.findMany({
       where: { customerId, active: 1 },

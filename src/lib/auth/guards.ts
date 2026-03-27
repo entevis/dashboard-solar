@@ -27,7 +27,7 @@ export async function requireRole(allowedRoles: UserRole[]): Promise<User> {
 /**
  * Get the list of power plant IDs accessible by a user based on their role.
  */
-export async function getAccessiblePowerPlantIds(user: User): Promise<string[] | "all"> {
+export async function getAccessiblePowerPlantIds(user: User): Promise<number[] | "all"> {
   switch (user.role) {
     case UserRole.MAESTRO:
       return "all";

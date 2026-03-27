@@ -11,6 +11,7 @@ import {
   Users,
   Building2,
   ClipboardList,
+  UserCircle,
   Sun,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";
@@ -52,6 +53,12 @@ const navItems: NavItem[] = [
     href: "/contingencies",
     icon: AlertTriangle,
     roles: ["MAESTRO", "OPERATIVO"],
+  },
+  {
+    label: "Clientes",
+    href: "/admin/customers",
+    icon: UserCircle,
+    roles: ["MAESTRO"],
   },
   {
     label: "Usuarios",
