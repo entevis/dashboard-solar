@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ──────────────────────────────────────
+// Enums
+// ──────────────────────────────────────
+
+enum UserRole {
+  MAESTRO
+  OPERATIVO
+  CLIENTE
+  CLIENTE_PERFILADO
+}
+
+enum ContingencyType {
+  PREVENTIVE
+  CORRECTIVE
+}
+
+enum ContingencyStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// ──────────────────────────────────────
+// Models
+// ──────────────────────────────────────
+
+model Portfolio {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  active      Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  powerPlants PowerPlant[]
+  users       User[]       @relation("AssignedPortfolio")
+
+  @@map("portfolios")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  rut       String   @unique
+  altName   String?  @map("alt_name")
+  active    Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  powerPlants PowerPlant[]
+  invoices    Invoice[]
+  users       User[]
+
+  @@map("customers")
+}
+
+model PowerPlant {
+  id          String   @id @default(cuid())
+  name        String
+  portfolioId String   @map("portfolio_id")
+  customerId  String   @map("customer_id")
+  status      String   @default("active")
+  location    String?
+  capacityKw  Float    @map("capacity_kw")
+  active      Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  portfolio         Portfolio              @relation(fields: [portfolioId], references: [id])
+  customer          Customer               @relation(fields: [customerId], references: [id])
+  generationReports GenerationReport[]
+  invoices          Invoice[]
+  contingencies     Contingency[]
+  userPermissions   UserPlantPermission[]
+
+  @@index([portfolioId])
+  @@index([customerId])
+  @@map("power_plants")
+}
+
+model User {
+  id                  String   @id @default(cuid())
+  supabaseId          String   @unique @map("supabase_id")
+  email               String   @unique
+  name                String
+  role                UserRole
+  customerId          String?  @map("customer_id")
+  assignedPortfolioId String?  @map("assigned_portfolio_id")
+  active              Int      @default(1)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  customer          Customer?             @relation(fields: [customerId], references: [id])
+  assignedPortfolio Portfolio?            @relation("AssignedPortfolio", fields: [assignedPortfolioId], references: [id])
+  plantPermissions  UserPlantPermission[]
+  contingencies     Contingency[]         @relation("CreatedBy")
+  auditLogs         AuditLog[]
+
+  @@index([customerId])
+  @@index([supabaseId])
+  @@map("users")
+}
+
+model UserPlantPermission {
+  id           String @id @default(cuid())
+  userId       String @map("user_id")
+  powerPlantId String @map("power_plant_id")
+  active       Int    @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  powerPlant PowerPlant @relation(fields: [powerPlantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, powerPlantId])
+  @@map("user_plant_permissions")
+}
+
+model GenerationReport {
+  id           String   @id @default(cuid())
+  powerPlantId String   @map("power_plant_id")
+  periodMonth  Int      @map("period_month")
+  periodYear   Int      @map("period_year")
+  fileUrl      String   @map("file_url")
+  fileName     String   @map("file_name")
+  kwhGenerated Float    @map("kwh_generated")
+  co2Avoided   Float    @map("co2_avoided")
+  active       Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  powerPlant PowerPlant @relation(fields: [powerPlantId], references: [id])
+
+  @@unique([powerPlantId, periodMonth, periodYear])
+  @@index([powerPlantId])
+  @@map("generation_reports")
+}
+
+model Invoice {
+  id           String        @id @default(cuid())
+  powerPlantId String        @map("power_plant_id")
+  customerId   String        @map("customer_id")
+  period       String
+  amount       Float
+  status       InvoiceStatus @default(PENDING)
+  duemintId    String?       @map("duemint_id")
+  charges      Json?
+  pdfUrl       String?       @map("pdf_url")
+  active       Int           @default(1)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  powerPlant PowerPlant @relation(fields: [powerPlantId], references: [id])
+  customer   Customer   @relation(fields: [customerId], references: [id])
+
+  @@index([powerPlantId])
+  @@index([customerId])
+  @@map("invoices")
+}
+
+model Contingency {
+  id              String            @id @default(cuid())
+  powerPlantId    String            @map("power_plant_id")
+  type            ContingencyType
+  description     String
+  status          ContingencyStatus @default(OPEN)
+  cost            Float?
+  provider        String?
+  workDescription String?           @map("work_description")
+  createdById     String            @map("created_by_id")
+  closedAt        DateTime?         @map("closed_at")
+  active          Int               @default(1)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  powerPlant PowerPlant @relation(fields: [powerPlantId], references: [id])
+  createdBy  User       @relation("CreatedBy", fields: [createdById], references: [id])
+
+  @@index([powerPlantId])
+  @@index([status])
+  @@map("contingencies")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  active     Int      @default(1)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
