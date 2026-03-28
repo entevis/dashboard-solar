@@ -19,6 +19,13 @@ const updateSchema = z.object({
   startDate: z.string().nullable().optional(),
   durationYears: z.number().positive().nullable().optional(),
   specificYield: z.number().positive().nullable().optional(),
+  address: z.object({
+    address: z.string().nullable().optional(),
+    reference: z.string().nullable().optional(),
+    city: z.string().nullable().optional(),
+    county: z.string().nullable().optional(),
+    country: z.string().nullable().optional(),
+  }).optional(),
 });
 
 interface RouteContext {
@@ -41,7 +48,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { startDate, ...rest } = parsed.data;
+  const { startDate, address, ...rest } = parsed.data;
   const updateData = {
     ...rest,
     ...(startDate !== undefined ? { startDate: startDate ? new Date(startDate) : null } : {}),
@@ -55,6 +62,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       customer: { select: { name: true } },
     },
   });
+
+  if (address !== undefined) {
+    await prisma.address.upsert({
+      where: { powerPlantId: id },
+      create: { powerPlantId: id, ...address },
+      update: address,
+    });
+  }
 
   logAction(user.id, "UPDATE", "power_plant", id, { changes: parsed.data });
 

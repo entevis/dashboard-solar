@@ -67,8 +67,47 @@ model Customer {
   powerPlants PowerPlant[]
   invoices    Invoice[]
   users       User[]
+  contacts    Contact[]
 
   @@map("customers")
+}
+
+model Contact {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @map("customer_id")
+  name       String
+  rut        String?
+  phone      String?
+  role       String?
+  email      String?
+  active     Int      @default(1)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@map("contacts")
+}
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  powerPlantId Int    @unique @map("power_plant_id")
+  address    String?
+  reference  String?
+  city       String?
+  county     String?
+  country    String?  @default("Chile")
+  postalCode String?  @map("postal_code")
+  lat        Float?
+  lng        Float?
+  active     Int      @default(1)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  powerPlant PowerPlant @relation(fields: [powerPlantId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
 }
 
 model PowerPlant {
@@ -92,6 +131,7 @@ model PowerPlant {
 
   portfolio         Portfolio              @relation(fields: [portfolioId], references: [id])
   customer          Customer               @relation(fields: [customerId], references: [id])
+  address           Address?
   generationReports GenerationReport[]
   invoices          Invoice[]
   contingencies     Contingency[]

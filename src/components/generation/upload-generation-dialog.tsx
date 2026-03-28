@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload } from "lucide-react";
+import { Upload, UploadCloud, FileText, X, AlertCircle, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const MONTHS = [
   { value: "1", label: "Enero" },
@@ -45,10 +46,21 @@ interface Props {
   powerPlantName: string;
 }
 
+type DropZoneState = "idle" | "dragging" | "selected" | "error";
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [periodError, setPeriodError] = useState<string | null>(null);
+  const [dropState, setDropState] = useState<DropZoneState>("idle");
+  const [fileError, setFileError] = useState<string | null>(null);
   const [form, setForm] = useState({
     periodMonth: "",
     periodYear: String(currentYear),
@@ -56,13 +68,62 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
   });
   const [file, setFile] = useState<File | null>(null);
 
+  function handleClose() {
+    setOpen(false);
+    setForm({ periodMonth: "", periodYear: String(currentYear), kwhGenerated: "" });
+    setFile(null);
+    setDropState("idle");
+    setFileError(null);
+    setPeriodError(null);
+  }
+
+  function validateFile(f: File): string | null {
+    if (!f.type.includes("pdf")) return "Solo se aceptan archivos PDF";
+    if (f.size > 10 * 1024 * 1024) return "El archivo supera el máximo de 10 MB";
+    return null;
+  }
+
+  function selectFile(f: File) {
+    const err = validateFile(f);
+    if (err) {
+      setFileError(err);
+      setDropState("error");
+      setFile(null);
+    } else {
+      setFileError(null);
+      setFile(f);
+      setDropState("selected");
+    }
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    if (dropState !== "selected") setDropState("dragging");
+  }
+
+  function handleDragLeave() {
+    if (dropState !== "selected") setDropState("idle");
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f) selectFile(f);
+  }
+
+  function clearFile() {
+    setFile(null);
+    setDropState("idle");
+    setFileError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.periodMonth || !form.kwhGenerated || !file) {
       toast.error("Completa todos los campos y selecciona un archivo PDF");
       return;
     }
-
     const kwh = parseFloat(form.kwhGenerated);
     if (isNaN(kwh) || kwh <= 0) {
       toast.error("Ingresa un valor de kWh válido");
@@ -70,6 +131,7 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
     }
 
     setLoading(true);
+    setPeriodError(null);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -83,15 +145,18 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
         body: formData,
       });
 
+      if (res.status === 409) {
+        setPeriodError("Ya existe un reporte para este periodo.");
+        return;
+      }
+
       if (!res.ok) {
         const err = await res.json();
         throw new Error(typeof err.error === "string" ? err.error : "Error al subir reporte");
       }
 
-      toast.success("Reporte de generación subido exitosamente");
-      setOpen(false);
-      setForm({ periodMonth: "", periodYear: String(currentYear), kwhGenerated: "" });
-      setFile(null);
+      toast.success("Reporte subido exitosamente");
+      handleClose();
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al subir reporte");
@@ -101,103 +166,154 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else setOpen(true); }}>
       <DialogTrigger asChild>
         <Button
           size="sm"
           className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
         >
-          <Upload className="w-4 h-4 mr-1" />
+          <Plus className="w-4 h-4 mr-1" />
           Subir Reporte
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="sm:max-w-md overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-[15px] font-bold">
             Subir Reporte de Generación
           </DialogTitle>
-          <p className="text-[12px] text-[var(--color-muted-foreground)]">
-            {powerPlantName}
-          </p>
+          <p className="text-[12px] text-[var(--color-muted-foreground)]">{powerPlantName}</p>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-[13px]">Mes *</Label>
+
+        <form onSubmit={handleSubmit} className="space-y-5 w-full min-w-0">
+          {/* Periodo */}
+          <div className="space-y-1.5">
+            <Label className="text-[13px]">Periodo <span className="text-[var(--color-warning)]">*</span></Label>
+            <div className="grid grid-cols-2 gap-3">
               <Select
                 value={form.periodMonth}
-                onValueChange={(v) => setForm({ ...form, periodMonth: v })}
+                onValueChange={(v) => { setForm({ ...form, periodMonth: v }); setPeriodError(null); }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar" />
+                  <SelectValue placeholder="Mes" />
                 </SelectTrigger>
                 <SelectContent>
                   {MONTHS.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>
-                      {m.label}
-                    </SelectItem>
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Año *</Label>
               <Select
                 value={form.periodYear}
-                onValueChange={(v) => setForm({ ...form, periodYear: v })}
+                onValueChange={(v) => { setForm({ ...form, periodYear: v }); setPeriodError(null); }}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {YEARS.map((y) => (
-                    <SelectItem key={y} value={y}>
-                      {y}
-                    </SelectItem>
+                    <SelectItem key={y} value={y}>{y}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            {periodError && (
+              <p className="flex items-center gap-1.5 text-[12px] text-red-500 mt-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {periodError}
+              </p>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-[13px]">Generación (kWh) *</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.kwhGenerated}
-              onChange={(e) => setForm({ ...form, kwhGenerated: e.target.value })}
-              placeholder="Ej: 12500.50"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[13px]">Archivo PDF *</Label>
-            <div className="border border-[var(--color-border)] rounded-md p-3">
+          {/* kWh */}
+          <div className="space-y-1.5">
+            <Label className="text-[13px]">Generación <span className="text-[var(--color-warning)]">*</span></Label>
+            <div className="flex items-center w-full border border-input rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-ring">
               <input
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="text-[13px] w-full file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[12px] file:font-medium file:bg-[var(--color-secondary)] file:text-[var(--color-foreground)] hover:file:bg-[var(--color-secondary)]/80 cursor-pointer"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.kwhGenerated}
+                onChange={(e) => setForm({ ...form, kwhGenerated: e.target.value })}
+                placeholder="0"
+                className="flex-1 px-3 py-2 text-[13px] bg-transparent outline-none"
               />
-              {file && (
-                <p className="text-[11px] text-[var(--color-muted-foreground)] mt-1">
-                  {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
-              )}
+              <span className="px-3 text-[12px] text-[var(--color-muted-foreground)] border-l border-input bg-[var(--color-secondary)] h-full flex items-center py-2">
+                kWh
+              </span>
             </div>
-            <p className="text-[11px] text-[var(--color-muted-foreground)]">
-              Máximo 10 MB. Solo archivos PDF.
-            </p>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          {/* Drop zone */}
+          <div className="space-y-1.5">
+            <Label className="text-[13px]">Archivo PDF <span className="text-[var(--color-warning)]">*</span></Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) selectFile(f); }}
+            />
+
+            {dropState === "selected" && file ? (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-success)] bg-[#22C55E]/5 w-full min-w-0">
+                <FileText className="w-5 h-5 text-[var(--color-success)] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-[var(--color-foreground)] truncate">{file.name}</p>
+                  <p className="text-[11px] text-[var(--color-muted-foreground)]">{formatFileSize(file.size)} · PDF</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearFile}
+                  className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : dropState === "error" ? (
+              <div
+                className="flex flex-col items-center justify-center h-[120px] rounded-xl border-2 border-dashed border-red-400 bg-red-50 cursor-pointer transition-all"
+                onClick={() => { setDropState("idle"); setFileError(null); fileInputRef.current?.click(); }}
+              >
+                <AlertCircle className="w-5 h-5 text-red-500 mb-1" />
+                <p className="text-[13px] text-red-500">{fileError}</p>
+                <p className="text-[11px] text-red-400 mt-0.5">Clic para intentar de nuevo</p>
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "flex flex-col items-center justify-center h-[120px] rounded-xl border-2 border-dashed cursor-pointer transition-all duration-150",
+                  dropState === "dragging"
+                    ? "border-[var(--color-primary)] bg-[#2A6EF5]/5"
+                    : "border-[var(--color-border)] bg-[var(--color-secondary)]"
+                )}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <UploadCloud
+                  className={cn(
+                    "w-6 h-6 mb-2 transition-colors",
+                    dropState === "dragging" ? "text-[var(--color-primary)]" : "text-[var(--color-muted-foreground)]"
+                  )}
+                />
+                <p className="text-[13px] font-medium text-[var(--color-foreground)]">
+                  {dropState === "dragging" ? "Soltá el archivo aquí" : "Arrastrá el PDF aquí"}
+                </p>
+                <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
+                  o hacé clic para seleccionar · máx. 10 MB
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-1">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setOpen(false)}
+              onClick={handleClose}
+              disabled={loading}
             >
               Cancelar
             </Button>
@@ -205,9 +321,19 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
               type="submit"
               size="sm"
               disabled={loading}
-              className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
+              className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90 min-w-[130px]"
             >
-              {loading ? "Subiendo..." : "Subir Reporte"}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  Subiendo...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-1.5" />
+                  Subir Reporte
+                </>
+              )}
             </Button>
           </div>
         </form>

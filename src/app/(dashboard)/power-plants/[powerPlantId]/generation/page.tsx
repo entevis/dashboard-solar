@@ -15,6 +15,8 @@ import {
 import { formatKwh, formatPeriod } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { UploadGenerationDialog } from "@/components/generation/upload-generation-dialog";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Download, FileUp } from "lucide-react";
 
 interface Props {
   params: Promise<{ powerPlantId: string }>;
@@ -68,7 +70,7 @@ export default async function PlantGenerationPage({ params }: Props) {
             <Link href={`/power-plants/${plant.id}`}>General</Link>
           </TabsTrigger>
           <TabsTrigger value="generation" asChild>
-            <Link href={`/power-plants/${plant.id}/generation`}>Generación</Link>
+            <Link href={`/power-plants/${plant.id}/generation`}>Reportes</Link>
           </TabsTrigger>
           <TabsTrigger value="billing" asChild>
             <Link href={`/power-plants/${plant.id}/billing`}>Facturación</Link>
@@ -112,40 +114,58 @@ export default async function PlantGenerationPage({ params }: Props) {
         </CardHeader>
         <CardContent className="p-0">
           {reports.length === 0 ? (
-            <div className="text-center py-12 text-[13px] text-[var(--color-muted-foreground)]">
-              No hay reportes de generación
+            <div className="flex flex-col items-center justify-center min-h-[200px] gap-2 text-[var(--color-muted-foreground)]">
+              <FileUp className="w-8 h-8" />
+              <p className="text-[13px]">Sin reportes de generación</p>
+              {user.role === UserRole.MAESTRO && (
+                <p className="text-[12px]">Subí el primer reporte usando el botón superior</p>
+              )}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-[12px]">Periodo</TableHead>
-                  <TableHead className="text-[12px]">Generación</TableHead>
-                  <TableHead className="text-[12px]">CO2 evitado</TableHead>
+                  <TableHead className="text-[12px] text-right">Generación</TableHead>
+                  <TableHead className="text-[12px] text-right">CO2 evitado</TableHead>
                   <TableHead className="text-[12px]">Archivo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {reports.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="text-[13px] font-medium capitalize">
-                      {formatPeriod(r.periodMonth, r.periodYear)}
+                    <TableCell>
+                      <Badge variant="secondary" className="text-[11px] font-medium capitalize rounded-md">
+                        {formatPeriod(r.periodMonth, r.periodYear)}
+                      </Badge>
                     </TableCell>
-                    <TableCell className="text-[13px]">
-                      {formatKwh(r.kwhGenerated)}
+                    <TableCell className="text-[13px] text-right">
+                      <span className="font-medium">{formatKwh(r.kwhGenerated)}</span>
                     </TableCell>
-                    <TableCell className="text-[13px]">
-                      {r.co2Avoided.toFixed(2)} ton
+                    <TableCell className="text-[13px] text-right">
+                      <span className="font-medium">{r.co2Avoided.toFixed(2)}</span>
+                      <span className="text-[11px] text-[var(--color-muted-foreground)] ml-1">ton</span>
                     </TableCell>
                     <TableCell>
-                      <a
-                        href={r.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[12px] text-[var(--color-primary)] hover:underline"
-                      >
-                        {r.fileName}
-                      </a>
+                      <div className="flex items-center gap-1">
+                        <a
+                          href={r.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/8 transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Ver reporte
+                        </a>
+                        <span className="text-[var(--color-border)]">|</span>
+                        <a
+                          href={r.fileUrl}
+                          download={r.fileName}
+                          className="p-1 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/8 transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

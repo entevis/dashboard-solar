@@ -8,6 +8,7 @@ import { EnvironmentalImpact } from "@/components/dashboard/environmental-impact
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
 import { formatDate } from "@/lib/utils/formatters";
 import { Zap, Building2, AlertTriangle, Leaf } from "lucide-react";
+import { getPortfolioLogo } from "@/lib/portfolio-logos";
 
 async function getMaestroDashboardData() {
   const [portfolios, totalPlants, openContingencies, generationReports] =
@@ -17,7 +18,7 @@ async function getMaestroDashboardData() {
         include: {
           powerPlants: {
             where: { active: 1 },
-            select: { id: true, capacityKw: true, status: true },
+            select: { id: true, capacityKw: true, status: true, customerId: true },
           },
         },
       }),
@@ -87,6 +88,26 @@ export default async function DashboardPage() {
           </p>
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {data.portfolios.map((portfolio) => (
+            <PortfolioSummaryCard
+              key={portfolio.id}
+              name={portfolio.name}
+              plantCount={portfolio.powerPlants.length}
+              totalCapacityKw={portfolio.powerPlants.reduce(
+                (sum, p) => sum + p.capacityKw,
+                0
+              )}
+              activePlants={
+                portfolio.powerPlants.filter((p) => p.status === "active").length
+              }
+              logoUrl={getPortfolioLogo(portfolio.id)}
+              href={`/power-plants?portfolioId=${portfolio.id}`}
+              customerCount={new Set(portfolio.powerPlants.map((p) => p.customerId)).size}
+            />
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard
             label="Total Plantas"
@@ -110,23 +131,6 @@ export default async function DashboardPage() {
             sublabel="acumulado total"
             icon={<Leaf className="w-5 h-5" />}
           />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {data.portfolios.map((portfolio) => (
-            <PortfolioSummaryCard
-              key={portfolio.id}
-              name={portfolio.name}
-              plantCount={portfolio.powerPlants.length}
-              totalCapacityKw={portfolio.powerPlants.reduce(
-                (sum, p) => sum + p.capacityKw,
-                0
-              )}
-              activePlants={
-                portfolio.powerPlants.filter((p) => p.status === "active").length
-              }
-            />
-          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

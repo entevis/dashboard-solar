@@ -37,6 +37,7 @@ export default async function PowerPlantsPage({ searchParams }: Props) {
       include: {
         portfolio: { select: { name: true } },
         customer: { select: { name: true } },
+        address: true,
       },
       orderBy: { name: "asc" },
     }),
@@ -70,7 +71,6 @@ export default async function PowerPlantsPage({ searchParams }: Props) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-[12px] whitespace-nowrap">ID</TableHead>
                     <TableHead className="text-[12px] whitespace-nowrap">ID Solcor</TableHead>
                     <TableHead className="text-[12px] whitespace-nowrap">Nombre Planta</TableHead>
                     <TableHead className="text-[12px] whitespace-nowrap">Comuna</TableHead>
@@ -88,11 +88,8 @@ export default async function PowerPlantsPage({ searchParams }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {plants.map((plant, idx) => (
+                  {plants.map((plant) => (
                     <TableRow key={plant.id}>
-                      <TableCell className="text-[12px] text-[var(--color-muted-foreground)] font-mono">
-                        {idx + 1}
-                      </TableCell>
                       <TableCell className="text-[13px] text-[var(--color-muted-foreground)] font-mono">
                         {plant.solcorId ?? "—"}
                       </TableCell>

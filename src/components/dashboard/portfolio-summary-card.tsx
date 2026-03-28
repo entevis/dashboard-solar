@@ -1,12 +1,16 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Zap } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import { Zap, Users } from "lucide-react";
 
 interface PortfolioSummaryCardProps {
   name: string;
   plantCount: number;
   totalCapacityKw: number;
   activePlants: number;
+  customerCount: number;
+  logoUrl: string | null;
+  href: string;
 }
 
 export function PortfolioSummaryCard({
@@ -14,45 +18,86 @@ export function PortfolioSummaryCard({
   plantCount,
   totalCapacityKw,
   activePlants,
+  customerCount,
+  logoUrl,
+  href,
 }: PortfolioSummaryCardProps) {
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
   return (
-    <Card className="border-[var(--color-border)] shadow-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[14px] font-medium text-[var(--color-foreground)]">
-            {name}
-          </h3>
-          <Badge
-            variant="secondary"
-            className="text-[11px] bg-[var(--color-success)]/10 text-[var(--color-success)]"
-          >
-            {activePlants} activas
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-[11px] text-[var(--color-muted-foreground)]">
-              Plantas
-            </p>
-            <p className="text-lg font-bold text-[var(--color-foreground)]">
-              {plantCount}
-            </p>
+    <Link href={href} className="block group">
+      <Card className="border-[var(--color-border)] shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:border-[var(--color-primary)]/30">
+        <CardContent className="p-4 space-y-3">
+          {/* Header: logo + name */}
+          <div className="flex items-center gap-3">
+            <div
+              className="shrink-0 overflow-hidden rounded-[8px] bg-[var(--color-secondary)] flex items-center justify-center"
+              style={{ width: 88, height: 40 }}
+            >
+              {logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt={`Logo ${name}`}
+                  width={88}
+                  height={40}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span
+                  className="text-[13px] font-semibold text-[var(--color-primary)]"
+                >
+                  {initials}
+                </span>
+              )}
+            </div>
+            <h3 className="text-[14px] font-semibold text-[var(--color-foreground)] truncate">
+              {name}
+            </h3>
           </div>
-          <div>
-            <p className="text-[11px] text-[var(--color-muted-foreground)]">
-              Capacidad
-            </p>
-            <div className="flex items-center gap-1">
-              <Zap className="w-3.5 h-3.5 text-[var(--color-warning)]" />
-              <p className="text-lg font-bold text-[var(--color-foreground)]">
-                {Math.round(totalCapacityKw)} kW
+
+          {/* Separator */}
+          <div className="border-t border-[var(--color-border)]/60" />
+
+          {/* Stats grid */}
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
+                clientes
+              </p>
+              <p className="text-[18px] font-bold text-[var(--color-foreground)] leading-none">
+                {customerCount}
               </p>
             </div>
+            <div>
+              <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
+                plantas activas
+              </p>
+              <p className="text-[18px] font-bold text-[var(--color-foreground)] leading-none">
+                {activePlants}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
+                capacidad
+              </p>
+              <div className="flex items-baseline gap-1 leading-none">
+                <Zap className="w-3 h-3 text-[var(--color-warning)] shrink-0 mb-0.5" />
+                <p className="text-[18px] font-bold text-[var(--color-foreground)]">
+                  {Math.round(totalCapacityKw).toLocaleString("es-CL")}
+                  <span className="text-[11px] font-normal text-[var(--color-muted-foreground)] ml-0.5">
+                    kW
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

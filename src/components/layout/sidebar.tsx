@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -12,7 +13,6 @@ import {
   Building2,
   ClipboardList,
   UserCircle,
-  Sun,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";
 
@@ -31,13 +31,25 @@ const navItems: NavItem[] = [
     roles: "all",
   },
   {
+    label: "Portafolios",
+    href: "/admin/portfolios",
+    icon: Building2,
+    roles: ["MAESTRO"],
+  },
+  {
     label: "Plantas",
     href: "/power-plants",
     icon: Zap,
     roles: "all",
   },
   {
-    label: "Generación",
+    label: "Clientes",
+    href: "/admin/customers",
+    icon: UserCircle,
+    roles: ["MAESTRO"],
+  },
+  {
+    label: "Reportes",
     href: "/reports",
     icon: FileText,
     roles: ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"],
@@ -55,21 +67,9 @@ const navItems: NavItem[] = [
     roles: ["MAESTRO", "OPERATIVO"],
   },
   {
-    label: "Clientes",
-    href: "/admin/customers",
-    icon: UserCircle,
-    roles: ["MAESTRO"],
-  },
-  {
     label: "Usuarios",
     href: "/admin/users",
     icon: Users,
-    roles: ["MAESTRO"],
-  },
-  {
-    label: "Portafolios",
-    href: "/admin/portfolios",
-    icon: Building2,
     roles: ["MAESTRO"],
   },
 ];
@@ -88,11 +88,9 @@ export function Sidebar({ userRole }: SidebarProps) {
   return (
     <aside className="hidden lg:flex flex-col w-[240px] h-screen border-r border-[var(--color-border)] bg-white fixed left-0 top-0 z-30">
       <div className="flex items-center gap-3 px-5 h-16 border-b border-[var(--color-border)]">
-        <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center">
-          <Sun className="w-4 h-4 text-white" />
-        </div>
+        <Image src="/logo.jpg" alt="S-Invest" width={32} height={32} className="rounded-lg object-contain" />
         <span className="font-bold text-[15px] text-[var(--color-foreground)]">
-          Dashboard Solar
+          S-Invest
         </span>
       </div>
 

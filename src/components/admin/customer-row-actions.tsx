@@ -19,7 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { CustomerContactsSheet } from "@/components/admin/customer-contacts-sheet";
+import { MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 interface Customer {
@@ -33,6 +34,7 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [contactsOpen, setContactsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: customer.name,
@@ -79,7 +81,11 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
             <MoreHorizontal className="w-4 h-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-36">
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onClick={() => setContactsOpen(true)}>
+            <Users className="w-3.5 h-3.5 mr-2" />
+            Contactos
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
             <Pencil className="w-3.5 h-3.5 mr-2" />
             Editar
@@ -122,6 +128,13 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <CustomerContactsSheet
+        open={contactsOpen}
+        onOpenChange={setContactsOpen}
+        customerId={customer.id}
+        customerName={customer.name}
+      />
 
       <ConfirmDeleteDialog
         open={deleteOpen}

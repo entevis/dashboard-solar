@@ -12,6 +12,8 @@ import {
 import { formatKwh, formatPeriod } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Download, FileUp } from "lucide-react";
 
 interface Props {
   searchParams: Promise<{ year?: string; powerPlantId?: string }>;
@@ -67,7 +69,7 @@ export default async function ReportsPage({ searchParams }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-[var(--color-foreground)]">
-            Reportes de Generación
+            Reportes
           </h1>
           <p className="text-[13px] text-[var(--color-muted-foreground)]">
             Historial de producción energética del portafolio
@@ -110,8 +112,9 @@ export default async function ReportsPage({ searchParams }: Props) {
         </CardHeader>
         <CardContent className="p-0">
           {reports.length === 0 ? (
-            <div className="text-center py-12 text-[13px] text-[var(--color-muted-foreground)]">
-              No hay reportes de generación disponibles
+            <div className="flex flex-col items-center justify-center min-h-[200px] gap-2 text-[var(--color-muted-foreground)]">
+              <FileUp className="w-8 h-8" />
+              <p className="text-[13px]">No hay reportes de generación disponibles</p>
             </div>
           ) : (
             <Table>
@@ -120,8 +123,8 @@ export default async function ReportsPage({ searchParams }: Props) {
                   <TableHead className="text-[12px]">Planta</TableHead>
                   <TableHead className="text-[12px]">Portafolio</TableHead>
                   <TableHead className="text-[12px]">Periodo</TableHead>
-                  <TableHead className="text-[12px]">Generación</TableHead>
-                  <TableHead className="text-[12px]">CO2 evitado</TableHead>
+                  <TableHead className="text-[12px] text-right">Generación</TableHead>
+                  <TableHead className="text-[12px] text-right">CO2 evitado</TableHead>
                   <TableHead className="text-[12px]">Archivo</TableHead>
                 </TableRow>
               </TableHeader>
@@ -139,24 +142,38 @@ export default async function ReportsPage({ searchParams }: Props) {
                     <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">
                       {r.powerPlant.portfolio.name}
                     </TableCell>
-                    <TableCell className="text-[13px] font-medium capitalize">
-                      {formatPeriod(r.periodMonth, r.periodYear)}
+                    <TableCell>
+                      <Badge variant="secondary" className="text-[11px] font-medium capitalize rounded-md">
+                        {formatPeriod(r.periodMonth, r.periodYear)}
+                      </Badge>
                     </TableCell>
-                    <TableCell className="text-[13px]">
-                      {formatKwh(r.kwhGenerated)}
+                    <TableCell className="text-[13px] text-right">
+                      <span className="font-medium">{formatKwh(r.kwhGenerated)}</span>
                     </TableCell>
-                    <TableCell className="text-[13px]">
-                      {r.co2Avoided.toFixed(2)} ton
+                    <TableCell className="text-[13px] text-right">
+                      <span className="font-medium">{r.co2Avoided.toFixed(2)}</span>
+                      <span className="text-[11px] text-[var(--color-muted-foreground)] ml-1">ton</span>
                     </TableCell>
                     <TableCell>
-                      <a
-                        href={r.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[12px] text-[var(--color-primary)] hover:underline"
-                      >
-                        {r.fileName}
-                      </a>
+                      <div className="flex items-center gap-1">
+                        <a
+                          href={r.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/8 transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          Ver reporte
+                        </a>
+                        <span className="text-[var(--color-border)]">|</span>
+                        <a
+                          href={r.fileUrl}
+                          download={r.fileName}
+                          className="p-1 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/8 transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

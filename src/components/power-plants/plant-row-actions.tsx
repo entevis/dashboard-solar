@@ -29,6 +29,14 @@ import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+interface PlantAddress {
+  address: string | null;
+  reference: string | null;
+  city: string | null;
+  county: string | null;
+  country: string | null;
+}
+
 interface Plant {
   id: number;
   name: string;
@@ -44,6 +52,7 @@ interface Plant {
   startDate: Date | null;
   durationYears: number | null;
   specificYield: number | null;
+  address: PlantAddress | null;
 }
 
 interface Option { id: number; name: string }
@@ -78,6 +87,11 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
     startDate: toDateInputValue(plant.startDate),
     durationYears: plant.durationYears != null ? String(plant.durationYears) : "",
     specificYield: plant.specificYield != null ? String(plant.specificYield) : "",
+    addrAddress: plant.address?.address ?? "",
+    addrReference: plant.address?.reference ?? "",
+    addrCity: plant.address?.city ?? "",
+    addrCounty: plant.address?.county ?? "",
+    addrCountry: plant.address?.country ?? "Chile",
   });
 
   async function handleEdit(e: React.FormEvent) {
@@ -101,6 +115,13 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
           startDate: form.startDate || null,
           durationYears: form.durationYears ? parseInt(form.durationYears) : null,
           specificYield: form.specificYield ? parseFloat(form.specificYield) : null,
+          address: {
+            address: form.addrAddress || null,
+            reference: form.addrReference || null,
+            city: form.addrCity || null,
+            county: form.addrCounty || null,
+            country: form.addrCountry || "Chile",
+          },
         }),
       });
       if (!res.ok) throw new Error();
@@ -242,6 +263,35 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
                     {customers.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Dirección */}
+            <div className="pt-1">
+              <p className="text-[12px] font-semibold text-[var(--color-muted-foreground)] uppercase tracking-wide mb-3">Dirección</p>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-[13px]">Dirección</Label>
+                  <Input value={form.addrAddress} onChange={(e) => setForm({ ...form, addrAddress: e.target.value })} placeholder="Ej: Av. El Sol 1234" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px]">Referencia</Label>
+                  <Input value={form.addrReference} onChange={(e) => setForm({ ...form, addrReference: e.target.value })} placeholder="Ej: Frente al galpón principal" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[13px]">Comuna</Label>
+                    <Input value={form.addrCity} onChange={(e) => setForm({ ...form, addrCity: e.target.value })} placeholder="Ej: Rancagua" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[13px]">Región</Label>
+                    <Input value={form.addrCounty} onChange={(e) => setForm({ ...form, addrCounty: e.target.value })} placeholder="Ej: O'Higgins" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[13px]">País</Label>
+                  <Input value={form.addrCountry} onChange={(e) => setForm({ ...form, addrCountry: e.target.value })} placeholder="Chile" />
+                </div>
               </div>
             </div>
 

@@ -20,7 +20,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface PowerPlant {
@@ -35,6 +49,7 @@ export function CreateContingencyDialog({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [plantComboOpen, setPlantComboOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     powerPlantId: "",
@@ -99,22 +114,61 @@ export function CreateContingencyDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-[13px]">Planta *</Label>
-            <Select
-              value={form.powerPlantId}
-              onValueChange={(v) => setForm({ ...form, powerPlantId: v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar planta" />
-              </SelectTrigger>
-              <SelectContent>
-                {powerPlants.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label id="plant-label" className="text-[13px]">
+              Planta <span className="text-[var(--color-warning)]">*</span>
+            </Label>
+            <Popover open={plantComboOpen} onOpenChange={setPlantComboOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={plantComboOpen}
+                  aria-labelledby="plant-label"
+                  className="w-full justify-between text-[13px] font-normal h-9"
+                >
+                  {form.powerPlantId ? (
+                    <span className="truncate">
+                      {powerPlants.find((p) => String(p.id) === form.powerPlantId)?.name}
+                    </span>
+                  ) : (
+                    <span className="text-[var(--color-muted-foreground)]">Seleccionar planta...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar planta..." className="text-[13px]" />
+                  <CommandList>
+                    <CommandEmpty className="text-[13px] py-3 text-center text-[var(--color-muted-foreground)]">
+                      Sin resultados
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {powerPlants.map((p) => (
+                        <CommandItem
+                          key={p.id}
+                          value={p.name}
+                          onSelect={() => {
+                            setForm({ ...form, powerPlantId: String(p.id) });
+                            setPlantComboOpen(false);
+                          }}
+                          className="text-[13px]"
+                          title={p.name}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4 shrink-0 text-[var(--color-primary)]",
+                              form.powerPlantId === String(p.id) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {p.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">

@@ -81,7 +81,7 @@ export default async function PlantContingenciesPage({ params }: Props) {
             <Link href={`/power-plants/${plant.id}`}>General</Link>
           </TabsTrigger>
           <TabsTrigger value="generation" asChild>
-            <Link href={`/power-plants/${plant.id}/generation`}>Generación</Link>
+            <Link href={`/power-plants/${plant.id}/generation`}>Reportes</Link>
           </TabsTrigger>
           <TabsTrigger value="billing" asChild>
             <Link href={`/power-plants/${plant.id}/billing`}>Facturación</Link>
