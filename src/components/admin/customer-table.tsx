@@ -44,7 +44,7 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por nombre o RUT..."
+            placeholder="Buscar por razón social o RUT..."
             className="pl-8 h-8 text-[13px]"
           />
         </div>
@@ -58,7 +58,7 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-[12px]">Nombre</TableHead>
+              <TableHead className="text-[12px]">Razón Social</TableHead>
               <TableHead className="text-[12px]">RUT</TableHead>
               <TableHead className="text-[12px]">Nombre alternativo</TableHead>
               <TableHead className="text-[12px]">Plantas</TableHead>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
-import { Zap, Users } from "lucide-react";
+import { Zap, ChevronRight } from "lucide-react";
 
 interface PortfolioSummaryCardProps {
   name: string;
@@ -63,38 +63,41 @@ export function PortfolioSummaryCard({
           {/* Separator */}
           <div className="border-t border-[var(--color-border)]/60" />
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
-                clientes
-              </p>
-              <p className="text-[18px] font-bold text-[var(--color-foreground)] leading-none">
-                {customerCount}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
-                plantas activas
-              </p>
-              <p className="text-[18px] font-bold text-[var(--color-foreground)] leading-none">
-                {activePlants}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
-                capacidad
-              </p>
-              <div className="flex items-baseline gap-1 leading-none">
-                <Zap className="w-3 h-3 text-[var(--color-warning)] shrink-0 mb-0.5" />
-                <p className="text-[18px] font-bold text-[var(--color-foreground)]">
-                  {Math.round(totalCapacityKw).toLocaleString("es-CL")}
-                  <span className="text-[11px] font-normal text-[var(--color-muted-foreground)] ml-0.5">
-                    kW
-                  </span>
+          {/* Stats grid + chevron */}
+          <div className="flex items-end justify-between gap-2">
+            <div className="grid grid-cols-3 gap-3 flex-1">
+              <div>
+                <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
+                  clientes
+                </p>
+                <p className="text-[18px] font-bold text-[var(--color-foreground)] leading-none">
+                  {customerCount}
                 </p>
               </div>
+              <div>
+                <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
+                  plantas activas
+                </p>
+                <p className="text-[18px] font-bold text-[var(--color-foreground)] leading-none">
+                  {activePlants}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] text-[var(--color-muted-foreground)] mb-0.5">
+                  capacidad
+                </p>
+                <div className="flex items-baseline gap-1 leading-none">
+                  <Zap className="w-3 h-3 text-[var(--color-warning)] shrink-0 mb-0.5" />
+                  <p className="text-[18px] font-bold text-[var(--color-foreground)]">
+                    {Math.round(totalCapacityKw).toLocaleString("es-CL")}
+                    <span className="text-[11px] font-normal text-[var(--color-muted-foreground)] ml-0.5">
+                      kW
+                    </span>
+                  </p>
+                </div>
+              </div>
             </div>
+            <ChevronRight className="w-4 h-4 text-[var(--color-muted-foreground)] shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--color-primary)]" />
           </div>
         </CardContent>
       </Card>

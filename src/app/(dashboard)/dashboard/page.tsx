@@ -2,43 +2,48 @@ import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { KpiCard } from "@/components/dashboard/kpi-card";
-import { PortfolioSummaryCard } from "@/components/dashboard/portfolio-summary-card";
-import { AlertsPanel } from "@/components/dashboard/alerts-panel";
+import { PortfolioVerticalCard } from "@/components/dashboard/portfolio-vertical-card";
 import { EnvironmentalImpact } from "@/components/dashboard/environmental-impact";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
-import { formatDate } from "@/lib/utils/formatters";
-import { Zap, Building2, AlertTriangle, Leaf } from "lucide-react";
+import { Zap, Leaf } from "lucide-react";
 import { getPortfolioLogo } from "@/lib/portfolio-logos";
 
 async function getMaestroDashboardData() {
-  const [portfolios, totalPlants, openContingencies, generationReports] =
-    await Promise.all([
-      prisma.portfolio.findMany({
-        where: { active: 1 },
-        include: {
-          powerPlants: {
-            where: { active: 1 },
-            select: { id: true, capacityKw: true, status: true, customerId: true },
-          },
+  const [portfolios, openContingencies, generationReports] = await Promise.all([
+    prisma.portfolio.findMany({
+      where: { active: 1 },
+      include: {
+        powerPlants: {
+          where: { active: 1 },
+          select: { id: true, capacityKw: true, status: true, customerId: true },
         },
-      }),
-      prisma.powerPlant.count({ where: { active: 1 } }),
-      prisma.contingency.findMany({
-        where: { active: 1, status: { in: ["OPEN", "IN_PROGRESS"] } },
-        include: { powerPlant: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      }),
-      prisma.generationReport.aggregate({
-        where: { active: 1 },
-        _sum: { kwhGenerated: true, co2Avoided: true },
-      }),
-    ]);
+      },
+      orderBy: { id: "asc" },
+    }),
+    prisma.contingency.findMany({
+      where: { active: 1, status: { in: ["OPEN", "IN_PROGRESS"] } },
+      select: { powerPlant: { select: { portfolioId: true } } },
+    }),
+    prisma.generationReport.findMany({
+      where: { active: 1 },
+      select: { co2Avoided: true, powerPlant: { select: { portfolioId: true } } },
+    }),
+  ]);
 
-  const totalKwh = generationReports._sum.kwhGenerated ?? 0;
-  const totalCo2 = generationReports._sum.co2Avoided ?? 0;
+  // Aggregate per portfolio
+  const contingenciesByPortfolio = new Map<number, number>();
+  for (const c of openContingencies) {
+    const pid = c.powerPlant.portfolioId;
+    contingenciesByPortfolio.set(pid, (contingenciesByPortfolio.get(pid) ?? 0) + 1);
+  }
 
-  return { portfolios, totalPlants, openContingencies, totalKwh, totalCo2 };
+  const co2ByPortfolio = new Map<number, number>();
+  for (const r of generationReports) {
+    const pid = r.powerPlant.portfolioId;
+    co2ByPortfolio.set(pid, (co2ByPortfolio.get(pid) ?? 0) + r.co2Avoided);
+  }
+
+  return { portfolios, contingenciesByPortfolio, co2ByPortfolio };
 }
 
 async function getClienteDashboardData(customerId: number) {
@@ -68,15 +73,6 @@ export default async function DashboardPage() {
   if (user.role === UserRole.MAESTRO) {
     const data = await getMaestroDashboardData();
 
-    const alerts = data.openContingencies.map((c) => ({
-      id: c.id,
-      plantName: c.powerPlant.name,
-      type: c.type,
-      description: c.description,
-      status: c.status,
-      createdAt: formatDate(c.createdAt),
-    }));
-
     return (
       <div className="space-y-6">
         <div>
@@ -88,58 +84,21 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {data.portfolios.map((portfolio) => (
-            <PortfolioSummaryCard
+            <PortfolioVerticalCard
               key={portfolio.id}
               name={portfolio.name}
-              plantCount={portfolio.powerPlants.length}
-              totalCapacityKw={portfolio.powerPlants.reduce(
-                (sum, p) => sum + p.capacityKw,
-                0
-              )}
-              activePlants={
-                portfolio.powerPlants.filter((p) => p.status === "active").length
-              }
+              description={portfolio.description}
               logoUrl={getPortfolioLogo(portfolio.id)}
-              href={`/power-plants?portfolioId=${portfolio.id}`}
               customerCount={new Set(portfolio.powerPlants.map((p) => p.customerId)).size}
+              activePlants={portfolio.powerPlants.filter((p) => p.status === "active").length}
+              totalCapacityKw={portfolio.powerPlants.reduce((sum, p) => sum + p.capacityKw, 0)}
+              openContingencies={data.contingenciesByPortfolio.get(portfolio.id) ?? 0}
+              co2Avoided={data.co2ByPortfolio.get(portfolio.id) ?? 0}
+              href={`/power-plants?portfolioId=${portfolio.id}`}
             />
           ))}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard
-            label="Total Plantas"
-            value={String(data.totalPlants)}
-            sublabel="en 3 portafolios"
-            icon={<Zap className="w-5 h-5" />}
-          />
-          <KpiCard
-            label="Portafolios"
-            value={String(data.portfolios.length)}
-            icon={<Building2 className="w-5 h-5" />}
-          />
-          <KpiCard
-            label="Contingencias Abiertas"
-            value={String(data.openContingencies.length)}
-            icon={<AlertTriangle className="w-5 h-5" />}
-          />
-          <KpiCard
-            label="CO2 Evitado"
-            value={`${data.totalCo2.toFixed(1)} ton`}
-            sublabel="acumulado total"
-            icon={<Leaf className="w-5 h-5" />}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <AlertsPanel alerts={alerts} />
-          <EnvironmentalImpact
-            co2Tonnes={data.totalCo2}
-            equivalentTrees={calculateEquivalentTrees(data.totalCo2)}
-            equivalentCars={calculateEquivalentCars(data.totalCo2)}
-          />
         </div>
       </div>
     );

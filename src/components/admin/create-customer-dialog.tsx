@@ -76,11 +76,11 @@ export function CreateCustomerDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-[13px]">Nombre *</Label>
+            <Label className="text-[13px]">Razón Social *</Label>
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Nombre del cliente"
+              placeholder="Razón social del cliente"
             />
           </div>
 
