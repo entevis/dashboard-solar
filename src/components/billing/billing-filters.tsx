@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -8,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Search, Loader2 } from "lucide-react";
 
 const MONTHS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -36,17 +39,26 @@ interface Props {
 export function BillingFilters({ month, year, status }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  function update(key: "month" | "year" | "status", value: string) {
+  const [localMonth, setLocalMonth] = useState(String(month));
+  const [localYear, setLocalYear] = useState(String(year));
+  const [localStatus, setLocalStatus] = useState(status);
+
+  function handleSearch() {
     const params = new URLSearchParams(searchParams.toString());
-    params.set(key, value);
+    params.set("month", localMonth);
+    params.set("year", localYear);
+    params.set("status", localStatus);
     params.set("page", "1");
-    router.push(`?${params.toString()}`);
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
   }
 
   return (
     <div className="flex items-center gap-2">
-      <Select value={status} onValueChange={(v) => update("status", v)}>
+      <Select value={localStatus} onValueChange={setLocalStatus}>
         <SelectTrigger className="h-8 text-[13px] w-40">
           <SelectValue />
         </SelectTrigger>
@@ -59,7 +71,7 @@ export function BillingFilters({ month, year, status }: Props) {
         </SelectContent>
       </Select>
 
-      <Select value={String(month)} onValueChange={(v) => update("month", v)}>
+      <Select value={localMonth} onValueChange={setLocalMonth}>
         <SelectTrigger className="h-8 text-[13px] w-[130px]">
           <SelectValue />
         </SelectTrigger>
@@ -72,7 +84,7 @@ export function BillingFilters({ month, year, status }: Props) {
         </SelectContent>
       </Select>
 
-      <Select value={String(year)} onValueChange={(v) => update("year", v)}>
+      <Select value={localYear} onValueChange={setLocalYear}>
         <SelectTrigger className="h-8 text-[13px] w-[90px]">
           <SelectValue />
         </SelectTrigger>
@@ -84,6 +96,20 @@ export function BillingFilters({ month, year, status }: Props) {
           ))}
         </SelectContent>
       </Select>
+
+      <Button
+        size="sm"
+        className="h-8 gap-1.5 text-label"
+        onClick={handleSearch}
+        disabled={isPending}
+      >
+        {isPending ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Search className="w-3.5 h-3.5" />
+        )}
+        {isPending ? "Buscando..." : "Buscar"}
+      </Button>
     </div>
   );
 }

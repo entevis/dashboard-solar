@@ -14,7 +14,6 @@ import {
 import { formatCLP } from "@/lib/utils/formatters";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ClipboardList, ExternalLink, FileText } from "lucide-react";
-import { SyncButton } from "@/components/billing/sync-button";
 import { BillingPagination } from "@/components/billing/billing-pagination";
 import { BillingFilters } from "@/components/billing/billing-filters";
 
@@ -77,7 +76,6 @@ export default async function BillingPage({
   const status = VALID_STATUSES.includes(params.status ?? "") ? params.status! : "all";
 
   const plantFilter = await buildPlantAccessFilter(user);
-  const isMaestro = user.role === UserRole.MAESTRO;
 
   // Build invoice filter based on role
   const periodFilter = { gte: periodStart, lt: periodEnd };
@@ -152,7 +150,6 @@ export default async function BillingPage({
         </div>
         <div className="flex items-center gap-3">
           <BillingFilters month={month} year={year} status={status} />
-          {isMaestro && <SyncButton />}
         </div>
       </div>
 
@@ -189,9 +186,7 @@ export default async function BillingPage({
             icon={ClipboardList}
             title="Sin facturas registradas"
             description={
-              isMaestro
-                ? "Usa el botón Sincronizar para importar las facturas desde Duemint."
-                : "El historial de facturación aparecerá aquí cuando esté disponible."
+              "El historial de facturación aparecerá aquí cuando esté disponible."
             }
             size="sm"
           />
