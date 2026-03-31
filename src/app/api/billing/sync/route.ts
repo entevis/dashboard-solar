@@ -1,17 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { UserRole } from "@prisma/client";
 import { fetchAllInvoices, toFloat } from "@/lib/services/duemint.service";
 import { logAction } from "@/lib/services/audit.service";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user || user.role !== UserRole.MAESTRO) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Load portfolios that have a Duemint company ID configured
+  const body = await request.json().catch(() => ({}));
+  const incremental: boolean = body.mode !== "full";
+
   const portfolios = await prisma.portfolio.findMany({
     where: { active: 1, duemintCompanyId: { not: null } },
     select: { id: true, name: true, duemintCompanyId: true },
@@ -21,7 +23,6 @@ export async function POST() {
     return NextResponse.json({ error: "No portfolios configured with a Duemint company ID" }, { status: 400 });
   }
 
-  // Load all customers indexed by normalized RUT
   const customers = await prisma.customer.findMany({
     where: { active: 1 },
     select: { id: true, rut: true },
@@ -34,6 +35,13 @@ export async function POST() {
   const customerByRut = new Map<string, number>();
   for (const c of customers) {
     customerByRut.set(normalizeRut(c.rut), c.id);
+  }
+
+  // In incremental mode, pre-load all existing duemintIds to skip them
+  const existingIds = new Set<string>();
+  if (incremental) {
+    const existing = await prisma.invoice.findMany({ select: { duemintId: true } });
+    for (const e of existing) existingIds.add(e.duemintId);
   }
 
   let totalCreated = 0;
@@ -53,6 +61,14 @@ export async function POST() {
 
     for (const inv of invoices) {
       if (!inv.id) { totalSkipped++; continue; }
+
+      const duemintId = String(inv.id);
+
+      // Incremental: skip invoices already in DB
+      if (incremental && existingIds.has(duemintId)) {
+        totalSkipped++;
+        continue;
+      }
 
       const rawTaxId = inv.clientTaxId ?? inv.client?.taxId ?? null;
       const customerId = rawTaxId
@@ -91,21 +107,24 @@ export async function POST() {
         creditNoteNumber: creditNote?.number ?? null,
       };
 
-      const existing = await prisma.invoice.findUnique({
-        where: { duemintId: String(inv.id) },
-      });
-
-      if (existing) {
-        await prisma.invoice.update({ where: { duemintId: String(inv.id) }, data });
-        totalUpdated++;
-      } else {
-        await prisma.invoice.create({ data: { ...data, duemintId: String(inv.id) } });
+      if (incremental) {
+        await prisma.invoice.create({ data: { ...data, duemintId } });
         totalCreated++;
+      } else {
+        const existing = await prisma.invoice.findUnique({ where: { duemintId } });
+        if (existing) {
+          await prisma.invoice.update({ where: { duemintId }, data });
+          totalUpdated++;
+        } else {
+          await prisma.invoice.create({ data: { ...data, duemintId } });
+          totalCreated++;
+        }
       }
     }
   }
 
   logAction(user.id, "SYNC", "invoices", undefined, {
+    mode: incremental ? "incremental" : "full",
     portfolios: portfolios.length,
     created: totalCreated,
     updated: totalUpdated,
@@ -115,6 +134,7 @@ export async function POST() {
 
   return NextResponse.json({
     success: true,
+    mode: incremental ? "incremental" : "full",
     created: totalCreated,
     updated: totalUpdated,
     skipped: totalSkipped,

@@ -16,7 +16,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ClipboardList, ExternalLink, FileText } from "lucide-react";
 import { SyncButton } from "@/components/billing/sync-button";
 import { BillingPagination } from "@/components/billing/billing-pagination";
-import { DEFAULT_PAGE_SIZE } from "@/components/ui/table-pagination";
+import { BillingFilters } from "@/components/billing/billing-filters";
+
+const PAGE_SIZE = 15;
+
+const MONTHS = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
 
 function formatDate(date: Date | null) {
   if (!date) return "—";
@@ -53,34 +60,60 @@ function StatusBadge({ statusName }: { statusName: string | null }) {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; month?: string; year?: string; status?: string }>;
 }) {
   const user = await requireAuth();
   const params = await searchParams;
-  const page = Math.max(1, parseInt(params.page ?? "1"));
-  const pageSize = DEFAULT_PAGE_SIZE;
+  const page = Math.max(1, parseInt(params.page ?? "1") || 1);
+  const pageSize = PAGE_SIZE;
+
+  const now = new Date();
+  const month = Math.min(12, Math.max(1, parseInt(params.month ?? "") || now.getMonth() + 1));
+  const year = parseInt(params.year ?? "") || now.getFullYear();
+  const periodStart = new Date(year, month - 1, 1);
+  const periodEnd = new Date(year, month, 1);
+
+  const VALID_STATUSES = ["pagada", "porVencer", "vencida", "anulada"];
+  const status = VALID_STATUSES.includes(params.status ?? "") ? params.status! : "all";
 
   const plantFilter = await buildPlantAccessFilter(user);
   const isMaestro = user.role === UserRole.MAESTRO;
 
   // Build invoice filter based on role
-  let invoiceWhere: Record<string, unknown> = { active: 1 };
+  const periodFilter = { gte: periodStart, lt: periodEnd };
+  let invoiceWhere: Record<string, unknown> = { active: 1, issueDate: periodFilter };
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
-    invoiceWhere = { active: 1, customerId: user.customerId };
+    invoiceWhere = { active: 1, customerId: user.customerId, issueDate: periodFilter };
   } else if (user.role === UserRole.OPERATIVO) {
     const plants = await prisma.powerPlant.findMany({
       where: { ...plantFilter, active: 1 },
       select: { customerId: true },
     });
     const customerIds = [...new Set(plants.map((p) => p.customerId))];
-    invoiceWhere = { active: 1, customerId: { in: customerIds } };
+    invoiceWhere = { active: 1, customerId: { in: customerIds }, issueDate: periodFilter };
   }
 
+  // Status filter (applied to table/count only, not KPIs)
+  const i = "insensitive" as const;
+  const statusConditions: Record<string, object> = {
+    pagada:    { OR: [{ statusName: { contains: "pag", mode: i } }, { statusName: { contains: "paid", mode: i } }] },
+    vencida:   { OR: [{ statusName: { contains: "venc", mode: i } }, { statusName: { contains: "overdue", mode: i } }] },
+    anulada:   { OR: [{ statusName: { contains: "nul", mode: i } }, { statusName: { contains: "cancel", mode: i } }] },
+    porVencer: { NOT: { OR: [
+      { statusName: { contains: "pag", mode: i } }, { statusName: { contains: "paid", mode: i } },
+      { statusName: { contains: "venc", mode: i } }, { statusName: { contains: "overdue", mode: i } },
+      { statusName: { contains: "nul", mode: i } }, { statusName: { contains: "cancel", mode: i } },
+    ]}},
+  };
+  const tableWhere = status === "all"
+    ? invoiceWhere
+    : { ...invoiceWhere, ...statusConditions[status] };
+
   const [total, invoices, allInvoices] = await Promise.all([
-    prisma.invoice.count({ where: invoiceWhere }),
+    prisma.invoice.count({ where: tableWhere }),
     prisma.invoice.findMany({
-      where: invoiceWhere,
+      where: tableWhere,
       include: {
         customer: { select: { name: true } },
         portfolio: { select: { name: true } },
@@ -91,13 +124,22 @@ export default async function BillingPage({
     }),
     prisma.invoice.findMany({
       where: invoiceWhere,
-      select: { total: true, amountDue: true, paidAmount: true },
+      select: { total: true, statusName: true },
     }),
   ]);
 
-  const totalFacturado = allInvoices.reduce((s, i) => s + (i.total ?? 0), 0);
-  const totalPorCobrar = allInvoices.reduce((s, i) => s + (i.amountDue ?? 0), 0);
-  const totalPagado = allInvoices.reduce((s, i) => s + (i.paidAmount ?? 0), 0);
+  function categorize(statusName: string | null) {
+    const s = (statusName ?? "").toLowerCase();
+    if (s.includes("pag") || s.includes("paid")) return "pagada";
+    if (s.includes("venc") || s.includes("overdue")) return "vencida";
+    if (s.includes("nul") || s.includes("cancel")) return "anulada";
+    return "porVencer";
+  }
+
+  const kpis = { pagada: 0, porVencer: 0, vencida: 0, anulada: 0 };
+  for (const inv of allInvoices) {
+    kpis[categorize(inv.statusName)] += inv.total ?? 0;
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-4">
@@ -105,29 +147,38 @@ export default async function BillingPage({
         <div>
           <h1 className="text-lg font-bold text-(--color-foreground)">Facturación</h1>
           <p className="text-label text-(--color-muted-foreground)">
-            {total} {total === 1 ? "factura" : "facturas"} registradas
+            {total} {total === 1 ? "factura" : "facturas"} · {MONTHS[month - 1]} {year}
           </p>
         </div>
-        {isMaestro && <SyncButton />}
+        <div className="flex items-center gap-3">
+          <BillingFilters month={month} year={year} status={status} />
+          {isMaestro && <SyncButton />}
+        </div>
       </div>
 
-      <div className="shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card className="border-(--color-border) shadow-sm">
           <CardContent className="pt-4">
-            <p className="text-caption text-(--color-muted-foreground)">Total facturado</p>
-            <p className="text-[20px] font-bold text-(--color-foreground)">{formatCLP(totalFacturado)}</p>
+            <p className="text-caption text-(--color-muted-foreground)">Pagada</p>
+            <p className="text-[20px] font-bold text-(--color-success)">{formatCLP(kpis.pagada)}</p>
           </CardContent>
         </Card>
         <Card className="border-(--color-border) shadow-sm">
           <CardContent className="pt-4">
-            <p className="text-caption text-(--color-muted-foreground)">Por cobrar</p>
-            <p className="text-[20px] font-bold text-(--color-warning)">{formatCLP(totalPorCobrar)}</p>
+            <p className="text-caption text-(--color-muted-foreground)">Por vencer</p>
+            <p className="text-[20px] font-bold text-(--color-warning)">{formatCLP(kpis.porVencer)}</p>
           </CardContent>
         </Card>
         <Card className="border-(--color-border) shadow-sm">
           <CardContent className="pt-4">
-            <p className="text-caption text-(--color-muted-foreground)">Cobrado</p>
-            <p className="text-[20px] font-bold text-(--color-success)">{formatCLP(totalPagado)}</p>
+            <p className="text-caption text-(--color-muted-foreground)">Vencida</p>
+            <p className="text-[20px] font-bold text-(--color-destructive)">{formatCLP(kpis.vencida)}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-(--color-border) shadow-sm">
+          <CardContent className="pt-4">
+            <p className="text-caption text-(--color-muted-foreground)">Nota de Crédito</p>
+            <p className="text-[20px] font-bold text-(--color-muted-foreground)">{formatCLP(kpis.anulada)}</p>
           </CardContent>
         </Card>
       </div>
