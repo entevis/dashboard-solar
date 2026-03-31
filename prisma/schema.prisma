@@ -154,11 +154,13 @@ model User {
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
-  customer          Customer?             @relation(fields: [customerId], references: [id])
-  assignedPortfolio Portfolio?            @relation("AssignedPortfolio", fields: [assignedPortfolioId], references: [id])
-  plantPermissions  UserPlantPermission[]
-  contingencies     Contingency[]         @relation("CreatedBy")
-  auditLogs         AuditLog[]
+  customer                Customer?               @relation(fields: [customerId], references: [id])
+  assignedPortfolio       Portfolio?              @relation("AssignedPortfolio", fields: [assignedPortfolioId], references: [id])
+  plantPermissions        UserPlantPermission[]
+  contingencies           Contingency[]           @relation("CreatedBy")
+  contingencyComments     ContingencyComment[]    @relation("ContingencyComments")
+  contingencyAttachments  ContingencyAttachment[] @relation("ContingencyAttachments")
+  auditLogs               AuditLog[]
 
   @@index([customerId])
   @@index([supabaseId])
@@ -237,12 +239,49 @@ model Contingency {
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
 
-  powerPlant PowerPlant @relation(fields: [powerPlantId], references: [id])
-  createdBy  User       @relation("CreatedBy", fields: [createdById], references: [id])
+  powerPlant  PowerPlant              @relation(fields: [powerPlantId], references: [id])
+  createdBy   User                    @relation("CreatedBy", fields: [createdById], references: [id])
+  comments    ContingencyComment[]
+  attachment  ContingencyAttachment?
 
   @@index([powerPlantId])
   @@index([status])
   @@map("contingencies")
+}
+
+model ContingencyComment {
+  id            Int         @id @default(autoincrement())
+  contingencyId Int         @map("contingency_id")
+  userId        Int         @map("user_id")
+  body          String
+  active        Int         @default(1)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  contingency Contingency @relation(fields: [contingencyId], references: [id])
+  user        User        @relation("ContingencyComments", fields: [userId], references: [id])
+
+  @@index([contingencyId])
+  @@map("contingency_comments")
+}
+
+model ContingencyAttachment {
+  id            Int      @id @default(autoincrement())
+  contingencyId Int      @unique @map("contingency_id")
+  userId        Int      @map("user_id")
+  fileUrl       String   @map("file_url")
+  fileName      String   @map("file_name")
+  fileSize      Int?     @map("file_size")
+  fileType      String?  @map("file_type")
+  active        Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  contingency Contingency @relation(fields: [contingencyId], references: [id])
+  user        User        @relation("ContingencyAttachments", fields: [userId], references: [id])
+
+  @@index([contingencyId])
+  @@map("contingency_attachments")
 }
 
 model AuditLog {
