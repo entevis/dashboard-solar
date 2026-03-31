@@ -8,6 +8,7 @@ import { z } from "zod";
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().nullable().optional(),
+  duemintCompanyId: z.string().max(50).nullable().optional(),
 });
 
 interface RouteContext {

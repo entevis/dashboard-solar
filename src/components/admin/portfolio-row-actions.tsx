@@ -27,6 +27,7 @@ interface Portfolio {
   id: number;
   name: string;
   description: string | null;
+  duemintCompanyId: string | null;
 }
 
 export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
@@ -37,6 +38,7 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
   const [form, setForm] = useState({
     name: portfolio.name,
     description: portfolio.description ?? "",
+    duemintCompanyId: portfolio.duemintCompanyId ?? "",
   });
 
   async function handleEdit(e: React.FormEvent) {
@@ -46,7 +48,11 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
       const res = await fetch(`/api/portfolios/${portfolio.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, description: form.description || null }),
+        body: JSON.stringify({
+          name: form.name,
+          description: form.description || null,
+          duemintCompanyId: form.duemintCompanyId || null,
+        }),
       });
       if (!res.ok) throw new Error();
       toast.success("Portafolio actualizado");
@@ -103,6 +109,14 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
             <div className="space-y-2">
               <Label className="text-[13px]">Descripción</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="min-h-[80px]" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[13px]">Duemint Company ID</Label>
+              <Input
+                value={form.duemintCompanyId}
+                onChange={(e) => setForm({ ...form, duemintCompanyId: e.target.value })}
+                placeholder="ej: 2908"
+              />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(false)}>Cancelar</Button>

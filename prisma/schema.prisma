@@ -35,6 +35,7 @@ enum InvoiceStatus {
   PAID
   OVERDUE
   CANCELLED
+  SYNCED
 }
 
 // ──────────────────────────────────────
@@ -42,15 +43,17 @@ enum InvoiceStatus {
 // ──────────────────────────────────────
 
 model Portfolio {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  active      Int      @default(1)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                Int      @id @default(autoincrement())
+  name              String
+  description       String?
+  duemintCompanyId  String?  @map("duemint_company_id")
+  active            Int      @default(1)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   powerPlants PowerPlant[]
   users       User[]       @relation("AssignedPortfolio")
+  invoices    Invoice[]
 
   @@map("portfolios")
 }
@@ -133,7 +136,6 @@ model PowerPlant {
   customer          Customer               @relation(fields: [customerId], references: [id])
   address           Address?
   generationReports GenerationReport[]
-  invoices          Invoice[]
   contingencies     Contingency[]
   userPermissions   UserPlantPermission[]
 
@@ -203,24 +205,51 @@ model GenerationReport {
 }
 
 model Invoice {
-  id           Int           @id @default(autoincrement())
-  powerPlantId Int           @map("power_plant_id")
-  customerId   Int           @map("customer_id")
-  period       String
-  amount       Float
-  status       InvoiceStatus @default(PENDING)
-  duemintId    String?       @map("duemint_id")
-  charges      Json?
-  pdfUrl       String?       @map("pdf_url")
-  active       Int           @default(1)
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
+  id              Int      @id @default(autoincrement())
+  customerId      Int      @map("customer_id")
 
-  powerPlant PowerPlant @relation(fields: [powerPlantId], references: [id])
-  customer   Customer   @relation(fields: [customerId], references: [id])
+  // Duemint fields
+  duemintId       String   @unique @map("duemint_id")
+  number          String?
+  clientTaxId     String?  @map("client_tax_id")
+  issueDate       DateTime? @map("issue_date")
+  dueDate         DateTime? @map("due_date")
+  statusCode      Int?     @map("status_code")
+  statusName      String?  @map("status_name")
+  currency        String?
+  net             Float?
+  taxes           Float?
+  total           Float?
+  paidAmount      Float?   @map("paid_amount")
+  amountDue       Float?   @map("amount_due")
+  amountCredit    Float?   @map("amount_credit")
+  amountDebit     Float?   @map("amount_debit")
+  isCeded         Boolean? @map("is_ceded")
+  onJudicial      Boolean? @map("on_judicial")
+  url             String?
+  pdfUrl          String?  @map("pdf_url")
+  xmlUrl          String?  @map("xml_url")
 
-  @@index([powerPlantId])
+  // Duemint client fields (denormalized)
+  duemintClientId   String? @map("duemint_client_id")
+  duemintClientName String? @map("duemint_client_name")
+
+  // Credit note (first element if exists)
+  creditNoteId     String? @map("credit_note_id")
+  creditNoteNumber String? @map("credit_note_number")
+
+  portfolioId Int? @map("portfolio_id")
+
+  active    Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  portfolio Portfolio? @relation(fields: [portfolioId], references: [id])
+
   @@index([customerId])
+  @@index([portfolioId])
+  @@index([clientTaxId])
   @@map("invoices")
 }
 
