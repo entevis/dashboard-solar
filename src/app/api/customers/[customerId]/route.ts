@@ -23,6 +23,13 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // IDOR protection: CLIENTE/CLIENTE_PERFILADO can only access their own customer
+  if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
+    if (user.customerId !== id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   const customer = await prisma.customer.findUnique({
     where: { id, active: 1 },
     include: {

@@ -10,7 +10,17 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      // Prevent open redirect: only allow internal paths
+      let safePath = "/dashboard";
+      try {
+        const resolved = new URL(next, origin);
+        if (resolved.origin === origin) {
+          safePath = resolved.pathname + resolved.search;
+        }
+      } catch {
+        // Invalid URL — fall back to dashboard
+      }
+      return NextResponse.redirect(`${origin}${safePath}`);
     }
   }
 
