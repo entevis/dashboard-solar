@@ -29,12 +29,12 @@ export function ReportFilterBar({ plants }: { plants: Option[] }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col sm:flex-row flex-wrap gap-2">
       <Select
         defaultValue={searchParams.get("year") ?? "_all"}
         onValueChange={(v) => updateParam("year", v)}
       >
-        <SelectTrigger className="h-8 text-[13px] w-32">
+        <SelectTrigger className="h-9 text-[13px] w-full sm:w-32">
           <SelectValue placeholder="Año" />
         </SelectTrigger>
         <SelectContent>
@@ -49,7 +49,7 @@ export function ReportFilterBar({ plants }: { plants: Option[] }) {
         defaultValue={searchParams.get("powerPlantId") ?? "_all"}
         onValueChange={(v) => updateParam("powerPlantId", v)}
       >
-        <SelectTrigger className="h-8 text-[13px] w-52">
+        <SelectTrigger className="h-9 text-[13px] w-full sm:w-52">
           <SelectValue placeholder="Planta" />
         </SelectTrigger>
         <SelectContent>

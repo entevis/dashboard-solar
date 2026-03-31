@@ -55,7 +55,7 @@ export default async function PowerPlantDetailPage({ params }: Props) {
         </div>
         <Badge
           variant="secondary"
-          className={`text-[11px] ${
+          className={`text-[12px] ${
             plant.status === "active"
               ? "bg-[var(--color-success)]/10 text-[var(--color-success)]"
               : "bg-[var(--color-warning)]/10 text-[var(--color-warning)]"

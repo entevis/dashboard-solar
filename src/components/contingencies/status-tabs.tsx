@@ -42,7 +42,7 @@ export function StatusTabs({ counts }: { counts: Record<string, number> }) {
             )}
           >
             {tab.label}
-            <span className="ml-1.5 text-[11px] opacity-60">{count}</span>
+            <span className="ml-1.5 text-[12px] opacity-60">{count}</span>
           </button>
         );
       })}

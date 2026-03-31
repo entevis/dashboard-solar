@@ -162,7 +162,7 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
           <SheetHeader className="px-6 pt-6 pb-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-0.5">
+                <p className="text-[12px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-0.5">
                   Contactos
                 </p>
                 <SheetTitle className="text-[15px] font-semibold text-[var(--color-foreground)] leading-tight">
@@ -206,10 +206,10 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-[11px] px-4">Nombre</TableHead>
-                    <TableHead className="text-[11px] px-4">Cargo</TableHead>
-                    <TableHead className="text-[11px] px-4">Email</TableHead>
-                    <TableHead className="text-[11px] px-4">Teléfono</TableHead>
+                    <TableHead className="text-[12px] px-4">Nombre</TableHead>
+                    <TableHead className="text-[12px] px-4">Cargo</TableHead>
+                    <TableHead className="text-[12px] px-4">Email</TableHead>
+                    <TableHead className="text-[12px] px-4">Teléfono</TableHead>
                     <TableHead className="w-16" />
                   </TableRow>
                 </TableHeader>
@@ -240,7 +240,7 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
                           </button>
                           <button
                             onClick={() => setDeleteContact(c)}
-                            className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-red-500 hover:bg-red-50 transition-colors"
+                            className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/8 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -345,7 +345,7 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
             <AlertDialogCancel className="text-[13px]">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-500 hover:bg-red-600 text-white text-[13px]"
+              className="bg-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/90 text-white text-[13px]"
             >
               Eliminar
             </AlertDialogAction>

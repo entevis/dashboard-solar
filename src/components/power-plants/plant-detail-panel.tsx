@@ -71,7 +71,7 @@ function calcEndDate(startDate: Date | null, durationYears: number | null): stri
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-0.5">
+      <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-0.5">
         {label}
       </p>
       <p className="text-[14px] font-medium text-[var(--color-foreground)]">
@@ -85,7 +85,7 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="flex items-center gap-1 mb-0.5">
-        <p className="text-[11px] uppercase tracking-wide text-[var(--color-muted-foreground)]">{label}</p>
+        <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)]">{label}</p>
         <Lock className="w-2.5 h-2.5 text-[var(--color-muted-foreground)]" />
       </div>
       <p className="text-[14px] font-medium text-[var(--color-foreground)]">{value || "—"}</p>
@@ -132,7 +132,7 @@ function EditInput({
 }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">
+      <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">
         {label}
       </p>
       <Input
@@ -269,7 +269,7 @@ export function PlantDetailPanel({ plant, canEdit }: Props) {
                   <EditInput label="Nombre de planta" value={form.name} onChange={ef("name")} />
                   <EditInput label="ID Solcor" value={form.solcorId} onChange={ef("solcorId")} placeholder="Ej: SOL-001" />
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">Estado</p>
+                    <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">Estado</p>
                     <Select value={form.status} onValueChange={ef("status")}>
                       <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -284,7 +284,7 @@ export function PlantDetailPanel({ plant, canEdit }: Props) {
                   <Field label="Nombre de planta" value={plant.name} />
                   <Field label="ID Solcor" value={plant.solcorId} />
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">Estado</p>
+                    <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">Estado</p>
                     <Badge
                       variant="secondary"
                       className={`text-[12px] font-semibold px-2.5 rounded-full ${

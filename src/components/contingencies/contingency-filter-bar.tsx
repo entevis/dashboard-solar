@@ -26,12 +26,12 @@ export function ContingencyFilterBar({ plants }: { plants: Option[] }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col sm:flex-row flex-wrap gap-2">
       <Select
         defaultValue={searchParams.get("powerPlantId") ?? "_all"}
         onValueChange={(v) => updateParam("powerPlantId", v)}
       >
-        <SelectTrigger className="h-8 text-[13px] w-52">
+        <SelectTrigger className="h-9 text-[13px] w-full sm:w-52">
           <SelectValue placeholder="Planta" />
         </SelectTrigger>
         <SelectContent>
@@ -46,7 +46,7 @@ export function ContingencyFilterBar({ plants }: { plants: Option[] }) {
         defaultValue={searchParams.get("type") ?? "_all"}
         onValueChange={(v) => updateParam("type", v)}
       >
-        <SelectTrigger className="h-8 text-[13px] w-40">
+        <SelectTrigger className="h-9 text-[13px] w-full sm:w-40">
           <SelectValue placeholder="Tipo" />
         </SelectTrigger>
         <SelectContent>

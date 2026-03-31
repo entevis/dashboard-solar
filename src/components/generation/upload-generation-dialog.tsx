@@ -217,7 +217,7 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
               </Select>
             </div>
             {periodError && (
-              <p className="flex items-center gap-1.5 text-[12px] text-red-500 mt-1">
+              <p className="flex items-center gap-1.5 text-[12px] text-[var(--color-destructive)] mt-1">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 {periodError}
               </p>
@@ -255,11 +255,11 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
             />
 
             {dropState === "selected" && file ? (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-success)] bg-[#22C55E]/5 w-full min-w-0">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-success)] bg-[var(--color-success)]/5 w-full min-w-0">
                 <FileText className="w-5 h-5 text-[var(--color-success)] shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-[var(--color-foreground)] truncate">{file.name}</p>
-                  <p className="text-[11px] text-[var(--color-muted-foreground)]">{formatFileSize(file.size)} · PDF</p>
+                  <p className="text-[12px] text-[var(--color-muted-foreground)]">{formatFileSize(file.size)} · PDF</p>
                 </div>
                 <button
                   type="button"
@@ -271,19 +271,19 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
               </div>
             ) : dropState === "error" ? (
               <div
-                className="flex flex-col items-center justify-center h-[120px] rounded-xl border-2 border-dashed border-red-400 bg-red-50 cursor-pointer transition-all"
+                className="flex flex-col items-center justify-center h-[120px] rounded-xl border-2 border-dashed border-[var(--color-destructive)]/50 bg-[var(--color-destructive)]/5 cursor-pointer transition-all"
                 onClick={() => { setDropState("idle"); setFileError(null); fileInputRef.current?.click(); }}
               >
-                <AlertCircle className="w-5 h-5 text-red-500 mb-1" />
-                <p className="text-[13px] text-red-500">{fileError}</p>
-                <p className="text-[11px] text-red-400 mt-0.5">Clic para intentar de nuevo</p>
+                <AlertCircle className="w-5 h-5 text-[var(--color-destructive)] mb-1" />
+                <p className="text-[13px] text-[var(--color-destructive)]">{fileError}</p>
+                <p className="text-[12px] text-[var(--color-destructive)]/70 mt-0.5">Clic para intentar de nuevo</p>
               </div>
             ) : (
               <div
                 className={cn(
                   "flex flex-col items-center justify-center h-[120px] rounded-xl border-2 border-dashed cursor-pointer transition-all duration-150",
                   dropState === "dragging"
-                    ? "border-[var(--color-primary)] bg-[#2A6EF5]/5"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
                     : "border-[var(--color-border)] bg-[var(--color-secondary)]"
                 )}
                 onClick={() => fileInputRef.current?.click()}
@@ -300,7 +300,7 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
                 <p className="text-[13px] font-medium text-[var(--color-foreground)]">
                   {dropState === "dragging" ? "Soltá el archivo aquí" : "Arrastrá el PDF aquí"}
                 </p>
-                <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
+                <p className="text-[12px] text-[var(--color-muted-foreground)] mt-0.5">
                   o hacé clic para seleccionar · máx. 10 MB
                 </p>
               </div>

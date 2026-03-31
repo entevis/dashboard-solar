@@ -135,7 +135,7 @@ export default async function PlantGenerationPage({ params }: Props) {
                 {reports.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[11px] font-medium capitalize rounded-md">
+                      <Badge variant="secondary" className="text-[12px] font-medium capitalize rounded-md">
                         {formatPeriod(r.periodMonth, r.periodYear)}
                       </Badge>
                     </TableCell>
@@ -144,7 +144,7 @@ export default async function PlantGenerationPage({ params }: Props) {
                     </TableCell>
                     <TableCell className="text-[13px] text-right">
                       <span className="font-medium">{r.co2Avoided.toFixed(2)}</span>
-                      <span className="text-[11px] text-[var(--color-muted-foreground)] ml-1">ton</span>
+                      <span className="text-[12px] text-[var(--color-muted-foreground)] ml-1">ton</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

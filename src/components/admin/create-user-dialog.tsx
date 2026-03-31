@@ -86,54 +86,51 @@ export function CreateUserDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="h-9 text-[13px] bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 rounded-lg">
-          <Plus className="w-4 h-4 mr-1.5" />
-          Crear usuario
+        <Button size="sm" className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90">
+          <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+          Nuevo usuario
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle className="text-base">Crear nuevo usuario</DialogTitle>
+          <DialogTitle className="text-[15px] font-bold">Crear usuario</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
-            <Label className="text-[13px]">Nombre</Label>
+            <Label className="text-[13px]">Nombre <span className="text-[var(--color-warning)]">*</span></Label>
             <Input
               name="name"
               placeholder="Nombre completo"
               required
-              className="h-10"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[13px]">Correo electrónico</Label>
+            <Label className="text-[13px]">Correo electrónico <span className="text-[var(--color-warning)]">*</span></Label>
             <Input
               name="email"
               type="email"
               placeholder="correo@empresa.cl"
               required
-              className="h-10"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[13px]">Contraseña</Label>
+            <Label className="text-[13px]">Contraseña <span className="text-[var(--color-warning)]">*</span></Label>
             <Input
               name="password"
               type="password"
               placeholder="Mínimo 6 caracteres"
               minLength={6}
               required
-              className="h-10"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[13px]">Rol</Label>
+            <Label className="text-[13px]">Rol <span className="text-[var(--color-warning)]">*</span></Label>
             <Select value={role} onValueChange={setRole} required>
-              <SelectTrigger className="h-10">
+              <SelectTrigger>
                 <SelectValue placeholder="Seleccionar rol" />
               </SelectTrigger>
               <SelectContent>
@@ -149,9 +146,9 @@ export function CreateUserDialog({
 
           {showCustomer && (
             <div className="space-y-2">
-              <Label className="text-[13px]">Cliente</Label>
+              <Label className="text-[13px]">Cliente <span className="text-[var(--color-warning)]">*</span></Label>
               <Select name="customerId" required>
-                <SelectTrigger className="h-10">
+                <SelectTrigger>
                   <SelectValue placeholder="Seleccionar cliente" />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,9 +164,9 @@ export function CreateUserDialog({
 
           {showPortfolio && (
             <div className="space-y-2">
-              <Label className="text-[13px]">Portafolio asignado</Label>
+              <Label className="text-[13px]">Portafolio asignado <span className="text-[var(--color-warning)]">*</span></Label>
               <Select name="assignedPortfolioId" required>
-                <SelectTrigger className="h-10">
+                <SelectTrigger>
                   <SelectValue placeholder="Seleccionar portafolio" />
                 </SelectTrigger>
                 <SelectContent>
@@ -187,15 +184,16 @@ export function CreateUserDialog({
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => setOpen(false)}
-              className="h-9 text-[13px]"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="sm"
               disabled={loading || !role}
-              className="h-9 text-[13px] bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 rounded-lg"
+              className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
             >
               {loading ? "Creando..." : "Crear usuario"}
             </Button>

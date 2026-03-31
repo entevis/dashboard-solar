@@ -35,8 +35,8 @@ export function ContingencyRowActions({ contingencyId, description, canWrite }: 
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]">
-            <MoreHorizontal className="w-4 h-4" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]" aria-label="Acciones para esta contingencia">
+            <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
@@ -51,7 +51,7 @@ export function ContingencyRowActions({ contingencyId, description, canWrite }: 
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => setDeleteOpen(true)}
-                className="text-red-600 focus:text-red-600"
+                className="text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-2" />
                 Eliminar

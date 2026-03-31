@@ -77,8 +77,8 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]">
-            <MoreHorizontal className="w-4 h-4" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]" aria-label={`Acciones para ${customer.name}`}>
+            <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
@@ -93,7 +93,7 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => setDeleteOpen(true)}
-            className="text-red-600 focus:text-red-600"
+            className="text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
           >
             <Trash2 className="w-3.5 h-3.5 mr-2" />
             Eliminar
@@ -108,11 +108,11 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-[13px]">Razón Social *</Label>
+              <Label className="text-[13px]">Razón Social <span className="text-[var(--color-warning)]">*</span></Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label className="text-[13px]">RUT *</Label>
+              <Label className="text-[13px]">RUT <span className="text-[var(--color-warning)]">*</span></Label>
               <Input value={form.rut} onChange={(e) => setForm({ ...form, rut: e.target.value })} />
             </div>
             <div className="space-y-2">

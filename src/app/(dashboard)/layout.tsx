@@ -17,16 +17,23 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--color-primary)] focus:text-white focus:rounded-lg focus:text-[13px] focus:font-medium"
+      >
+        Saltar al contenido principal
+      </a>
+
       <Sidebar userRole={user.role} />
 
-      <div className="lg:pl-[240px]">
+      <div className="lg:pl-[240px] flex flex-col h-screen">
         <Topbar
           userName={user.name}
           userEmail={user.email}
           userRole={user.role}
         />
 
-        <main className="p-4 lg:p-6">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-6 flex flex-col">{children}</main>
       </div>
 
       <Toaster />

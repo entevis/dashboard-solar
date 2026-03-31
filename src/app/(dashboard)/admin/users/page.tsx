@@ -30,12 +30,10 @@ export default async function AdminUsersPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col flex-1 min-h-0 gap-4">
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">
-            Usuarios
-          </h1>
+          <h1 className="text-lg font-bold text-[var(--color-foreground)]">Usuarios</h1>
           <p className="text-[13px] text-[var(--color-muted-foreground)]">
             Gestión de accesos al sistema
           </p>

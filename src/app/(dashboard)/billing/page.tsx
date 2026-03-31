@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { formatCLP } from "@/lib/utils/formatters";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ClipboardList } from "lucide-react";
 
 const statusLabels: Record<string, { label: string; className: string }> = {
   PENDING: {
@@ -24,7 +26,7 @@ const statusLabels: Record<string, { label: string; className: string }> = {
   },
   OVERDUE: {
     label: "Vencida",
-    className: "bg-red-500/10 text-red-600",
+    className: "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]",
   },
   CANCELLED: {
     label: "Anulada",
@@ -76,7 +78,7 @@ export default async function BillingPage() {
         </div>
         <Badge
           variant="outline"
-          className="text-[11px] bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20"
+          className="text-[12px] bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20"
         >
           Datos Demo — Integración Duemint pendiente
         </Badge>
@@ -121,9 +123,12 @@ export default async function BillingPage() {
         </CardHeader>
         <CardContent className="p-0">
           {invoices.length === 0 ? (
-            <div className="text-center py-12 text-[13px] text-[var(--color-muted-foreground)]">
-              No hay facturas registradas
-            </div>
+            <EmptyState
+              icon={ClipboardList}
+              title="Sin facturas registradas"
+              description="El historial de facturación de tus plantas aparecerá aquí a medida que se emitan."
+              size="sm"
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -147,7 +152,7 @@ export default async function BillingPage() {
                         >
                           {inv.powerPlant.name}
                         </Link>
-                        <p className="text-[11px] text-[var(--color-muted-foreground)]">
+                        <p className="text-[12px] text-[var(--color-muted-foreground)]">
                           {inv.powerPlant.portfolio.name}
                         </p>
                       </TableCell>
@@ -163,7 +168,7 @@ export default async function BillingPage() {
                       <TableCell>
                         <Badge
                           variant="secondary"
-                          className={`text-[11px] ${status.className}`}
+                          className={`text-[12px] ${status.className}`}
                         >
                           {status.label}
                         </Badge>

@@ -102,14 +102,14 @@ export function CreateContingencyDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90">
-          <Plus className="w-4 h-4 mr-1" />
-          Nueva Contingencia
+          <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+          Nueva contingencia
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-[15px] font-bold">
-            Crear Contingencia
+            Crear contingencia
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -172,7 +172,7 @@ export function CreateContingencyDialog({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[13px]">Tipo *</Label>
+            <Label className="text-[13px]">Tipo <span className="text-[var(--color-warning)]">*</span></Label>
             <Select
               value={form.type}
               onValueChange={(v) => setForm({ ...form, type: v })}
@@ -188,7 +188,7 @@ export function CreateContingencyDialog({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[13px]">Descripción *</Label>
+            <Label className="text-[13px]">Descripción <span className="text-[var(--color-warning)]">*</span></Label>
             <Textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -242,7 +242,7 @@ export function CreateContingencyDialog({
               disabled={loading}
               className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
             >
-              {loading ? "Creando..." : "Crear Contingencia"}
+              {loading ? "Creando..." : "Crear contingencia"}
             </Button>
           </div>
         </form>

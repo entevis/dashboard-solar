@@ -46,7 +46,7 @@ export function PlantFilterBar({ portfolios, customers }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2 items-center">
+    <div className="flex flex-col sm:flex-row flex-wrap gap-2 items-stretch sm:items-center">
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-muted-foreground)]" />
         <Input
@@ -54,7 +54,7 @@ export function PlantFilterBar({ portfolios, customers }: Props) {
           defaultValue={searchParams.get("q") ?? ""}
           onChange={handleSearch}
           placeholder="Buscar planta..."
-          className="pl-8 h-8 text-[13px] w-52"
+          className="pl-8 h-9 text-[13px] w-full sm:w-52"
         />
       </div>
 
@@ -62,7 +62,7 @@ export function PlantFilterBar({ portfolios, customers }: Props) {
         defaultValue={searchParams.get("portfolioId") ?? "_all"}
         onValueChange={(v) => updateParam("portfolioId", v)}
       >
-        <SelectTrigger className="h-8 text-[13px] w-44">
+        <SelectTrigger className="h-9 text-[13px] w-full sm:w-44">
           <SelectValue placeholder="Portafolio" />
         </SelectTrigger>
         <SelectContent>
@@ -77,7 +77,7 @@ export function PlantFilterBar({ portfolios, customers }: Props) {
         defaultValue={searchParams.get("customerId") ?? "_all"}
         onValueChange={(v) => updateParam("customerId", v)}
       >
-        <SelectTrigger className="h-8 text-[13px] w-52">
+        <SelectTrigger className="h-9 text-[13px] w-full sm:w-52">
           <SelectValue placeholder="Cliente" />
         </SelectTrigger>
         <SelectContent>

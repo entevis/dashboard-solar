@@ -146,8 +146,8 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]">
-            <MoreHorizontal className="w-4 h-4" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]" aria-label={`Acciones para ${plant.name}`}>
+            <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-36">
@@ -158,7 +158,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => setDeleteOpen(true)}
-            className="text-red-600 focus:text-red-600"
+            className="text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
           >
             <Trash2 className="w-3.5 h-3.5 mr-2" />
             Eliminar
@@ -176,7 +176,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
             {/* Identificación */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[13px]">Nombre *</Label>
+                <Label className="text-[13px]">Nombre <span className="text-[var(--color-warning)]">*</span></Label>
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="space-y-2">
@@ -212,7 +212,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
             {/* Técnico */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[13px]">Potencia (kWp) *</Label>
+                <Label className="text-[13px]">Potencia (kWp) <span className="text-[var(--color-warning)]">*</span></Label>
                 <Input type="number" step="0.1" min="0" value={form.capacityKw} onChange={(e) => setForm({ ...form, capacityKw: e.target.value })} />
               </div>
               <div className="space-y-2">
@@ -235,7 +235,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
 
             {/* Estado y asignaciones */}
             <div className="space-y-2">
-              <Label className="text-[13px]">Estado *</Label>
+              <Label className="text-[13px]">Estado <span className="text-[var(--color-warning)]">*</span></Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -247,7 +247,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[13px]">Portafolio *</Label>
+                <Label className="text-[13px]">Portafolio <span className="text-[var(--color-warning)]">*</span></Label>
                 <Select value={form.portfolioId} onValueChange={(v) => setForm({ ...form, portfolioId: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -256,7 +256,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[13px]">Cliente *</Label>
+                <Label className="text-[13px]">Cliente <span className="text-[var(--color-warning)]">*</span></Label>
                 <Select value={form.customerId} onValueChange={(v) => setForm({ ...form, customerId: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>

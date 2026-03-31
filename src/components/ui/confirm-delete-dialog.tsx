@@ -42,8 +42,8 @@ export function ConfirmDeleteDialog({
       <DialogContent className="sm:max-w-[380px]">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
-              <Trash2 className="w-4 h-4 text-red-600" />
+            <div className="w-8 h-8 rounded-full bg-[var(--color-destructive)]/10 flex items-center justify-center flex-shrink-0">
+              <Trash2 className="w-4 h-4 text-[var(--color-destructive)]" />
             </div>
             <DialogTitle className="text-[15px] font-bold">{title}</DialogTitle>
           </div>
@@ -64,7 +64,7 @@ export function ConfirmDeleteDialog({
             size="sm"
             disabled={loading}
             onClick={handleConfirm}
-            className="bg-red-600 text-white hover:bg-red-700"
+            className="bg-[var(--color-destructive)] text-white hover:bg-[var(--color-destructive)]/90"
           >
             {loading ? "Eliminando..." : "Eliminar"}
           </Button>

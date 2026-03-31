@@ -63,19 +63,19 @@ export function CreatePortfolioDialog() {
           size="sm"
           className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
         >
-          <Plus className="w-4 h-4 mr-1" />
-          Nuevo Portafolio
+          <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+          Nuevo portafolio
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="text-[15px] font-bold">
-            Crear Portafolio
+            Crear portafolio
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-[13px]">Nombre *</Label>
+            <Label className="text-[13px]">Nombre <span className="text-[var(--color-warning)]">*</span></Label>
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -108,7 +108,7 @@ export function CreatePortfolioDialog() {
               disabled={loading}
               className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
             >
-              {loading ? "Creando..." : "Crear Portafolio"}
+              {loading ? "Creando..." : "Crear portafolio"}
             </Button>
           </div>
         </form>

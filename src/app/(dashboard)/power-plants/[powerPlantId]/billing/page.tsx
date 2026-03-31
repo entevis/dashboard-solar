@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/table";
 import { formatCLP } from "@/lib/utils/formatters";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ClipboardList } from "lucide-react";
 
 interface Props {
   params: Promise<{ powerPlantId: string }>;
@@ -22,7 +24,7 @@ interface Props {
 const statusLabels: Record<string, { label: string; className: string }> = {
   PENDING: { label: "Pendiente", className: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]" },
   PAID: { label: "Pagada", className: "bg-[var(--color-success)]/10 text-[var(--color-success)]" },
-  OVERDUE: { label: "Vencida", className: "bg-red-500/10 text-red-600" },
+  OVERDUE: { label: "Vencida", className: "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]" },
   CANCELLED: { label: "Anulada", className: "bg-gray-500/10 text-gray-500" },
 };
 
@@ -83,7 +85,7 @@ export default async function PlantBillingPage({ params }: Props) {
         </TabsList>
       </Tabs>
 
-      <Badge variant="outline" className="text-[11px] bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20">
+      <Badge variant="outline" className="text-[12px] bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20">
         Datos Demo — Integración Duemint pendiente
       </Badge>
 
@@ -112,9 +114,12 @@ export default async function PlantBillingPage({ params }: Props) {
         </CardHeader>
         <CardContent className="p-0">
           {invoices.length === 0 ? (
-            <div className="text-center py-12 text-[13px] text-[var(--color-muted-foreground)]">
-              No hay facturas registradas
-            </div>
+            <EmptyState
+              icon={ClipboardList}
+              title="Sin facturas registradas"
+              description="El historial de facturación de esta planta aparecerá aquí a medida que se emitan."
+              size="sm"
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -140,7 +145,7 @@ export default async function PlantBillingPage({ params }: Props) {
                         {formatCLP(inv.amount)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={`text-[11px] ${status.className}`}>
+                        <Badge variant="secondary" className={`text-[12px] ${status.className}`}>
                           {status.label}
                         </Badge>
                       </TableCell>

@@ -70,8 +70,8 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]">
-            <MoreHorizontal className="w-4 h-4" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]" aria-label={`Acciones para ${portfolio.name}`}>
+            <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-36">
@@ -82,7 +82,7 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => setDeleteOpen(true)}
-            className="text-red-600 focus:text-red-600"
+            className="text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
           >
             <Trash2 className="w-3.5 h-3.5 mr-2" />
             Eliminar
@@ -97,7 +97,7 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-[13px]">Nombre *</Label>
+              <Label className="text-[13px]">Nombre <span className="text-[var(--color-warning)]">*</span></Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div className="space-y-2">

@@ -14,7 +14,7 @@ interface Props {
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  OPEN: { label: "Abierta", className: "bg-red-500/10 text-red-600" },
+  OPEN: { label: "Abierta", className: "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]" },
   IN_PROGRESS: { label: "En progreso", className: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]" },
   CLOSED: { label: "Cerrada", className: "bg-[var(--color-success)]/10 text-[var(--color-success)]" },
 };
@@ -74,7 +74,7 @@ export default async function ContingencyDetailPage({ params }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className={`text-[11px] ${status.className}`}>
+          <Badge variant="secondary" className={`text-[12px] ${status.className}`}>
             {status.label}
           </Badge>
           {canWrite && contingency.status !== "CLOSED" && (

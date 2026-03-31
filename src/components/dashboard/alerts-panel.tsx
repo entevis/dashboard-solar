@@ -20,12 +20,12 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
     return (
       <Card className="border-[var(--color-border)] shadow-sm">
         <CardHeader className="pb-3">
-          <h3 className="text-[14px] font-medium text-[var(--color-foreground)]">
+          <h2 className="text-body font-medium text-[var(--color-foreground)]">
             Contingencias abiertas
-          </h3>
+          </h2>
         </CardHeader>
         <CardContent className="pt-0">
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
+          <p className="text-label text-[var(--color-muted-foreground)]">
             No hay contingencias abiertas
           </p>
         </CardContent>
@@ -37,12 +37,12 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
     <Card className="border-[var(--color-border)] shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-[14px] font-medium text-[var(--color-foreground)]">
+          <h2 className="text-body font-medium text-[var(--color-foreground)]">
             Contingencias abiertas
-          </h3>
+          </h2>
           <Badge
             variant="secondary"
-            className="text-[11px] bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
+            className="text-caption bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
           >
             {alerts.length}
           </Badge>
@@ -54,19 +54,19 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
             key={alert.id}
             className="flex items-start gap-3 p-3 rounded-lg bg-[var(--color-background)]"
           >
-            <AlertTriangle className="w-4 h-4 text-[var(--color-warning)] mt-0.5 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-[var(--color-warning)] mt-0.5 shrink-0" aria-hidden="true" />
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-[var(--color-foreground)] truncate">
+              <p className="text-label font-medium text-[var(--color-foreground)] truncate">
                 {alert.plantName}
               </p>
-              <p className="text-[12px] text-[var(--color-muted-foreground)] truncate">
+              <p className="text-caption text-[var(--color-muted-foreground)] truncate">
                 {alert.description}
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-[10px] h-5">
+                <Badge variant="outline" className="text-caption h-5">
                   {alert.type === "PREVENTIVE" ? "Preventivo" : "Correctivo"}
                 </Badge>
-                <span className="text-[11px] text-[var(--color-muted-foreground)]">
+                <span className="text-caption text-[var(--color-muted-foreground)]">
                   {alert.createdAt}
                 </span>
               </div>

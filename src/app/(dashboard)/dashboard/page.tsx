@@ -5,8 +5,9 @@ import { KpiCard } from "@/components/dashboard/kpi-card";
 import { PortfolioVerticalCard } from "@/components/dashboard/portfolio-vertical-card";
 import { EnvironmentalImpact } from "@/components/dashboard/environmental-impact";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
-import { Zap, Leaf } from "lucide-react";
+import { Zap, Leaf, AlertTriangle, ArrowRight } from "lucide-react";
 import { getPortfolioLogo } from "@/lib/portfolio-logos";
+import Link from "next/link";
 
 async function getMaestroDashboardData() {
   const [portfolios, openContingencies, generationReports] = await Promise.all([
@@ -158,13 +159,39 @@ export default async function DashboardPage() {
           Dashboard
         </h1>
         <p className="text-[13px] text-[var(--color-muted-foreground)]">
-          Portafolio asignado
+          Tu portafolio asignado
         </p>
       </div>
 
-      <p className="text-[13px] text-[var(--color-muted-foreground)]">
-        Selecciona una planta o revisa las contingencias pendientes.
-      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+        <Link
+          href="/power-plants"
+          className="flex items-center gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-white shadow-sm hover:border-[var(--color-primary)]/40 hover:shadow-md transition-all duration-150 group"
+        >
+          <div className="w-9 h-9 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center shrink-0">
+            <Zap className="w-4 h-4 text-[var(--color-primary)]" aria-hidden="true" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-[var(--color-foreground)]">Plantas</p>
+            <p className="text-[12px] text-[var(--color-muted-foreground)]">Ver plantas asignadas</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-[var(--color-muted-foreground)] group-hover:text-[var(--color-primary)] transition-colors shrink-0" aria-hidden="true" />
+        </Link>
+
+        <Link
+          href="/contingencies"
+          className="flex items-center gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-white shadow-sm hover:border-[var(--color-warning)]/40 hover:shadow-md transition-all duration-150 group"
+        >
+          <div className="w-9 h-9 rounded-lg bg-[var(--color-warning)]/10 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-4 h-4 text-[var(--color-warning)]" aria-hidden="true" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-[var(--color-foreground)]">Contingencias</p>
+            <p className="text-[12px] text-[var(--color-muted-foreground)]">Revisar alertas activas</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-[var(--color-muted-foreground)] group-hover:text-[var(--color-warning)] transition-colors shrink-0" aria-hidden="true" />
+        </Link>
+      </div>
     </div>
   );
 }

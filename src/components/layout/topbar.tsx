@@ -49,23 +49,23 @@ export function Topbar({ userName, userEmail, userRole }: TopbarProps) {
       <div className="flex items-center gap-3">
         <Badge
           variant="secondary"
-          className="hidden sm:inline-flex text-[11px] font-medium"
+          className="hidden sm:inline-flex text-[12px] font-medium"
         >
           {ROLE_LABELS[userRole]}
         </Badge>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
+            <Button variant="ghost" className="flex items-center gap-2 h-11 px-2" aria-label={`Menú de usuario: ${userName}`}>
               <Avatar className="w-7 h-7">
-                <AvatarFallback className="text-[11px] bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-medium">
+                <AvatarFallback className="text-[12px] bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-medium">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <span className="hidden sm:inline text-[13px] font-medium text-[var(--color-foreground)]">
                 {userName}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--color-muted-foreground)]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--color-muted-foreground)]" aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[200px]">

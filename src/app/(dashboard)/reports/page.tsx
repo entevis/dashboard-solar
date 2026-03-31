@@ -12,8 +12,9 @@ import {
 import { formatKwh, formatPeriod } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, FileUp } from "lucide-react";
+import { FileText, Download, FileUp, SearchX } from "lucide-react";
 
 interface Props {
   searchParams: Promise<{ year?: string; powerPlantId?: string }>;
@@ -112,10 +113,16 @@ export default async function ReportsPage({ searchParams }: Props) {
         </CardHeader>
         <CardContent className="p-0">
           {reports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[200px] gap-2 text-[var(--color-muted-foreground)]">
-              <FileUp className="w-8 h-8" />
-              <p className="text-[13px]">No hay reportes de generación disponibles</p>
-            </div>
+            <EmptyState
+              icon={params.year || params.powerPlantId ? SearchX : FileUp}
+              title={params.year || params.powerPlantId ? "Sin resultados" : "Sin reportes disponibles"}
+              description={
+                params.year || params.powerPlantId
+                  ? "Ningún reporte coincide con los filtros aplicados."
+                  : "Los reportes de generación mensual aparecerán aquí una vez que el equipo de S-Invest los cargue."
+              }
+              size="sm"
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -143,7 +150,7 @@ export default async function ReportsPage({ searchParams }: Props) {
                       {r.powerPlant.portfolio.name}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[11px] font-medium capitalize rounded-md">
+                      <Badge variant="secondary" className="text-[12px] font-medium capitalize rounded-md">
                         {formatPeriod(r.periodMonth, r.periodYear)}
                       </Badge>
                     </TableCell>
@@ -152,7 +159,7 @@ export default async function ReportsPage({ searchParams }: Props) {
                     </TableCell>
                     <TableCell className="text-[13px] text-right">
                       <span className="font-medium">{r.co2Avoided.toFixed(2)}</span>
-                      <span className="text-[11px] text-[var(--color-muted-foreground)] ml-1">ton</span>
+                      <span className="text-[12px] text-[var(--color-muted-foreground)] ml-1">ton</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

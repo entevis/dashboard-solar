@@ -1,6 +1,5 @@
 import { requireRole } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -12,7 +11,9 @@ import {
 } from "@/components/ui/table";
 import { CreatePortfolioDialog } from "@/components/admin/create-portfolio-dialog";
 import { PortfolioRowActions } from "@/components/admin/portfolio-row-actions";
+import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
+import { Building2 } from "lucide-react";
 
 export default async function PortfoliosPage() {
   await requireRole(["MAESTRO"]);
@@ -31,26 +32,27 @@ export default async function PortfoliosPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col flex-1 min-h-0 gap-4">
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">
-            Portafolios
-          </h1>
+          <h1 className="text-lg font-bold text-[var(--color-foreground)]">Portafolios</h1>
           <p className="text-[13px] text-[var(--color-muted-foreground)]">
-            Gestión de portafolios de inversión solar
+            {portfolios.length} {portfolios.length === 1 ? "portafolio registrado" : "portafolios registrados"}
           </p>
         </div>
         <CreatePortfolioDialog />
       </div>
 
-      <Card className="border-[var(--color-border)] shadow-sm">
-        <CardContent className="p-0">
-          {portfolios.length === 0 ? (
-            <div className="text-center py-12 text-[13px] text-[var(--color-muted-foreground)]">
-              No hay portafolios registrados
-            </div>
-          ) : (
+      <div className="flex-1 min-h-0 overflow-hidden border border-[var(--color-border)] rounded-xl bg-white shadow-sm flex flex-col">
+        {portfolios.length === 0 ? (
+          <EmptyState
+            icon={Building2}
+            title="Sin portafolios registrados"
+            description="Crea un portafolio para agrupar plantas solares por cliente o proyecto de inversión."
+            action={<CreatePortfolioDialog />}
+          />
+        ) : (
+          <div className="flex-1 min-h-0 overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -76,14 +78,10 @@ export default async function PortfoliosPage() {
                       {p.description ?? "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[11px]">
-                        {p._count.powerPlants}
-                      </Badge>
+                      <Badge variant="secondary" className="text-[12px]">{p._count.powerPlants}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[11px]">
-                        {p._count.users}
-                      </Badge>
+                      <Badge variant="secondary" className="text-[12px]">{p._count.users}</Badge>
                     </TableCell>
                     <TableCell>
                       <PortfolioRowActions portfolio={p} />
@@ -92,9 +90,9 @@ export default async function PortfoliosPage() {
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

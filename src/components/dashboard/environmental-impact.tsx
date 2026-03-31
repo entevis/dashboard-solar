@@ -28,7 +28,7 @@ export function EnvironmentalImpact({
             <p className="text-lg font-bold text-[var(--color-foreground)]">
               {co2Tonnes.toFixed(1)}
             </p>
-            <p className="text-[11px] text-[var(--color-muted-foreground)]">
+            <p className="text-[12px] text-[var(--color-muted-foreground)]">
               ton CO2 evitadas
             </p>
           </div>
@@ -39,7 +39,7 @@ export function EnvironmentalImpact({
             <p className="text-lg font-bold text-[var(--color-foreground)]">
               {equivalentTrees.toLocaleString("es-CL")}
             </p>
-            <p className="text-[11px] text-[var(--color-muted-foreground)]">
+            <p className="text-[12px] text-[var(--color-muted-foreground)]">
               árboles equivalentes
             </p>
           </div>
@@ -50,7 +50,7 @@ export function EnvironmentalImpact({
             <p className="text-lg font-bold text-[var(--color-foreground)]">
               {equivalentCars}
             </p>
-            <p className="text-[11px] text-[var(--color-muted-foreground)]">
+            <p className="text-[12px] text-[var(--color-muted-foreground)]">
               autos retirados
             </p>
           </div>

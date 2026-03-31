@@ -16,13 +16,15 @@ import {
 import { formatDate, formatCLP } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { CreateContingencyDialog } from "@/components/contingencies/create-contingency-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CheckCircle2 } from "lucide-react";
 
 interface Props {
   params: Promise<{ powerPlantId: string }>;
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  OPEN: { label: "Abierta", className: "bg-red-500/10 text-red-600" },
+  OPEN: { label: "Abierta", className: "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]" },
   IN_PROGRESS: { label: "En progreso", className: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]" },
   CLOSED: { label: "Cerrada", className: "bg-[var(--color-success)]/10 text-[var(--color-success)]" },
 };
@@ -95,9 +97,12 @@ export default async function PlantContingenciesPage({ params }: Props) {
       <Card className="border-[var(--color-border)] shadow-sm">
         <CardContent className="p-0">
           {contingencies.length === 0 ? (
-            <div className="text-center py-12 text-[13px] text-[var(--color-muted-foreground)]">
-              No hay contingencias registradas para esta planta
-            </div>
+            <EmptyState
+              icon={CheckCircle2}
+              title="Sin contingencias registradas"
+              description="Esta planta no tiene mantenciones ni alertas activas."
+              size="sm"
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -116,7 +121,7 @@ export default async function PlantContingenciesPage({ params }: Props) {
                   return (
                     <TableRow key={c.id}>
                       <TableCell>
-                        <Badge variant="outline" className="text-[11px]">
+                        <Badge variant="outline" className="text-[12px]">
                           {typeLabels[c.type] ?? c.type}
                         </Badge>
                       </TableCell>
@@ -129,7 +134,7 @@ export default async function PlantContingenciesPage({ params }: Props) {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={`text-[11px] ${status.className}`}>
+                        <Badge variant="secondary" className={`text-[12px] ${status.className}`}>
                           {status.label}
                         </Badge>
                       </TableCell>

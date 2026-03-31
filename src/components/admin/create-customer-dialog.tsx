@@ -64,19 +64,19 @@ export function CreateCustomerDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90">
-          <Plus className="w-4 h-4 mr-1" />
-          Nuevo Cliente
+          <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+          Nuevo cliente
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="text-[15px] font-bold">
-            Crear Cliente
+            Crear cliente
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-[13px]">Razón Social *</Label>
+            <Label className="text-[13px]">Razón social <span className="text-[var(--color-warning)]">*</span></Label>
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -85,7 +85,7 @@ export function CreateCustomerDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[13px]">RUT *</Label>
+            <Label className="text-[13px]">RUT <span className="text-[var(--color-warning)]">*</span></Label>
             <Input
               value={form.rut}
               onChange={(e) => setForm({ ...form, rut: e.target.value })}
@@ -112,7 +112,7 @@ export function CreateCustomerDialog() {
               disabled={loading}
               className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
             >
-              {loading ? "Creando..." : "Crear Cliente"}
+              {loading ? "Creando..." : "Crear cliente"}
             </Button>
           </div>
         </form>
