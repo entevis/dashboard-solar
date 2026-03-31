@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Sun } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -41,9 +41,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] px-4">
       <div className="w-full max-w-[400px]">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)] flex items-center justify-center mb-4">
-            <Sun className="w-6 h-6 text-white" />
-          </div>
+          <Image
+            src="/logo.jpg"
+            alt="Dashboard Solar"
+            width={64}
+            height={64}
+            className="mb-4 rounded-xl"
+            priority
+          />
           <h1 className="text-xl font-bold text-[var(--color-foreground)]">
             Dashboard Solar
           </h1>
