@@ -61,12 +61,17 @@ function StatusBadge({ statusName }: { statusName: string | null }) {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; month?: string; year?: string; status?: string }>;
+  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; status?: string }>;
 }) {
   const user = await requireAuth();
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1") || 1);
-  const pageSize = PAGE_SIZE;
+  const VALID_SIZES = [15, 50, 100] as const;
+  type PageSize = typeof VALID_SIZES[number];
+  const parsedSize = parseInt(params.size ?? "");
+  const pageSize: PageSize = (VALID_SIZES as readonly number[]).includes(parsedSize)
+    ? parsedSize as PageSize
+    : PAGE_SIZE;
 
   const now = new Date();
   const month = Math.min(12, Math.max(1, parseInt(params.month ?? "") || now.getMonth() + 1));
@@ -274,7 +279,7 @@ export default async function BillingPage({
                 </TableBody>
               </Table>
             </div>
-            <BillingPagination total={total} page={page} />
+            <BillingPagination total={total} page={page} pageSize={pageSize} />
           </>
         )}
       </div>

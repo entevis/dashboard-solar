@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { TablePagination, DEFAULT_PAGE_SIZE, type PageSize } from "@/components/ui/table-pagination";
 
-export function BillingPagination({ total, page }: { total: number; page: number }) {
+export function BillingPagination({ total, page, pageSize = DEFAULT_PAGE_SIZE }: { total: number; page: number; pageSize?: PageSize }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -18,8 +18,8 @@ export function BillingPagination({ total, page }: { total: number; page: number
     <TablePagination
       total={total}
       page={page}
-      pageSize={DEFAULT_PAGE_SIZE}
-      onPageChange={(p) => navigate(p, DEFAULT_PAGE_SIZE)}
+      pageSize={pageSize}
+      onPageChange={(p) => navigate(p, pageSize)}
       onPageSizeChange={(s) => navigate(1, s)}
     />
   );
