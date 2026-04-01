@@ -17,6 +17,7 @@ import { ClipboardList } from "lucide-react";
 import { BillingPagination } from "@/components/billing/billing-pagination";
 import { BillingFilters } from "@/components/billing/billing-filters";
 import { ImportInvoiceDialog } from "@/components/billing/import-invoice-dialog";
+import { SyncSinceDialog } from "@/components/billing/sync-since-dialog";
 import { InvoiceRowActions } from "@/components/billing/invoice-row-actions";
 
 const PAGE_SIZE = 15;
@@ -166,7 +167,10 @@ export default async function BillingPage({
         <div className="flex items-center gap-3">
           <BillingFilters month={month} year={year} status={status} />
           {isMaestro && maestroPortfolios.length > 0 && (
-            <ImportInvoiceDialog portfolios={maestroPortfolios} />
+            <>
+              <SyncSinceDialog />
+              <ImportInvoiceDialog portfolios={maestroPortfolios} />
+            </>
           )}
         </div>
       </div>

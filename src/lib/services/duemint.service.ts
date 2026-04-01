@@ -91,6 +91,30 @@ export async function fetchInvoiceById(companyId: string, invoiceId: string): Pr
   return res.json();
 }
 
+export async function fetchInvoicesSince(companyId: string, since: string): Promise<DuemintInvoice[]> {
+  const all: DuemintInvoice[] = [];
+  let page = 1;
+
+  while (true) {
+    const url = `${BASE_URL}/collection-documents?since=${since}&dateBy=2&resultsPerPage=100&page=${page}`;
+    const res = await fetch(url, { headers: getHeaders(companyId) });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Duemint API error ${res.status} (company ${companyId}): ${text}`);
+    }
+
+    const data: DuemintResponse = await res.json();
+    all.push(...(data.items ?? []));
+
+    const totalPages = data.records?.pages ?? 1;
+    if (page >= totalPages) break;
+    page++;
+  }
+
+  return all;
+}
+
 export async function fetchAllInvoices(companyId: string): Promise<DuemintInvoice[]> {
   const all: DuemintInvoice[] = [];
 
