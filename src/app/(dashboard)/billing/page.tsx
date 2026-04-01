@@ -17,6 +17,7 @@ import { ClipboardList, ExternalLink, FileText } from "lucide-react";
 import { BillingPagination } from "@/components/billing/billing-pagination";
 import { BillingFilters } from "@/components/billing/billing-filters";
 import { ImportInvoiceDialog } from "@/components/billing/import-invoice-dialog";
+import { RefreshInvoiceButton } from "@/components/billing/refresh-invoice-button";
 
 const PAGE_SIZE = 15;
 
@@ -216,7 +217,7 @@ export default async function BillingPage({
                     <TableHead className="text-caption">Total</TableHead>
                     <TableHead className="text-caption">Por cobrar</TableHead>
                     <TableHead className="text-caption">Estado</TableHead>
-                    <TableHead className="text-caption w-16">Docs</TableHead>
+                    <TableHead className="text-caption w-20">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -262,6 +263,9 @@ export default async function BillingPage({
                               className="text-(--color-muted-foreground) hover:text-(--color-primary) transition-colors">
                               <FileText className="w-3.5 h-3.5" />
                             </a>
+                          )}
+                          {!inv.statusName?.toLowerCase().includes("pag") && !inv.statusName?.toLowerCase().includes("paid") && (
+                            <RefreshInvoiceButton invoiceId={inv.id} />
                           )}
                         </div>
                       </TableCell>
