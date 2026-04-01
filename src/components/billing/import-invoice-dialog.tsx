@@ -186,18 +186,18 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 text-destructive bg-destructive/10 rounded-lg px-3 py-2.5">
+              <div className="flex items-start gap-2 text-(--color-destructive) bg-destructive/10 rounded-lg px-3 py-2.5">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <p className="text-label">{error}</p>
               </div>
             )}
 
             <Button
-              className="w-full"
+              className="w-full gap-2"
               onClick={handleFetch}
               disabled={loading || !duemintId.trim() || !portfolioId}
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {loading ? "Buscando..." : "Buscar factura"}
             </Button>
           </div>
@@ -221,7 +221,7 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
               </div>
               <div className="grid grid-cols-2 gap-x-4 px-4 py-3">
                 <div>
-                  <p className="text-caption text-(--color-muted-foreground)">Cliente (Duemint)</p>
+                  <p className="text-caption text-(--color-muted-foreground)">Cliente</p>
                   <p className="text-label font-medium">{result.preview.clientName ?? "—"}</p>
                   <p className="text-caption text-(--color-muted-foreground)">{result.preview.clientTaxId ?? "—"}</p>
                 </div>
@@ -258,25 +258,25 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
 
             {/* Customer match status */}
             {result.customer ? (
-              <div className="flex items-start gap-2 text-success bg-success/10 rounded-lg px-3 py-2.5">
+              <div className="flex items-start gap-2 text-(--color-success) bg-success/10 rounded-lg px-3 py-2.5">
                 <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
                 <p className="text-label">
                   Cliente encontrado: <span className="font-medium">{result.customer.name}</span>
                 </p>
               </div>
             ) : (
-              <div className="flex items-start gap-2 text-destructive bg-destructive/10 rounded-lg px-3 py-2.5">
+              <div className="flex items-start gap-2 text-(--color-destructive) bg-destructive/10 rounded-lg px-3 py-2.5">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <p className="text-label">
-                  No existe un cliente asociado al RUT{" "}
+                  No hay cliente asociado al RUT{" "}
                   <span className="font-mono font-medium">{result.preview.clientTaxId ?? "desconocido"}</span>.
-                  Créalo en la sección de clientes y vuelve a intentarlo.
+                  Créalo en Clientes y vuelve a intentarlo.
                 </p>
               </div>
             )}
 
             {error && (
-              <div className="flex items-start gap-2 text-destructive bg-destructive/10 rounded-lg px-3 py-2.5">
+              <div className="flex items-start gap-2 text-(--color-destructive) bg-destructive/10 rounded-lg px-3 py-2.5">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <p className="text-label">{error}</p>
               </div>
@@ -287,11 +287,11 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
                 Volver
               </Button>
               <Button
-                className="flex-1"
+                className="flex-1 gap-2"
                 onClick={handleConfirm}
                 disabled={loading || !result.customer}
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {loading ? "Importando..." : "Confirmar importación"}
               </Button>
             </div>

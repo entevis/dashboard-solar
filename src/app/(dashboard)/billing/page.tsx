@@ -253,13 +253,13 @@ export default async function BillingPage({
                         <div className="flex items-center gap-1">
                           {inv.url && (
                             <a href={inv.url} target="_blank" rel="noopener noreferrer" title="Ver en Duemint"
-                              className="text-(--color-muted-foreground) hover:text-(--color-primary)">
+                              className="text-(--color-muted-foreground) hover:text-(--color-primary) transition-colors">
                               <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                           )}
                           {inv.pdfUrl && (
                             <a href={inv.pdfUrl} target="_blank" rel="noopener noreferrer" title="Descargar PDF"
-                              className="text-(--color-muted-foreground) hover:text-(--color-primary)">
+                              className="text-(--color-muted-foreground) hover:text-(--color-primary) transition-colors">
                               <FileText className="w-3.5 h-3.5" />
                             </a>
                           )}

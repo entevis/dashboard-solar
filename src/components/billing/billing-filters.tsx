@@ -58,26 +58,13 @@ export function BillingFilters({ month, year, status }: Props) {
 
   return (
     <div className="flex items-center gap-2">
-      <Select value={localStatus} onValueChange={setLocalStatus}>
-        <SelectTrigger className="h-8 text-[13px] w-40">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {STATUS_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value} className="text-[13px]">
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
       <Select value={localMonth} onValueChange={setLocalMonth}>
-        <SelectTrigger className="h-8 text-[13px] w-[130px]">
+        <SelectTrigger className="h-8 text-label w-32.5">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {MONTHS.map((name, i) => (
-            <SelectItem key={i + 1} value={String(i + 1)} className="text-[13px]">
+            <SelectItem key={i + 1} value={String(i + 1)} className="text-label">
               {name}
             </SelectItem>
           ))}
@@ -85,13 +72,26 @@ export function BillingFilters({ month, year, status }: Props) {
       </Select>
 
       <Select value={localYear} onValueChange={setLocalYear}>
-        <SelectTrigger className="h-8 text-[13px] w-[90px]">
+        <SelectTrigger className="h-8 text-label w-22.5">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {getYears().map((y) => (
-            <SelectItem key={y} value={String(y)} className="text-[13px]">
+            <SelectItem key={y} value={String(y)} className="text-label">
               {y}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={localStatus} onValueChange={setLocalStatus}>
+        <SelectTrigger className="h-8 text-label w-40">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_OPTIONS.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value} className="text-label">
+              {opt.label}
             </SelectItem>
           ))}
         </SelectContent>
