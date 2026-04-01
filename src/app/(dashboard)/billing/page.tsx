@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ClipboardList, ExternalLink, FileText } from "lucide-react";
 import { BillingPagination } from "@/components/billing/billing-pagination";
 import { BillingFilters } from "@/components/billing/billing-filters";
+import { ImportInvoiceDialog } from "@/components/billing/import-invoice-dialog";
 
 const PAGE_SIZE = 15;
 
@@ -108,7 +109,9 @@ export default async function BillingPage({
     ? invoiceWhere
     : { ...invoiceWhere, ...statusConditions[status] };
 
-  const [total, invoices, allInvoices] = await Promise.all([
+  const isMaestro = user.role === UserRole.MAESTRO;
+
+  const [total, invoices, allInvoices, maestroPortfolios] = await Promise.all([
     prisma.invoice.count({ where: tableWhere }),
     prisma.invoice.findMany({
       where: tableWhere,
@@ -124,6 +127,12 @@ export default async function BillingPage({
       where: invoiceWhere,
       select: { total: true, statusName: true },
     }),
+    isMaestro
+      ? prisma.portfolio.findMany({
+          where: { active: 1, duemintCompanyId: { not: null } },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   function categorize(statusName: string | null) {
@@ -150,6 +159,9 @@ export default async function BillingPage({
         </div>
         <div className="flex items-center gap-3">
           <BillingFilters month={month} year={year} status={status} />
+          {isMaestro && maestroPortfolios.length > 0 && (
+            <ImportInvoiceDialog portfolios={maestroPortfolios} />
+          )}
         </div>
       </div>
 
