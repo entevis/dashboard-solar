@@ -19,7 +19,7 @@ export function SelectPortfolioForm({ portfolios }: { portfolios: Portfolio[] })
   function handleContinue() {
     if (!selected) return;
     document.cookie = `portfolio_id=${selected}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-    router.push(`/${selected}/power-plants`);
+    router.push(`/dashboard`);
   }
 
   return (
