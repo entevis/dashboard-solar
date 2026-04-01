@@ -17,9 +17,10 @@ interface Option { id: number; name: string }
 interface Props {
   portfolios: Option[];
   customers: Option[];
+  hidePortfolioFilter?: boolean;
 }
 
-export function PlantFilterBar({ portfolios, customers }: Props) {
+export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = false }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -34,7 +35,7 @@ export function PlantFilterBar({ portfolios, customers }: Props) {
       params.delete(key);
     }
     startTransition(() => {
-      router.push(`/power-plants?${params.toString()}`);
+      router.push(`?${params.toString()}`);
     });
   }
 
@@ -58,20 +59,22 @@ export function PlantFilterBar({ portfolios, customers }: Props) {
         />
       </div>
 
-      <Select
-        defaultValue={searchParams.get("portfolioId") ?? "_all"}
-        onValueChange={(v) => updateParam("portfolioId", v)}
-      >
-        <SelectTrigger className="h-9 text-[13px] w-full sm:w-44">
-          <SelectValue placeholder="Portafolio" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="_all">Todos los portafolios</SelectItem>
-          {portfolios.map((p) => (
-            <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {!hidePortfolioFilter && (
+        <Select
+          defaultValue={searchParams.get("portfolioId") ?? "_all"}
+          onValueChange={(v) => updateParam("portfolioId", v)}
+        >
+          <SelectTrigger className="h-9 text-[13px] w-full sm:w-44">
+            <SelectValue placeholder="Portafolio" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_all">Todos los portafolios</SelectItem>
+            {portfolios.map((p) => (
+              <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       <Select
         defaultValue={searchParams.get("customerId") ?? "_all"}

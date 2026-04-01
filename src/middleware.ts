@@ -35,14 +35,24 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  const isPublicPath = pathname.startsWith("/login") || pathname.startsWith("/api/auth");
+  const isSelectPortfolio = pathname.startsWith("/select-portfolio");
+
   // Redirect unauthenticated users to login
-  if (!user && !pathname.startsWith("/login") && !pathname.startsWith("/api/auth")) {
+  if (!user && !isPublicPath && !isSelectPortfolio) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from login
+  // Unauthenticated user trying to access select-portfolio → login
+  if (!user && isSelectPortfolio) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Redirect authenticated users away from login (but NOT from select-portfolio)
   if (user && pathname.startsWith("/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";

@@ -97,7 +97,7 @@ export default async function DashboardPage() {
               totalCapacityKw={portfolio.powerPlants.reduce((sum, p) => sum + p.capacityKw, 0)}
               openContingencies={data.contingenciesByPortfolio.get(portfolio.id) ?? 0}
               co2Avoided={data.co2ByPortfolio.get(portfolio.id) ?? 0}
-              href={`/power-plants?portfolioId=${portfolio.id}`}
+              href={`/${portfolio.id}/power-plants`}
             />
           ))}
         </div>
@@ -152,6 +152,7 @@ export default async function DashboardPage() {
   }
 
   // Operativo view
+  const opPid = user.assignedPortfolioId;
   return (
     <div className="space-y-6">
       <div>
@@ -165,7 +166,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
         <Link
-          href="/power-plants"
+          href={opPid ? `/${opPid}/power-plants` : "/power-plants"}
           className="flex items-center gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-white shadow-sm hover:border-[var(--color-primary)]/40 hover:shadow-md transition-all duration-150 group"
         >
           <div className="w-9 h-9 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center shrink-0">
@@ -179,7 +180,7 @@ export default async function DashboardPage() {
         </Link>
 
         <Link
-          href="/contingencies"
+          href={opPid ? `/${opPid}/contingencies` : "/contingencies"}
           className="flex items-center gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-white shadow-sm hover:border-[var(--color-warning)]/40 hover:shadow-md transition-all duration-150 group"
         >
           <div className="w-9 h-9 rounded-lg bg-[var(--color-warning)]/10 flex items-center justify-center shrink-0">

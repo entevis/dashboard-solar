@@ -15,20 +15,24 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, ChevronDown } from "lucide-react";
 import { MobileNav } from "./mobile-nav";
 import { ROLE_LABELS } from "@/lib/auth/roles";
+import { PortfolioSelector } from "./portfolio-selector";
 import type { UserRole } from "@prisma/client";
 
 interface TopbarProps {
   userName: string;
   userEmail: string;
   userRole: UserRole;
+  portfolios?: { id: number; name: string }[];
+  selectedPortfolioId?: number | null;
 }
 
-export function Topbar({ userName, userEmail, userRole }: TopbarProps) {
+export function Topbar({ userName, userEmail, userRole, portfolios = [], selectedPortfolioId }: TopbarProps) {
   const router = useRouter();
 
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    document.cookie = "portfolio_id=; path=/; max-age=0";
     router.push("/login");
     router.refresh();
   }
@@ -47,6 +51,13 @@ export function Topbar({ userName, userEmail, userRole }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-3">
+        {userRole === "MAESTRO" && portfolios.length > 0 && (
+          <PortfolioSelector
+            portfolios={portfolios}
+            selectedPortfolioId={selectedPortfolioId}
+          />
+        )}
+
         <Badge
           variant="secondary"
           className="hidden sm:inline-flex text-[12px] font-medium"

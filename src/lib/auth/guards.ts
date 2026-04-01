@@ -73,3 +73,38 @@ export async function buildPlantAccessFilter(user: User) {
   }
   return { id: { in: accessibleIds }, active: 1 };
 }
+
+/**
+ * Validate that the user has access to a specific portfolio.
+ * MAESTRO: any portfolio. OPERATIVO: only their assigned portfolio.
+ * CLIENTE/CLIENTE_PERFILADO: any portfolio that has plants belonging to their customer.
+ * Returns the portfolio or redirects.
+ */
+export async function requirePortfolioAccess(user: User, portfolioId: number) {
+  const portfolio = await prisma.portfolio.findUnique({
+    where: { id: portfolioId, active: 1 },
+    select: { id: true, name: true, duemintCompanyId: true },
+  });
+
+  if (!portfolio) redirect("/portfolios");
+
+  if (user.role === UserRole.MAESTRO) return portfolio;
+
+  if (user.role === UserRole.OPERATIVO) {
+    if (user.assignedPortfolioId !== portfolioId) {
+      redirect(user.assignedPortfolioId ? `/${user.assignedPortfolioId}/power-plants` : "/dashboard");
+    }
+    return portfolio;
+  }
+
+  if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
+    const plant = await prisma.powerPlant.findFirst({
+      where: { portfolioId, customerId: user.customerId ?? -1, active: 1 },
+      select: { id: true },
+    });
+    if (!plant) redirect("/dashboard");
+    return portfolio;
+  }
+
+  redirect("/dashboard");
+}
