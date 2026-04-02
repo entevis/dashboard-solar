@@ -46,7 +46,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2 }}>
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary">Plantas Solares</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
