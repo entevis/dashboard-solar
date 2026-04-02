@@ -2,8 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -14,7 +12,6 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import TablePagination from "@mui/material/TablePagination";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { UserRowActions } from "@/components/admin/user-row-actions";
@@ -71,7 +68,6 @@ function sortUsers(users: UserWithRelations[], key: SortKey, dir: SortDir): User
 }
 
 export function UserTable({ users, customers, portfolios, currentUserId }: Props) {
-  const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -95,34 +91,17 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
     };
   }
 
-  const filtered = useMemo(() => {
-    const base = q
-      ? users.filter((u) => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()))
-      : users;
-    return sortUsers(base, sortKey, sortDir);
-  }, [users, q, sortKey, sortDir]);
+  const filtered = useMemo(() => sortUsers(users, sortKey, sortDir), [users, sortKey, sortDir]);
 
   const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden" }}>
-      {/* Search */}
-      <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-        <TextField
-          size="small"
-          value={q}
-          onChange={(e) => { setQ(e.target.value); setPage(0); }}
-          placeholder="Buscar por nombre o email..."
-          sx={{ maxWidth: 320, "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } }}
-          InputProps={{ startAdornment: <InputAdornment position="start"><SearchOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} /></InputAdornment> }}
-        />
-      </Box>
-
+    <Box>
       {filtered.length === 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
           <GroupOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
           <Typography fontSize="0.875rem" color="text.secondary">
-            {q ? `Ningún usuario coincide con "${q}".` : "Crea el primer usuario para dar acceso al sistema."}
+            Ningún usuario coincide con los filtros aplicados.
           </Typography>
         </Box>
       ) : (

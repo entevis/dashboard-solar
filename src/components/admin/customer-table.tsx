@@ -2,8 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -14,7 +12,6 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import TablePagination from "@mui/material/TablePagination";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
 import { formatRut } from "@/lib/utils/formatters";
 import { CustomerRowActions } from "@/components/admin/customer-row-actions";
@@ -46,7 +43,6 @@ function sortCustomers(customers: Customer[], key: SortKey, dir: SortDir): Custo
 }
 
 export function CustomerTable({ customers }: { customers: Customer[] }) {
-  const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -70,38 +66,16 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
     };
   }
 
-  const filtered = useMemo(() => {
-    const base = q
-      ? customers.filter((c) =>
-          c.name.toLowerCase().includes(q.toLowerCase()) ||
-          c.rut.includes(q) ||
-          (c.altName ?? "").toLowerCase().includes(q.toLowerCase())
-        )
-      : customers;
-    return sortCustomers(base, sortKey, sortDir);
-  }, [customers, q, sortKey, sortDir]);
-
-  const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const sorted = useMemo(() => sortCustomers(customers, sortKey, sortDir), [customers, sortKey, sortDir]);
+  const paginated = sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-      {/* Search */}
-      <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-        <TextField
-          size="small"
-          value={q}
-          onChange={(e) => { setQ(e.target.value); setPage(0); }}
-          placeholder="Buscar por razón social o RUT..."
-          sx={{ maxWidth: 320, "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } }}
-          InputProps={{ startAdornment: <InputAdornment position="start"><SearchOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} /></InputAdornment> }}
-        />
-      </Box>
-
-      {filtered.length === 0 ? (
+      {sorted.length === 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
           <PersonOffOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
           <Typography fontSize="0.875rem" color="text.secondary">
-            {q ? `Ningún cliente coincide con "${q}"` : "Crea el primer cliente para comenzar."}
+            Ningún cliente coincide con los filtros aplicados.
           </Typography>
         </Box>
       ) : (
@@ -147,7 +121,7 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
           </TableContainer>
           <TablePagination
             component="div"
-            count={filtered.length}
+            count={sorted.length}
             page={page}
             rowsPerPage={rowsPerPage}
             onPageChange={(_, p) => setPage(p)}
