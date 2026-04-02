@@ -29,14 +29,14 @@ function formatDate(date: Date | null) {
 }
 
 function StatusChip({ statusName }: { statusName: string | null }) {
-  if (!statusName) return <Typography component="span" color="text.secondary">—</Typography>;
+  if (!statusName) return <Typography variant="caption" color="text.secondary">—</Typography>;
   const n = statusName.toLowerCase();
-  let sx = { backgroundColor: "#f3f4f6", color: "#6b7280" };
+  let sx = { backgroundColor: "#e6eeff", color: "#434655" };
   if (n.includes("pag") || n.includes("paid")) sx = { backgroundColor: "#dcfce7", color: "#15803d" };
-  else if (n.includes("venc") || n.includes("overdue")) sx = { backgroundColor: "#fee2e2", color: "#b91c1c" };
+  else if (n.includes("venc") || n.includes("overdue")) sx = { backgroundColor: "#fee2e2", color: "#dc2626" };
   else if (n.includes("pend") || n.includes("emiti") || n.includes("vencer")) sx = { backgroundColor: "#fef9c3", color: "#a16207" };
-  else if (n.includes("nul") || n.includes("cancel")) sx = { backgroundColor: "#f3f4f6", color: "#9ca3af" };
-  return <Chip label={statusName} size="small" sx={{ ...sx, fontSize: "0.75rem", height: 22, fontWeight: 600 }} />;
+  else if (n.includes("nul") || n.includes("cancel")) sx = { backgroundColor: "#f1f5f9", color: "#64748b" };
+  return <Chip label={statusName} size="small" sx={{ ...sx, fontSize: "0.6875rem", height: 20, fontWeight: 600 }} />;
 }
 
 interface Props {
@@ -115,15 +115,15 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   for (const inv of allInvoices) kpis[categorize(inv.statusName)] += inv.total ?? 0;
 
   const kpiCards = [
-    { label: "Pagada", value: formatCLP(kpis.pagada), color: "#15803d" },
-    { label: "Por vencer", value: formatCLP(kpis.porVencer), color: "#a16207" },
-    { label: "Vencida", value: formatCLP(kpis.vencida), color: "#b91c1c" },
-    { label: "Nota de Crédito", value: formatCLP(kpis.anulada), color: "text.secondary" },
+    { label: "Pagada",          value: formatCLP(kpis.pagada),    color: "#15803d", bg: "#dcfce7" },
+    { label: "Por vencer",      value: formatCLP(kpis.porVencer), color: "#a16207", bg: "#fef9c3" },
+    { label: "Vencida",         value: formatCLP(kpis.vencida),   color: "#dc2626", bg: "#fee2e2" },
+    { label: "Nota de Crédito", value: formatCLP(kpis.anulada),   color: "#434655", bg: "#e6eeff" },
   ];
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 3 }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, flexWrap: "wrap", flexShrink: 0 }}>
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary">Facturación</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
@@ -141,26 +141,27 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
         </Box>
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 2 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 2, flexShrink: 0 }}>
         {kpiCards.map((kpi) => (
           <Card key={kpi.label} elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
-            <CardContent sx={{ pb: "12px !important" }}>
+            <CardContent>
               <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>{kpi.label}</Typography>
-              <Typography fontSize="1.125rem" fontWeight={700} sx={{ color: kpi.color }}>{kpi.value}</Typography>
+              <Typography variant="h6" fontWeight={700} sx={{ color: kpi.color }}>{kpi.value}</Typography>
             </CardContent>
           </Card>
         ))}
       </Box>
 
-      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {invoices.length === 0 ? (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8, gap: 1.5 }}>
-            <ReceiptLongOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
-            <Typography fontSize="0.875rem" color="text.secondary">El historial de facturación aparecerá aquí cuando esté disponible.</Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 1.5, color: "text.secondary" }}>
+            <ReceiptLongOutlinedIcon sx={{ fontSize: 36 }} />
+            <Typography variant="body2" fontWeight={500}>Sin facturas registradas</Typography>
+            <Typography variant="caption" color="text.secondary">El historial de facturación aparecerá aquí cuando esté disponible.</Typography>
           </Box>
         ) : (
           <>
-            <TableContainer>
+            <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
               <Table size="small" stickyHeader>
                 <TableHead>
                   <TableRow sx={{ "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600 } }}>
@@ -169,8 +170,8 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
                     <TableCell>Portafolio</TableCell>
                     <TableCell>Emisión</TableCell>
                     <TableCell>Vencimiento</TableCell>
-                    <TableCell>Total</TableCell>
-                    <TableCell>Por cobrar</TableCell>
+                    <TableCell align="right">Total</TableCell>
+                    <TableCell align="right">Por cobrar</TableCell>
                     <TableCell>Estado</TableCell>
                     <TableCell sx={{ width: 40 }} />
                   </TableRow>
@@ -184,10 +185,10 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
                         {inv.clientTaxId && <Typography fontSize="0.75rem" color="text.secondary">{inv.clientTaxId}</Typography>}
                       </TableCell>
                       <TableCell sx={{ color: "text.secondary" }}>{inv.portfolio?.name ?? "—"}</TableCell>
-                      <TableCell sx={{ color: "text.secondary" }}>{formatDate(inv.issueDate)}</TableCell>
-                      <TableCell sx={{ color: "text.secondary" }}>{formatDate(inv.dueDate)}</TableCell>
-                      <TableCell sx={{ fontWeight: 500 }}>{inv.total != null ? formatCLP(inv.total) : "—"}</TableCell>
-                      <TableCell>{inv.amountDue != null ? formatCLP(inv.amountDue) : "—"}</TableCell>
+                      <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{formatDate(inv.issueDate)}</TableCell>
+                      <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{formatDate(inv.dueDate)}</TableCell>
+                      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{inv.total != null ? formatCLP(inv.total) : "—"}</TableCell>
+                      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>{inv.amountDue != null ? formatCLP(inv.amountDue) : "—"}</TableCell>
                       <TableCell><StatusChip statusName={inv.statusName} /></TableCell>
                       <TableCell>
                         <InvoiceRowActions invoiceId={inv.id} isPaid={inv.statusName?.toLowerCase().includes("pag") || inv.statusName?.toLowerCase().includes("paid") || false} url={inv.url ?? null} pdfUrl={inv.pdfUrl ?? null} />

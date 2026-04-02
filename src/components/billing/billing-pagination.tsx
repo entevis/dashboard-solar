@@ -28,6 +28,7 @@ export function BillingPagination({ total, page, pageSize = 15 }: { total: numbe
       labelRowsPerPage="Filas:"
       labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
       sx={{
+        borderTop: "none",
         flexShrink: 0,
         fontSize: "0.75rem",
         "& .MuiTablePagination-toolbar": { minHeight: 40, px: 1.5 },

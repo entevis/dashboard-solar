@@ -167,7 +167,7 @@ export default async function BillingPage({
       </Box>
 
       {/* KPI Cards */}
-      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, flexShrink: 0 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 2, flexShrink: 0 }}>
         {kpiCards.map((k) => (
           <Card key={k.label} elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
             <CardContent>
