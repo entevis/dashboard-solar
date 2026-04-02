@@ -1,4 +1,7 @@
-import { Card, CardContent } from "@/components/ui/card";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 interface KpiCardProps {
   label: string;
@@ -9,26 +12,22 @@ interface KpiCardProps {
 
 export function KpiCard({ label, value, sublabel, icon }: KpiCardProps) {
   return (
-    <Card className="border-[var(--color-border)] shadow-sm">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[12px] font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">
+    <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+      <CardContent>
+        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <Box>
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
               {label}
-            </p>
-            <p className="text-2xl font-bold text-[var(--color-foreground)] mt-1">
-              {value}
-            </p>
+            </Typography>
+            <Typography variant="h5" fontWeight={700} color="text.primary">{value}</Typography>
             {sublabel && (
-              <p className="text-[12px] text-[var(--color-muted-foreground)] mt-1">
-                {sublabel}
-              </p>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>{sublabel}</Typography>
             )}
-          </div>
-          <div className="w-10 h-10 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+          </Box>
+          <Box sx={{ width: 40, height: 40, borderRadius: 1.5, backgroundColor: "#dbe1ff", display: "flex", alignItems: "center", justifyContent: "center", color: "#004ac6", flexShrink: 0 }}>
             {icon}
-          </div>
-        </div>
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );

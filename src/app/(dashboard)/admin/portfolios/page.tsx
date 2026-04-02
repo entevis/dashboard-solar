@@ -1,19 +1,19 @@
 import { requireRole } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { CreatePortfolioDialog } from "@/components/admin/create-portfolio-dialog";
 import { PortfolioRowActions } from "@/components/admin/portfolio-row-actions";
-import { EmptyState } from "@/components/ui/empty-state";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Chip from "@mui/material/Chip";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import Link from "next/link";
-import { Building2 } from "lucide-react";
 
 export default async function PortfoliosPage() {
   await requireRole(["MAESTRO"]);
@@ -32,56 +32,56 @@ export default async function PortfoliosPage() {
   });
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">Portafolios</h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Portafolios</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             {portfolios.length} {portfolios.length === 1 ? "portafolio registrado" : "portafolios registrados"}
-          </p>
-        </div>
+          </Typography>
+        </Box>
         <CreatePortfolioDialog />
-      </div>
+      </Box>
 
-      <div className="flex-1 min-h-0 overflow-hidden border border-[var(--color-border)] rounded-xl bg-white shadow-sm flex flex-col">
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
         {portfolios.length === 0 ? (
-          <EmptyState
-            icon={Building2}
-            title="Sin portafolios registrados"
-            description="Crea un portafolio para agrupar plantas solares por cliente o proyecto de inversión."
-            action={<CreatePortfolioDialog />}
-          />
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
+            <BusinessOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
+            <Typography fontSize="0.875rem" color="text.secondary">
+              Crea un portafolio para agrupar plantas solares por cliente o proyecto de inversión.
+            </Typography>
+            <CreatePortfolioDialog />
+          </Box>
         ) : (
-          <div className="flex-1 min-h-0 overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-[12px]">Nombre</TableHead>
-                  <TableHead className="text-[12px]">Descripción</TableHead>
-                  <TableHead className="text-[12px]">Plantas</TableHead>
-                  <TableHead className="text-[12px]">Usuarios asignados</TableHead>
-                  <TableHead className="w-10" />
+          <TableContainer>
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow sx={{ "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600 } }}>
+                  <TableCell>Nombre</TableCell>
+                  <TableCell>Descripción</TableCell>
+                  <TableCell>Plantas</TableCell>
+                  <TableCell>Usuarios asignados</TableCell>
+                  <TableCell sx={{ width: 48 }} />
                 </TableRow>
-              </TableHeader>
+              </TableHead>
               <TableBody>
                 {portfolios.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="text-[13px] font-medium">
-                      <Link
+                  <TableRow key={p.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
+                    <TableCell sx={{ fontWeight: 500 }}>
+                      <Box
+                        component={Link}
                         href={`/power-plants?portfolioId=${p.id}`}
-                        className="text-[var(--color-primary)] hover:underline"
+                        sx={{ color: "primary.main", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
                       >
                         {p.name}
-                      </Link>
+                      </Box>
                     </TableCell>
-                    <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">
-                      {p.description ?? "—"}
+                    <TableCell sx={{ color: "text.secondary" }}>{p.description ?? "—"}</TableCell>
+                    <TableCell>
+                      <Chip label={p._count.powerPlants} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.75rem", height: 20 }} />
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[12px]">{p._count.powerPlants}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="text-[12px]">{p._count.users}</Badge>
+                      <Chip label={p._count.users} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.75rem", height: 20 }} />
                     </TableCell>
                     <TableCell>
                       <PortfolioRowActions portfolio={p} />
@@ -90,9 +90,9 @@ export default async function PortfoliosPage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableContainer>
         )}
-      </div>
-    </div>
+      </Card>
+    </Box>
   );
 }

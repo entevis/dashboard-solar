@@ -32,11 +32,17 @@ Sistema de gestión de portafolios de inversión solar. Web app con Next.js 15 +
 - `src/lib/supabase/` - Supabase client utilities
 - `prisma/schema.prisma` - Database schema
 
-## Design System
-- Font: DM Sans
-- Primary: #2A6EF5, Success: #22C55E, Warning: #F97316
-- Cards: border-radius 12px, subtle shadows
-- Max 2 font weights per screen
+## Design System — "The Architectural Calm"
+- **Fonts**: Manrope (headlines/display) + Inter (body/labels) — never DM Sans
+- **Primary**: #004ac6 (primary), #2563eb (primary-container)
+- **Surfaces**: structure via background shifts, NOT borders. `surface-container-lowest` (#fff) on `surface-container-low` (#eff4ff) = elevation
+- **No-Line Rule**: do NOT use 1px solid borders to section content — use bg color shifts
+- **Radii**: 8px buttons/inputs, 12px cards — never 9999px except chips/tags
+- **Shadows**: always tinted (`rgba(13,28,46,0.06)`) — never pure black
+- **Tokens**: defined in `src/app/globals.css` — use `--color-*` CSS vars or Tailwind utilities
+- **Tables**: no horizontal dividers — use row hover bg (`surface-container-low`) for separation
+- **Inputs**: no border by default — `surface-container-low` bg + 2px primary ghost border on focus
+- Full spec in `/Users/nicolasaguirre/.claude/agents/charly.md`
 
 ## Conventions
 - All tables use soft delete (`active`: 1=visible, 0=deleted)

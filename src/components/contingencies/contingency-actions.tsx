@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Play, CheckCircle } from "lucide-react";
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import CircularProgress from "@mui/material/CircularProgress";
+import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import PlayArrowOutlinedIcon from "@mui/icons-material/PlayArrowOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { toast } from "sonner";
 
 interface Props {
@@ -19,9 +18,11 @@ interface Props {
 
 export function ContingencyActions({ contingencyId, currentStatus }: Props) {
   const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [loading, setLoading] = useState(false);
 
   async function updateStatus(newStatus: string) {
+    setAnchorEl(null);
     setLoading(true);
     try {
       const res = await fetch(`/api/contingencies/${contingencyId}`, {
@@ -29,13 +30,8 @@ export function ContingencyActions({ contingencyId, currentStatus }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-
-      if (!res.ok) throw new Error("Error al actualizar estado");
-
-      const labels: Record<string, string> = {
-        IN_PROGRESS: "en progreso",
-        CLOSED: "cerrada",
-      };
+      if (!res.ok) throw new Error();
+      const labels: Record<string, string> = { IN_PROGRESS: "en progreso", CLOSED: "cerrada" };
       toast.success(`Contingencia marcada como ${labels[newStatus] ?? newStatus}`);
       router.refresh();
     } catch {
@@ -46,26 +42,40 @@ export function ContingencyActions({ contingencyId, currentStatus }: Props) {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={loading}>
-          <MoreHorizontal className="w-4 h-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+    <>
+      <Button
+        variant="outlined"
+        size="small"
+        disabled={loading}
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        endIcon={loading ? <CircularProgress size={12} color="inherit" /> : <MoreHorizOutlinedIcon />}
+        color="inherit"
+        sx={{ borderColor: "#c3c6d7" }}
+      >
+        Acciones
+      </Button>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        slotProps={{ paper: { sx: { width: 200, mt: 0.5 } } }}
+      >
         {currentStatus === "OPEN" && (
-          <DropdownMenuItem onClick={() => updateStatus("IN_PROGRESS")}>
-            <Play className="w-4 h-4 mr-2" />
+          <MenuItem onClick={() => updateStatus("IN_PROGRESS")} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+            <PlayArrowOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
             Marcar en progreso
-          </DropdownMenuItem>
+          </MenuItem>
         )}
         {(currentStatus === "OPEN" || currentStatus === "IN_PROGRESS") && (
-          <DropdownMenuItem onClick={() => updateStatus("CLOSED")}>
-            <CheckCircle className="w-4 h-4 mr-2" />
+          <MenuItem onClick={() => updateStatus("CLOSED")} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+            <CheckCircleOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
             Cerrar contingencia
-          </DropdownMenuItem>
+          </MenuItem>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </Menu>
+    </>
   );
 }

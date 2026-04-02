@@ -3,11 +3,22 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
 import Image from "next/image";
+
+const inputSx = {
+  "& .MuiOutlinedInput-root": {
+    backgroundColor: "#eff4ff",
+    "& fieldset": { borderColor: "transparent" },
+    "&:hover fieldset": { borderColor: "transparent" },
+    "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 },
+  },
+};
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -22,10 +33,7 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError("Credenciales inválidas. Intenta nuevamente.");
@@ -38,84 +46,107 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] px-4">
-      <div className="w-full max-w-[400px]">
-        <div className="flex flex-col items-center mb-8">
-          <Image
-            src="/logo.jpg"
-            alt="Dashboard Solar"
-            width={64}
-            height={64}
-            className="mb-4 rounded-xl"
-            priority
-          />
-          <h1 className="text-xl font-bold text-[var(--color-foreground)]">
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#f5f7ff",
+        px: 2,
+      }}
+    >
+      <Box sx={{ width: "100%", maxWidth: 400 }}>
+        {/* Branding */}
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 4 }}>
+          <Box sx={{ mb: 2, borderRadius: 2, overflow: "hidden", width: 64, height: 64 }}>
+            <Image src="/logo.jpg" alt="Dashboard Solar" width={64} height={64} priority />
+          </Box>
+          <Typography fontSize="1.125rem" fontWeight={700} color="text.primary">
             Dashboard Solar
-          </h1>
-          <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Sistema de Gestión de Portafolios
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
-        <Card className="border-[var(--color-border)] shadow-sm">
-          <CardHeader className="pb-4">
-            <h2 className="text-base font-medium text-[var(--color-foreground)]">
-              Iniciar sesión
-            </h2>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-[13px]">
-                  Correo electrónico
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu@empresa.cl"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-10"
-                />
-              </div>
+        {/* Login card */}
+        <Card
+          elevation={0}
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 3,
+            p: 3,
+            boxShadow: "0 4px 12px rgba(13,28,46,0.08)",
+          }}
+        >
+          <Typography fontSize="0.9375rem" fontWeight={600} color="text.primary" sx={{ mb: 2.5 }}>
+            Iniciar sesión
+          </Typography>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-[13px]">
-                  Contraseña
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-10"
-                />
-              </div>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, fontSize: "0.8125rem" }}>
+              {error}
+            </Alert>
+          )}
 
-              {error && (
-                <p className="text-sm text-[var(--color-destructive)]">
-                  {error}
-                </p>
-              )}
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            aria-label="Formulario de inicio de sesión"
+            noValidate
+            sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+          >
+            <TextField
+              id="email"
+              label="Correo electrónico"
+              type="email"
+              size="small"
+              placeholder="tu@empresa.cl"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              inputProps={{ "aria-required": "true", "aria-invalid": !!error }}
+              sx={inputSx}
+            />
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-10 bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white rounded-lg"
-              >
-                {loading ? "Ingresando..." : "Ingresar"}
-              </Button>
-            </form>
-          </CardContent>
+            <TextField
+              id="password"
+              label="Contraseña"
+              type="password"
+              size="small"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              inputProps={{ "aria-required": "true" }}
+              sx={inputSx}
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={loading}
+              aria-busy={loading}
+              sx={{ mt: 0.5, height: 40 }}
+            >
+              {loading ? "Ingresando..." : "Ingresar"}
+            </Button>
+          </Box>
         </Card>
 
-        <p className="text-center text-[12px] text-[var(--color-muted-foreground)] mt-6">
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", textAlign: "center", mt: 3 }}
+        >
           Acceso proporcionado por el administrador del sistema
-        </p>
-      </div>
-    </div>
+        </Typography>
+      </Box>
+    </Box>
   );
 }

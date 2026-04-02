@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
-import { MoreHorizontal, ExternalLink, Trash2 } from "lucide-react";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Divider from "@mui/material/Divider";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { toast } from "sonner";
 
 interface Props {
@@ -22,52 +25,70 @@ interface Props {
 
 export function ContingencyRowActions({ contingencyId, description, canWrite }: Props) {
   const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
-    const res = await fetch(`/api/contingencies/${contingencyId}`, { method: "DELETE" });
-    if (!res.ok) throw new Error();
-    toast.success("Contingencia eliminada");
-    router.refresh();
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/contingencies/${contingencyId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Contingencia eliminada");
+      router.refresh();
+    } catch {
+      toast.error("Error al eliminar la contingencia");
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
   }
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]" aria-label="Acciones para esta contingencia">
-            <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem asChild>
-            <a href={`/contingencies/${contingencyId}`}>
-              <ExternalLink className="w-3.5 h-3.5 mr-2" />
-              Ver detalle
-            </a>
-          </DropdownMenuItem>
-          {canWrite && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setDeleteOpen(true)}
-                className="text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
-              >
-                <Trash2 className="w-3.5 h-3.5 mr-2" />
-                Eliminar
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <IconButton size="small" aria-label="Acciones" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ width: 28, height: 28, color: "text.secondary" }}>
+        <MoreHorizOutlinedIcon sx={{ fontSize: 16 }} />
+      </IconButton>
 
-      <ConfirmDeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Eliminar contingencia"
-        description={`¿Eliminar esta contingencia? Esta acción no se puede deshacer.`}
-        onConfirm={handleDelete}
-      />
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        slotProps={{ paper: { sx: { width: 160, mt: 0.5 } } }}
+      >
+        <MenuItem component="a" href={`/contingencies/${contingencyId}`} onClick={() => setAnchorEl(null)} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+          <OpenInNewOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+          Ver detalle
+        </MenuItem>
+        {canWrite && <Divider />}
+        {canWrite && (
+          <MenuItem onClick={() => { setAnchorEl(null); setDeleteOpen(true); }} sx={{ fontSize: "0.8125rem", gap: 1.5, color: "error.main" }}>
+            <DeleteOutlinedIcon sx={{ fontSize: 15 }} />
+            Eliminar
+          </MenuItem>
+        )}
+      </Menu>
+
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography fontWeight={700} fontSize="0.9375rem">Eliminar contingencia</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            ¿Eliminar esta contingencia? Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" size="small" color="inherit" onClick={() => setDeleteOpen(false)} disabled={deleting} sx={{ borderColor: "#c3c6d7" }}>
+            Cancelar
+          </Button>
+          <Button variant="contained" size="small" color="error" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Eliminando..." : "Eliminar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

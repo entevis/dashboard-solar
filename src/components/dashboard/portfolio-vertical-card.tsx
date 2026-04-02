@@ -2,9 +2,17 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Leaf, TreePine, Car, CheckCircle2, AlertTriangle, ArrowRight } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import Button from "@mui/material/Button";
+import EnergySavingsLeafOutlinedIcon from "@mui/icons-material/EnergySavingsLeafOutlined";
+import ParkOutlinedIcon from "@mui/icons-material/ParkOutlined";
+import DirectionsCarOutlinedIcon from "@mui/icons-material/DirectionsCarOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
-
 
 interface Props {
   name: string;
@@ -18,118 +26,102 @@ interface Props {
   href: string;
 }
 
-export function PortfolioVerticalCard({
-  name,
-  description,
-  logoUrl,
-  customerCount,
-  activePlants,
-  totalCapacityKw,
-  openContingencies,
-  co2Avoided,
-  href,
-}: Props) {
+export function PortfolioVerticalCard({ name, description, logoUrl, customerCount, activePlants, totalCapacityKw, openContingencies, co2Avoided, href }: Props) {
   const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const equivalentTrees = calculateEquivalentTrees(co2Avoided);
   const equivalentCars = calculateEquivalentCars(co2Avoided);
 
   return (
-    <div className="flex flex-col rounded-[12px] border border-[var(--color-border)] bg-white shadow-sm overflow-hidden h-full">
+    <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
 
       {/* Header */}
-      <div className="p-6 pb-5 bg-[var(--color-surface-dark)]">
-        <div className="flex items-center justify-center rounded-[6px] mb-3 mx-auto bg-white/15 px-2.5 py-1.5 w-full max-w-[160px] h-10">
-          {logoUrl ? (
-            <Image
-              src={logoUrl}
-              alt={`Logo ${name}`}
-              width={120}
-              height={28}
-              className="object-contain max-h-7"
-            />
-          ) : (
-            <span className="text-[16px] font-bold text-white">{initials}</span>
-          )}
-        </div>
-        <h3 className="text-[18px] font-semibold text-white leading-tight">{name}</h3>
+      <Box sx={{ p: 3, pb: 2.5, backgroundColor: "#0d1c2e" }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 1, backgroundColor: "rgba(255,255,255,0.12)", px: 2, py: 1, mb: 2, mx: "auto", width: "fit-content", minWidth: 120, maxWidth: 160, height: 40 }}>
+          {logoUrl
+            ? <Image src={logoUrl} alt={`Logo ${name}`} width={120} height={28} style={{ objectFit: "contain", maxHeight: 28 }} />
+            : <Typography fontWeight={700} fontSize="1rem" color="white">{initials}</Typography>
+          }
+        </Box>
+        <Typography fontSize="1.0625rem" fontWeight={600} color="white" sx={{ lineHeight: 1.3 }}>{name}</Typography>
         {description && (
-          <p className="text-[12px] text-white/70 mt-1 line-clamp-2">{description}</p>
+          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.65)", mt: 0.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+            {description}
+          </Typography>
         )}
-      </div>
+      </Box>
 
       {/* Stats */}
-      <div className="px-6 py-5 border-b border-[var(--color-border)]">
-        <div className="grid grid-cols-3 divide-x divide-[var(--color-border)]">
-          <div className="flex flex-col items-center gap-1 pr-4">
-            <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)]">Clientes</p>
-            <p className="text-[22px] font-semibold text-[var(--color-foreground)] leading-none">{customerCount}</p>
-          </div>
-          <div className="flex flex-col items-center gap-1 px-4">
-            <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)]">Plantas</p>
-            <p className="text-[22px] font-semibold text-[var(--color-foreground)] leading-none">{activePlants}</p>
-          </div>
-          <div className="flex flex-col items-center gap-1 pl-4">
-            <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)]">Capacidad</p>
-            <p className="text-[18px] font-semibold text-[var(--color-foreground)] leading-none">
-              {Math.round(totalCapacityKw).toLocaleString("es-CL")}
-              <span className="text-[13px] font-normal text-[var(--color-muted-foreground)] ml-0.5">kW</span>
-            </p>
-          </div>
-        </div>
-      </div>
+      <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", divideX: "1px solid" }}>
+          {[
+            { label: "Clientes", value: customerCount },
+            { label: "Plantas", value: activePlants },
+            { label: `${Math.round(totalCapacityKw).toLocaleString("es-CL")} kW`, value: null, sublabel: "Capacidad" },
+          ].map((stat, i) => (
+            <Box key={i} sx={{ textAlign: "center", borderRight: i < 2 ? "1px solid" : "none", borderColor: "divider" }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", textTransform: "uppercase", letterSpacing: "0.06em", mb: 0.5 }}>
+                {stat.sublabel ?? stat.label}
+              </Typography>
+              <Typography fontSize={stat.value !== null ? "1.375rem" : "1.0625rem"} fontWeight={700} color="text.primary" sx={{ lineHeight: 1 }}>
+                {stat.value !== null ? stat.value : stat.label}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
 
       {/* Contingencias */}
-      <div className="px-6 py-4 border-b border-[var(--color-border)]">
+      <Box sx={{ px: 3, py: 2, borderBottom: "1px solid", borderColor: "divider" }}>
         {openContingencies === 0 ? (
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[var(--color-success)] shrink-0" />
-            <span className="text-[13px] text-[var(--color-muted-foreground)]">
-              <span className="font-semibold">0</span> Contingencias Abiertas
-            </span>
-          </div>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CheckCircleOutlinedIcon sx={{ fontSize: 16, color: "#16a34a" }} />
+            <Typography fontSize="0.8125rem" color="text.secondary">
+              <Box component="span" fontWeight={600}>0</Box> Contingencias Abiertas
+            </Typography>
+          </Box>
         ) : (
-          <div className="flex items-center gap-2 rounded-[8px] px-3 py-2 bg-[var(--color-warning)]/6">
-            <AlertTriangle className="w-4 h-4 text-[var(--color-warning)] shrink-0" />
-            <span className="text-[13px] font-bold text-[var(--color-warning)]">{openContingencies}</span>
-            <span className="text-[13px] text-[var(--color-foreground)]">Contingencias Abiertas</span>
-          </div>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 1, borderRadius: 1.5, backgroundColor: "#fef9c3" }}>
+            <WarningAmberOutlinedIcon sx={{ fontSize: 16, color: "#a16207" }} />
+            <Typography fontSize="0.8125rem" fontWeight={700} sx={{ color: "#a16207" }}>{openContingencies}</Typography>
+            <Typography fontSize="0.8125rem" color="text.primary">Contingencias Abiertas</Typography>
+          </Box>
         )}
-      </div>
+      </Box>
 
       {/* Impacto ambiental */}
-      <div className="px-6 py-5 flex-1">
-        <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-3">
+      <Box sx={{ px: 3, py: 2.5, flex: 1 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", textTransform: "uppercase", letterSpacing: "0.06em", mb: 1.5 }}>
           Impacto Medioambiental
-        </p>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2.5">
-            <Leaf className="w-4 h-4 text-[var(--color-success)] shrink-0" />
-            <span className="text-[14px] font-semibold text-[var(--color-foreground)]">{co2Avoided.toFixed(1)}</span>
-            <span className="text-[13px] text-[var(--color-muted-foreground)]">t CO₂ evitadas</span>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <TreePine className="w-4 h-4 text-[var(--color-success)] shrink-0" />
-            <span className="text-[14px] font-semibold text-[var(--color-foreground)]">{equivalentTrees.toLocaleString("es-CL")}</span>
-            <span className="text-[13px] text-[var(--color-muted-foreground)]">árboles equivalentes</span>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Car className="w-4 h-4 text-[var(--color-muted-foreground)] shrink-0" />
-            <span className="text-[14px] font-semibold text-[var(--color-foreground)]">{equivalentCars.toFixed(1)}</span>
-            <span className="text-[13px] text-[var(--color-muted-foreground)]">autos equivalentes</span>
-          </div>
-        </div>
-      </div>
+        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+          {[
+            { icon: <EnergySavingsLeafOutlinedIcon sx={{ fontSize: 15, color: "#16a34a" }} />, value: co2Avoided.toFixed(1), label: "t CO₂ evitadas" },
+            { icon: <ParkOutlinedIcon sx={{ fontSize: 15, color: "#16a34a" }} />, value: equivalentTrees.toLocaleString("es-CL"), label: "árboles equivalentes" },
+            { icon: <DirectionsCarOutlinedIcon sx={{ fontSize: 15, color: "#434655" }} />, value: equivalentCars.toFixed(1), label: "autos equivalentes" },
+          ].map((item) => (
+            <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+              {item.icon}
+              <Typography fontSize="0.875rem" fontWeight={600}>{item.value}</Typography>
+              <Typography fontSize="0.8125rem" color="text.secondary">{item.label}</Typography>
+            </Box>
+          ))}
+        </Box>
+      </Box>
 
       {/* CTA */}
-      <div className="px-6 pb-6">
-        <Link
+      <Box sx={{ px: 3, pb: 3 }}>
+        <Button
+          component={Link}
           href={href}
-          className="flex items-center justify-center gap-2 w-full h-10 rounded-[8px] border-[1.5px] border-[var(--color-border)] text-[13px] font-medium text-[var(--color-foreground)] transition-all duration-150 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/4"
+          variant="outlined"
+          fullWidth
+          endIcon={<ArrowForwardOutlinedIcon />}
+          color="inherit"
+          sx={{ borderColor: "#c3c6d7", fontSize: "0.8125rem", "&:hover": { borderColor: "#004ac6", color: "#004ac6", backgroundColor: "#eff4ff" } }}
         >
           Ver detalle del portafolio
-          <ArrowRight className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-        </Link>
-      </div>
-    </div>
+        </Button>
+      </Box>
+    </Card>
   );
 }

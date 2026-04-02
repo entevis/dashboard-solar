@@ -4,11 +4,12 @@ import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { PortfolioVerticalCard } from "@/components/dashboard/portfolio-vertical-card";
 import { getPortfolioLogo } from "@/lib/portfolio-logos";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 export default async function PortfoliosPage() {
   const user = await requireAuth();
 
-  // Roles con portafolio fijo → redirigir directamente sin mostrar selección
   if (user.role !== UserRole.MAESTRO) {
     if (user.assignedPortfolioId) {
       redirect(`/${user.assignedPortfolioId}/power-plants`);
@@ -50,15 +51,15 @@ export default async function PortfoliosPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-bold text-[var(--color-foreground)]">Portafolios</h1>
-        <p className="text-[13px] text-[var(--color-muted-foreground)]">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box>
+        <Typography variant="h5" fontWeight={700} color="text.primary">Portafolios</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
           Selecciona un portafolio para acceder a sus módulos
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }, gap: 3, alignItems: "start" }}>
         {portfolios.map((portfolio) => (
           <PortfolioVerticalCard
             key={portfolio.id}
@@ -73,7 +74,7 @@ export default async function PortfoliosPage() {
             href={`/${portfolio.id}/power-plants`}
           />
         ))}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

@@ -1,17 +1,18 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  Upload,
-  FileText,
-  ImageIcon,
-  ExternalLink,
-  Download,
-  Trash2,
-  Paperclip,
-} from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
+import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 
 interface Attachment {
   id: number;
@@ -34,11 +35,6 @@ function formatBytes(bytes: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function FileIcon({ fileType }: { fileType: string | null }) {
-  if (fileType?.startsWith("image/")) return <ImageIcon className="w-5 h-5 text-[var(--color-primary)]" />;
-  return <FileText className="w-5 h-5 text-[var(--color-primary)]" />;
-}
-
 export function ContingencyAttachment({ contingencyId, initialAttachment, canUpload }: Props) {
   const [attachment, setAttachment] = useState<Attachment | null>(initialAttachment);
   const [isDragging, setIsDragging] = useState(false);
@@ -48,26 +44,13 @@ export function ContingencyAttachment({ contingencyId, initialAttachment, canUpl
 
   function uploadFile(file: File) {
     setError(null);
-    if (file.size > 20 * 1024 * 1024) {
-      setError("El archivo excede el tamaño máximo de 20MB.");
-      return;
-    }
+    if (file.size > 20 * 1024 * 1024) { setError("El archivo excede el tamaño máximo de 20MB."); return; }
 
     startTransition(async () => {
       const formData = new FormData();
       formData.append("file", file);
-
-      const res = await fetch(`/api/contingencies/${contingencyId}/attachment`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Error al subir el archivo");
-        return;
-      }
-
+      const res = await fetch(`/api/contingencies/${contingencyId}/attachment`, { method: "POST", body: formData });
+      if (!res.ok) { const data = await res.json().catch(() => ({})); setError(data.error ?? "Error al subir el archivo"); return; }
       const created: Attachment = await res.json();
       setAttachment(created);
     });
@@ -83,64 +66,51 @@ export function ContingencyAttachment({ contingencyId, initialAttachment, canUpl
   function handleDelete() {
     setError(null);
     startTransition(async () => {
-      const res = await fetch(`/api/contingencies/${contingencyId}/attachment`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Error al eliminar el archivo");
-        return;
-      }
+      const res = await fetch(`/api/contingencies/${contingencyId}/attachment`, { method: "DELETE" });
+      if (!res.ok) { const data = await res.json().catch(() => ({})); setError(data.error ?? "Error al eliminar el archivo"); return; }
       setAttachment(null);
     });
   }
 
+  const isImage = attachment?.fileType?.startsWith("image/");
+
   return (
-    <div>
-      <Separator className="mb-6" />
-      <div className="flex items-center gap-2 mb-4">
-        <Paperclip className="w-4 h-4 text-[var(--color-muted-foreground)]" />
-        <h3 className="text-[14px] font-medium">Adjunto</h3>
-      </div>
+    <Box>
+      <Divider sx={{ mb: 3 }} />
+
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2.5 }}>
+        <AttachFileOutlinedIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+        <Typography fontSize="0.875rem" fontWeight={600}>Adjunto</Typography>
+      </Box>
 
       {attachment ? (
-        <div className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-secondary)]/40">
-          <FileIcon fileType={attachment.fileType} />
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-medium truncate">{attachment.fileName}</p>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, borderRadius: 1.5, border: "1px solid", borderColor: "divider", backgroundColor: "#fafafa" }}>
+          {isImage
+            ? <ImageOutlinedIcon sx={{ fontSize: 22, color: "#004ac6", flexShrink: 0 }} />
+            : <InsertDriveFileOutlinedIcon sx={{ fontSize: 22, color: "#004ac6", flexShrink: 0 }} />
+          }
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography fontSize="0.8125rem" fontWeight={500} noWrap>{attachment.fileName}</Typography>
             {attachment.fileSize && (
-              <p className="text-[12px] text-[var(--color-muted-foreground)]">
-                {formatBytes(attachment.fileSize)}
-              </p>
+              <Typography variant="caption" color="text.secondary">{formatBytes(attachment.fileSize)}</Typography>
             )}
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-              <a href={attachment.fileUrl} target="_blank" rel="noopener noreferrer" title="Ver archivo">
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-              <a href={attachment.fileUrl} download={attachment.fileName} title="Descargar">
-                <Download className="w-3.5 h-3.5" />
-              </a>
-            </Button>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+            <IconButton size="small" component="a" href={attachment.fileUrl} target="_blank" rel="noopener noreferrer" title="Ver archivo">
+              <OpenInNewOutlinedIcon sx={{ fontSize: 15 }} />
+            </IconButton>
+            <IconButton size="small" component="a" href={attachment.fileUrl} download={attachment.fileName} title="Descargar">
+              <FileDownloadOutlinedIcon sx={{ fontSize: 15 }} />
+            </IconButton>
             {canUpload && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-[var(--color-destructive)] hover:text-[var(--color-destructive)]"
-                onClick={handleDelete}
-                disabled={isPending}
-                title="Eliminar adjunto"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
+              <IconButton size="small" onClick={handleDelete} disabled={isPending} title="Eliminar adjunto" sx={{ color: "error.main" }}>
+                {isPending ? <CircularProgress size={12} color="inherit" /> : <DeleteOutlinedIcon sx={{ fontSize: 15 }} />}
+              </IconButton>
             )}
-          </div>
-        </div>
+          </Box>
+        </Box>
       ) : canUpload ? (
-        <div
+        <Box
           role="button"
           tabIndex={0}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -148,38 +118,27 @@ export function ContingencyAttachment({ contingencyId, initialAttachment, canUpl
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") inputRef.current?.click(); }}
-          className={`
-            flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed cursor-pointer transition-colors
-            ${isDragging
-              ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-              : "border-[var(--color-border)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-secondary)]/40"
-            }
-            ${isPending ? "opacity-50 pointer-events-none" : ""}
-          `}
+          sx={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1,
+            p: 3, borderRadius: 1.5, border: "2px dashed", cursor: "pointer", transition: "all 150ms",
+            borderColor: isDragging ? "primary.main" : "divider",
+            backgroundColor: isDragging ? "#eff4ff" : "#fafafa",
+            opacity: isPending ? 0.5 : 1,
+            pointerEvents: isPending ? "none" : "auto",
+          }}
         >
-          <Upload className="w-5 h-5 text-[var(--color-muted-foreground)]" />
-          <p className="text-[13px] text-[var(--color-muted-foreground)] text-center">
-            {isPending
-              ? "Subiendo archivo..."
-              : "Arrastra un archivo aquí o haz clic para seleccionar"}
-          </p>
-          <p className="text-[12px] text-[var(--color-muted-foreground)]">Máximo 20MB</p>
-          <input
-            ref={inputRef}
-            type="file"
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }}
-          />
-        </div>
+          <CloudUploadOutlinedIcon sx={{ fontSize: 24, color: isDragging ? "primary.main" : "text.secondary" }} />
+          <Typography fontSize="0.8125rem" color="text.secondary" textAlign="center">
+            {isPending ? "Subiendo archivo..." : "Arrastra un archivo aquí o haz clic para seleccionar"}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">Máximo 20MB</Typography>
+          <input ref={inputRef} type="file" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }} />
+        </Box>
       ) : (
-        <p className="text-[13px] text-[var(--color-muted-foreground)]">
-          Sin adjuntos.
-        </p>
+        <Typography variant="body2" color="text.secondary">Sin adjuntos.</Typography>
       )}
 
-      {error && (
-        <p className="mt-2 text-[12px] text-[var(--color-destructive)]">{error}</p>
-      )}
-    </div>
+      {error && <Typography variant="caption" color="error" sx={{ display: "block", mt: 1 }}>{error}</Typography>}
+    </Box>
   );
 }

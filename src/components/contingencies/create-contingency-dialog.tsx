@@ -2,54 +2,28 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import { toast } from "sonner";
 
-interface PowerPlant {
-  id: number;
-  name: string;
-}
+interface PowerPlant { id: number; name: string }
 
-export function CreateContingencyDialog({
-  powerPlants,
-}: {
-  powerPlants: PowerPlant[];
-}) {
+export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPlant[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [plantComboOpen, setPlantComboOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     powerPlantId: "",
@@ -59,6 +33,11 @@ export function CreateContingencyDialog({
     provider: "",
     workDescription: "",
   });
+
+  function handleClose() {
+    setOpen(false);
+    setForm({ powerPlantId: "", type: "", description: "", cost: "", provider: "", workDescription: "" });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,8 +67,7 @@ export function CreateContingencyDialog({
       }
 
       toast.success("Contingencia creada exitosamente");
-      setOpen(false);
-      setForm({ powerPlantId: "", type: "", description: "", cost: "", provider: "", workDescription: "" });
+      handleClose();
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al crear contingencia");
@@ -98,155 +76,100 @@ export function CreateContingencyDialog({
     }
   }
 
+  const selectedPlant = powerPlants.find((p) => String(p.id) === form.powerPlantId) ?? null;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90">
-          <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
-          Nueva contingencia
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-[15px] font-bold">
-            Crear contingencia
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label id="plant-label" className="text-[13px]">
-              Planta <span className="text-[var(--color-warning)]">*</span>
-            </Label>
-            <Popover open={plantComboOpen} onOpenChange={setPlantComboOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={plantComboOpen}
-                  aria-labelledby="plant-label"
-                  className="w-full justify-between text-[13px] font-normal h-9"
-                >
-                  {form.powerPlantId ? (
-                    <span className="truncate">
-                      {powerPlants.find((p) => String(p.id) === form.powerPlantId)?.name}
-                    </span>
-                  ) : (
-                    <span className="text-[var(--color-muted-foreground)]">Seleccionar planta...</span>
-                  )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Buscar planta..." className="text-[13px]" />
-                  <CommandList>
-                    <CommandEmpty className="text-[13px] py-3 text-center text-[var(--color-muted-foreground)]">
-                      Sin resultados
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {powerPlants.map((p) => (
-                        <CommandItem
-                          key={p.id}
-                          value={p.name}
-                          onSelect={() => {
-                            setForm({ ...form, powerPlantId: String(p.id) });
-                            setPlantComboOpen(false);
-                          }}
-                          className="text-[13px]"
-                          title={p.name}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4 shrink-0 text-[var(--color-primary)]",
-                              form.powerPlantId === String(p.id) ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {p.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+    <>
+      <Button variant="contained" size="small" startIcon={<AddOutlinedIcon />} onClick={() => setOpen(true)}>
+        Nueva contingencia
+      </Button>
 
-          <div className="space-y-2">
-            <Label className="text-[13px]">Tipo <span className="text-[var(--color-warning)]">*</span></Label>
-            <Select
-              value={form.type}
-              onValueChange={(v) => setForm({ ...form, type: v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PREVENTIVE">Preventiva</SelectItem>
-                <SelectItem value="CORRECTIVE">Correctiva</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Typography fontWeight={700} fontSize="0.9375rem">Crear contingencia</Typography>
+        </DialogTitle>
 
-          <div className="space-y-2">
-            <Label className="text-[13px]">Descripción <span className="text-[var(--color-warning)]">*</span></Label>
-            <Textarea
+        <DialogContent sx={{ pt: "8px !important" }}>
+          <Box component="form" id="contingency-form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+
+            <Autocomplete
+              size="small"
+              options={powerPlants}
+              getOptionLabel={(p) => p.name}
+              value={selectedPlant}
+              onChange={(_, v) => setForm({ ...form, powerPlantId: v ? String(v.id) : "" })}
+              renderInput={(params) => (
+                <TextField {...params} label="Planta *" placeholder="Buscar planta..." />
+              )}
+              noOptionsText="Sin resultados"
+            />
+
+            <FormControl size="small" fullWidth>
+              <InputLabel>Tipo *</InputLabel>
+              <Select label="Tipo *" value={form.type} onChange={(e) => setForm({ ...form, type: String(e.target.value) })}>
+                <MenuItem value="PREVENTIVE" sx={{ fontSize: "0.8125rem" }}>Preventiva</MenuItem>
+                <MenuItem value="CORRECTIVE" sx={{ fontSize: "0.8125rem" }}>Correctiva</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              size="small"
+              fullWidth
+              multiline
+              minRows={3}
+              label="Descripción *"
+              placeholder="Describe la contingencia..."
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Describe la contingencia..."
-              className="min-h-[80px]"
             />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-[13px]">Costo (CLP)</Label>
-              <Input
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <TextField
+                size="small"
                 type="number"
+                label="Costo (CLP)"
+                placeholder="0"
                 value={form.cost}
                 onChange={(e) => setForm({ ...form, cost: e.target.value })}
-                placeholder="0"
               />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Proveedor</Label>
-              <Input
+              <TextField
+                size="small"
+                label="Proveedor"
+                placeholder="Nombre del proveedor"
                 value={form.provider}
                 onChange={(e) => setForm({ ...form, provider: e.target.value })}
-                placeholder="Nombre del proveedor"
               />
-            </div>
-          </div>
+            </Box>
 
-          <div className="space-y-2">
-            <Label className="text-[13px]">Descripción del trabajo</Label>
-            <Textarea
+            <TextField
+              size="small"
+              fullWidth
+              multiline
+              minRows={2}
+              label="Descripción del trabajo"
+              placeholder="Detalle del trabajo realizado o a realizar..."
               value={form.workDescription}
               onChange={(e) => setForm({ ...form, workDescription: e.target.value })}
-              placeholder="Detalle del trabajo realizado o a realizar..."
-              className="min-h-[60px]"
             />
-          </div>
+          </Box>
+        </DialogContent>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={loading}
-              className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
-            >
-              {loading ? "Creando..." : "Crear contingencia"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" size="small" color="inherit" onClick={handleClose} disabled={loading} sx={{ borderColor: "#c3c6d7" }}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="contingency-form"
+            variant="contained"
+            size="small"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={12} color="inherit" /> : undefined}
+          >
+            {loading ? "Creando..." : "Crear contingencia"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

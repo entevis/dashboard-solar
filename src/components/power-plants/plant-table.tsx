@@ -2,16 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { TablePagination, DEFAULT_PAGE_SIZE, type PageSize } from "@/components/ui/table-pagination";
+import MuiTable from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TablePagination from "@mui/material/TablePagination";
+import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
 import { PlantRowActions } from "@/components/power-plants/plant-row-actions";
 
 interface PlantAddress {
@@ -51,84 +50,89 @@ interface PlantTableProps {
   canEdit: boolean;
 }
 
-export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTableProps) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+const PAGE_SIZES = [15, 25, 50];
 
-  const paginated = plants.slice((page - 1) * pageSize, page * pageSize);
+export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTableProps) {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
+
+  const paginated = plants.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex-1 min-h-0 overflow-auto">
-        <Table>
-          <TableHeader>
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+        <MuiTable stickyHeader size="small">
+          <TableHead>
             <TableRow>
-              <TableHead className="text-[12px] whitespace-nowrap">ID Solcor</TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap">Nombre Planta</TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap">Comuna</TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap">Empresa Distribuidora</TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap">ID Tarifa</TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap">Fecha Inicio (F6)</TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap">Duración (Años)</TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap">Potencia (kWp)</TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap leading-tight text-center">
-                Rendimiento Anual Espec.<br />
-                <span className="text-[12px] font-normal">(kWh/kWp)</span>
-              </TableHead>
-              <TableHead className="text-[12px] whitespace-nowrap">Estado</TableHead>
-              {canEdit && <TableHead className="w-10" />}
+              <TableCell>ID Solcor</TableCell>
+              <TableCell>Nombre Planta</TableCell>
+              <TableCell>Comuna</TableCell>
+              <TableCell>Distribuidora</TableCell>
+              <TableCell>ID Tarifa</TableCell>
+              <TableCell>Fecha Inicio (F6)</TableCell>
+              <TableCell align="center">Duración (Años)</TableCell>
+              <TableCell align="right">Potencia (kWp)</TableCell>
+              <TableCell align="right">
+                Rendimiento Anual<br />
+                <Box component="span" sx={{ fontWeight: 400, textTransform: "none", fontSize: "0.7rem" }}>
+                  (kWh/kWp)
+                </Box>
+              </TableCell>
+              <TableCell>Estado</TableCell>
+              {canEdit && <TableCell sx={{ width: 40 }} />}
             </TableRow>
-          </TableHeader>
+          </TableHead>
           <TableBody>
             {paginated.map((plant) => (
-              <TableRow key={plant.id}>
-                <TableCell className="text-[13px] text-[var(--color-muted-foreground)] font-mono">
+              <TableRow key={plant.id} hover>
+                <TableCell sx={{ color: "text.secondary", fontFamily: "monospace" }}>
                   {plant.solcorId ?? "—"}
                 </TableCell>
-                <TableCell className="whitespace-nowrap">
+                <TableCell sx={{ whiteSpace: "nowrap" }}>
                   <Link
                     href={`/power-plants/${plant.id}`}
-                    className="text-[13px] font-medium text-[var(--color-primary)] hover:underline"
+                    style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none" }}
+                    onMouseOver={e => (e.currentTarget.style.textDecoration = "underline")}
+                    onMouseOut={e => (e.currentTarget.style.textDecoration = "none")}
                   >
                     {plant.name}
                   </Link>
                 </TableCell>
-                <TableCell className="text-[13px] text-[var(--color-foreground)] whitespace-nowrap">
+                <TableCell sx={{ whiteSpace: "nowrap" }}>
                   {plant.city ?? plant.location ?? "—"}
                 </TableCell>
-                <TableCell className="text-[13px] text-[var(--color-foreground)] whitespace-nowrap">
+                <TableCell sx={{ whiteSpace: "nowrap" }}>
                   {plant.distributorCompany ?? "—"}
                 </TableCell>
-                <TableCell className="text-[13px] text-[var(--color-foreground)] font-mono">
+                <TableCell sx={{ fontFamily: "monospace" }}>
                   {plant.tariffId ?? "—"}
                 </TableCell>
-                <TableCell className="text-[13px] text-[var(--color-foreground)] whitespace-nowrap">
+                <TableCell sx={{ whiteSpace: "nowrap" }}>
                   {plant.startDate
                     ? new Intl.DateTimeFormat("es-CL").format(new Date(plant.startDate))
                     : "—"}
                 </TableCell>
-                <TableCell className="text-[13px] text-[var(--color-foreground)] text-center">
+                <TableCell align="center">
                   {plant.durationYears ?? "—"}
                 </TableCell>
-                <TableCell className="text-[13px] text-[var(--color-foreground)] text-right tabular-nums">
+                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
                   {plant.capacityKw}
                 </TableCell>
-                <TableCell className="text-[13px] text-[var(--color-foreground)] text-right tabular-nums">
+                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
                   {plant.specificYield != null
                     ? plant.specificYield.toLocaleString("es-CL")
                     : "—"}
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className={`text-[12px] ${
+                  <Chip
+                    label={plant.status === "active" ? "Activa" : "Mantención"}
+                    size="small"
+                    sx={
                       plant.status === "active"
-                        ? "bg-[var(--color-success)]/10 text-[var(--color-success)]"
-                        : "bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
-                    }`}
-                  >
-                    {plant.status === "active" ? "Activa" : "Mantención"}
-                  </Badge>
+                        ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
+                        : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }
+                    }
+                  />
                 </TableCell>
                 {canEdit && (
                   <TableCell>
@@ -138,15 +142,29 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
               </TableRow>
             ))}
           </TableBody>
-        </Table>
-      </div>
+        </MuiTable>
+      </TableContainer>
+
       <TablePagination
-        total={plants.length}
+        component="div"
+        count={plants.length}
         page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        onPageChange={(_, p) => setPage(p)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
+        rowsPerPageOptions={PAGE_SIZES}
+        labelRowsPerPage="Filas:"
+        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+        sx={{
+          borderTop: "none",
+          flexShrink: 0,
+          fontSize: "0.75rem",
+          "& .MuiTablePagination-toolbar": { minHeight: 40, px: 1.5 },
+          "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+            fontSize: "0.75rem",
+          },
+        }}
       />
-    </div>
+    </Box>
   );
 }

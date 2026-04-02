@@ -2,17 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RefreshCw, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
+import Alert from "@mui/material/Alert";
+import SyncOutlinedIcon from "@mui/icons-material/SyncOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 
 type Step = "form" | "loading" | "result";
 
@@ -53,7 +54,6 @@ export function SyncSinceDialog() {
   async function handleSync() {
     setStep("loading");
     setError(null);
-
     try {
       const res = await fetch("/api/billing/sync-since", {
         method: "POST",
@@ -61,13 +61,7 @@ export function SyncSinceDialog() {
         body: JSON.stringify({ since }),
       });
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Error al sincronizar");
-        setStep("form");
-        return;
-      }
-
+      if (!res.ok) { setError(data.error ?? "Error al sincronizar"); setStep("form"); return; }
       setResult(data);
       setStep("result");
       router.refresh();
@@ -78,105 +72,104 @@ export function SyncSinceDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-label">
-          <RefreshCw className="w-3.5 h-3.5" />
-          Sincronizar
-        </Button>
-      </DialogTrigger>
+    <>
+      <Button variant="outlined" size="small" startIcon={<SyncOutlinedIcon />} onClick={() => setOpen(true)} color="inherit" sx={{ borderColor: "#c3c6d7" }}>
+        Sincronizar
+      </Button>
 
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="text-body">Sincronizar facturas</DialogTitle>
-        </DialogHeader>
+      <Dialog open={open} onClose={() => handleOpenChange(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          <Typography fontWeight={700} fontSize="0.9375rem">Sincronizar facturas</Typography>
+        </DialogTitle>
 
-        {step === "form" && (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-label">Traer facturas creadas desde</Label>
-              <Input
-                type="date"
-                className="h-9 text-label"
-                value={since}
-                onChange={(e) => setSince(e.target.value)}
-                max={new Date().toISOString().slice(0, 10)}
-              />
-              <p className="text-caption text-(--color-muted-foreground)">
-                Se consultará esta fecha en todos los portafolios con Duemint configurado.
-              </p>
-            </div>
+        <DialogContent sx={{ pt: "8px !important" }}>
 
-            {error && (
-              <div className="flex items-start gap-2 text-(--color-destructive) bg-destructive/10 rounded-lg px-3 py-2.5">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <p className="text-label">{error}</p>
-              </div>
-            )}
+          {/* FORM */}
+          {step === "form" && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box>
+                <TextField
+                  size="small"
+                  fullWidth
+                  label="Traer facturas creadas desde"
+                  type="date"
+                  value={since}
+                  onChange={(e) => setSince(e.target.value)}
+                  inputProps={{ max: new Date().toISOString().slice(0, 10) }}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
+                  Se consultará esta fecha en todos los portafolios con Duemint configurado.
+                </Typography>
+              </Box>
+              {error && <Alert severity="error" sx={{ fontSize: "0.8125rem" }}>{error}</Alert>}
+            </Box>
+          )}
 
-            <Button className="w-full gap-2" onClick={handleSync} disabled={!since}>
-              <RefreshCw className="w-3.5 h-3.5" />
-              Sincronizar
-            </Button>
-          </div>
-        )}
+          {/* LOADING */}
+          {step === "loading" && (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 4 }}>
+              <CircularProgress size={32} />
+              <Box sx={{ textAlign: "center" }}>
+                <Typography fontSize="0.8125rem" fontWeight={600}>Sincronizando...</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                  Consultando todos los portafolios. Esto puede tomar unos segundos.
+                </Typography>
+              </Box>
+            </Box>
+          )}
 
-        {step === "loading" && (
-          <div className="flex flex-col items-center gap-4 py-6">
-            <Loader2 className="w-8 h-8 animate-spin text-(--color-primary)" />
-            <div className="text-center">
-              <p className="text-label font-medium">Sincronizando...</p>
-              <p className="text-caption text-(--color-muted-foreground) mt-1">
-                Consultando todos los portafolios. Esto puede tomar unos segundos.
-              </p>
-            </div>
-          </div>
-        )}
+          {/* RESULT */}
+          {step === "result" && result && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Box sx={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "#dbe1ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <CheckCircleOutlinedIcon sx={{ fontSize: 20, color: "#004ac6" }} />
+                </Box>
+                <Box>
+                  <Typography fontSize="0.8125rem" fontWeight={600}>Sincronización completada</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Desde {result.since} · {result.portfolios} {result.portfolios === 1 ? "portafolio" : "portafolios"}
+                  </Typography>
+                </Box>
+              </Box>
 
-        {step === "result" && result && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-(--color-success)" />
-              </div>
-              <div>
-                <p className="text-label font-medium">Sincronización completada</p>
-                <p className="text-caption text-(--color-muted-foreground)">
-                  Desde {result.since} · {result.portfolios} {result.portfolios === 1 ? "portafolio" : "portafolios"}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-(--color-border) divide-y divide-(--color-border)">
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-label text-(--color-muted-foreground)">Creadas</span>
-                <span className="text-label font-semibold text-(--color-success)">{result.created}</span>
-              </div>
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-label text-(--color-muted-foreground)">Actualizadas</span>
-                <span className="text-label font-semibold text-(--color-foreground)">{result.updated}</span>
-              </div>
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-label text-(--color-muted-foreground)">Omitidas</span>
-                <span className="text-label font-medium text-(--color-muted-foreground)">{result.skipped}</span>
-              </div>
-            </div>
-
-            {result.errors && result.errors.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-caption font-medium text-(--color-destructive)">Errores</p>
-                {result.errors.map((e, i) => (
-                  <p key={i} className="text-caption text-(--color-muted-foreground)">{e}</p>
+              <Box sx={{ borderRadius: 1.5, border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+                {[
+                  { label: "Creadas",      value: result.created,  color: "#16a34a" },
+                  { label: "Actualizadas", value: result.updated,  color: "text.primary" },
+                  { label: "Omitidas",     value: result.skipped,  color: "text.secondary" },
+                ].map((row, i) => (
+                  <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", px: 2, py: 1.25, backgroundColor: i % 2 === 1 ? "#eff4ff" : "transparent" }}>
+                    <Typography fontSize="0.8125rem" color="text.secondary">{row.label}</Typography>
+                    <Typography fontSize="0.8125rem" fontWeight={600} color={row.color}>{row.value}</Typography>
+                  </Box>
                 ))}
-              </div>
-            )}
+              </Box>
 
-            <Button className="w-full" onClick={() => handleOpenChange(false)}>
-              Cerrar
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+              {result.errors && result.errors.length > 0 && (
+                <Alert severity="warning" sx={{ fontSize: "0.75rem" }}>
+                  {result.errors.map((e, i) => <div key={i}>{e}</div>)}
+                </Alert>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          {step === "form" && (
+            <>
+              <Button variant="outlined" size="small" color="inherit" onClick={() => handleOpenChange(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+              <Button variant="contained" size="small" onClick={handleSync} disabled={!since} startIcon={<SyncOutlinedIcon />}>
+                Sincronizar
+              </Button>
+            </>
+          )}
+          {step === "result" && (
+            <Button variant="contained" size="small" onClick={() => handleOpenChange(false)} fullWidth>Cerrar</Button>
+          )}
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

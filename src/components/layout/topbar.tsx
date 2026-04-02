@@ -2,21 +2,23 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, ChevronDown } from "lucide-react";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import Avatar from "@mui/material/Avatar";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Divider from "@mui/material/Divider";
+import Chip from "@mui/material/Chip";
+import { useState } from "react";
 import { MobileNav } from "./mobile-nav";
-import { ROLE_LABELS } from "@/lib/auth/roles";
 import { PortfolioSelector } from "./portfolio-selector";
+import { ROLE_LABELS } from "@/lib/auth/roles";
 import type { UserRole } from "@prisma/client";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 interface TopbarProps {
   userName: string;
@@ -28,6 +30,7 @@ interface TopbarProps {
 
 export function Topbar({ userName, userEmail, userRole, portfolios = [], selectedPortfolioId }: TopbarProps) {
   const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -45,12 +48,27 @@ export function Topbar({ userName, userEmail, userRole, portfolios = [], selecte
     .slice(0, 2);
 
   return (
-    <header className="h-16 border-b border-[var(--color-border)] bg-white flex items-center justify-between px-4 lg:px-6">
-      <div className="flex items-center gap-3">
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{
+        backgroundColor: "rgba(255,255,255,0.85)",
+        backdropFilter: "blur(20px)",
+        boxShadow: "0 1px 0 0 #c3c6d7",
+        zIndex: 20,
+      }}
+    >
+      <Toolbar
+        variant="dense"
+        sx={{ minHeight: 52, px: { xs: 2, lg: 3 }, gap: 1.5 }}
+      >
+        {/* Mobile menu trigger */}
         <MobileNav userRole={userRole} />
-      </div>
 
-      <div className="flex items-center gap-3">
+        {/* Spacer */}
+        <Box sx={{ flex: 1 }} />
+
+        {/* Portfolio selector (MAESTRO only) */}
         {userRole === "MAESTRO" && portfolios.length > 0 && (
           <PortfolioSelector
             portfolios={portfolios}
@@ -58,42 +76,97 @@ export function Topbar({ userName, userEmail, userRole, portfolios = [], selecte
           />
         )}
 
-        <Badge
-          variant="secondary"
-          className="hidden sm:inline-flex text-[12px] font-medium"
-        >
-          {ROLE_LABELS[userRole]}
-        </Badge>
+        {/* Role badge */}
+        <Chip
+          label={ROLE_LABELS[userRole]}
+          size="small"
+          sx={{
+            display: { xs: "none", sm: "flex" },
+            fontSize: "0.6875rem",
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            backgroundColor: "#e6eeff",
+            color: "#434655",
+            height: 22,
+          }}
+        />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 h-11 px-2" aria-label={`Menú de usuario: ${userName}`}>
-              <Avatar className="w-7 h-7">
-                <AvatarFallback className="text-[12px] bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-medium">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden sm:inline text-[13px] font-medium text-[var(--color-foreground)]">
-                {userName}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--color-muted-foreground)]" aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            <div className="px-2 py-1.5">
-              <p className="text-[13px] font-medium">{userName}</p>
-              <p className="text-[12px] text-[var(--color-muted-foreground)]">
-                {userEmail}
-              </p>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-[13px]">
-              <LogOut className="w-4 h-4 mr-2" />
-              Cerrar sesión
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+        {/* User menu */}
+        <Box
+          component="button"
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          aria-label={`Menú de usuario: ${userName}`}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            borderRadius: 2,
+            px: 1,
+            py: 0.5,
+            "&:hover": { backgroundColor: "#eff4ff" },
+            transition: "background-color 150ms",
+          }}
+        >
+          <Avatar
+            sx={{
+              width: 28,
+              height: 28,
+              fontSize: "0.6875rem",
+              fontWeight: 700,
+              backgroundColor: "#dbe1ff",
+              color: "#004ac6",
+            }}
+          >
+            {initials}
+          </Avatar>
+          <Typography
+            sx={{
+              display: { xs: "none", sm: "block" },
+              fontSize: "0.8125rem",
+              fontWeight: 500,
+              color: "#0d1c2e",
+              fontFamily: '"Inter", sans-serif',
+            }}
+          >
+            {userName}
+          </Typography>
+          <KeyboardArrowDownIcon sx={{ fontSize: 16, color: "#434655" }} />
+        </Box>
+
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={() => setAnchorEl(null)}
+          transformOrigin={{ horizontal: "right", vertical: "top" }}
+          anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+          slotProps={{
+            paper: {
+              sx: { width: 200, mt: 0.5 },
+            },
+          }}
+        >
+          <Box sx={{ px: 2, py: 1.25 }}>
+            <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: "#0d1c2e" }}>
+              {userName}
+            </Typography>
+            <Typography sx={{ fontSize: "0.75rem", color: "#434655" }}>
+              {userEmail}
+            </Typography>
+          </Box>
+          <Divider />
+          <MenuItem
+            onClick={() => { setAnchorEl(null); handleLogout(); }}
+            sx={{ fontSize: "0.8125rem", gap: 1.5, color: "#0d1c2e", mt: 0.5 }}
+          >
+            <LogoutOutlinedIcon sx={{ fontSize: 16, color: "#434655" }} />
+            Cerrar sesión
+          </MenuItem>
+        </Menu>
+      </Toolbar>
+    </AppBar>
   );
 }

@@ -2,9 +2,11 @@ import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { PlantFilterBar } from "@/components/power-plants/plant-filter-bar";
 import { PlantTable } from "@/components/power-plants/plant-table";
-import { EmptyState } from "@/components/ui/empty-state";
 import { UserRole } from "@prisma/client";
-import { Zap, SearchX } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 
 interface Props {
   params: Promise<{ portfolioId: string }>;
@@ -43,33 +45,32 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
   const hasFilters = !!(sParams.q || sParams.customerId);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
-      <div className="flex-shrink-0 space-y-4">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">Plantas Solares</h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Plantas Solares</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             {plants.length} {plants.length === 1 ? "planta encontrada" : "plantas encontradas"}
-          </p>
-        </div>
-        {/* portfolios vacío: ya estamos en el contexto de uno */}
+          </Typography>
+        </Box>
         <PlantFilterBar portfolios={[]} customers={customers} hidePortfolioFilter />
-      </div>
+      </Box>
 
-      <div className="flex-1 min-h-0 overflow-hidden border border-[var(--color-border)] rounded-xl bg-white shadow-sm flex flex-col">
+      <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {plants.length === 0 ? (
-          <EmptyState
-            icon={hasFilters ? SearchX : Zap}
-            title={hasFilters ? "Sin resultados" : "Sin plantas asignadas"}
-            description={
-              hasFilters
-                ? "Ninguna planta coincide con los filtros aplicados."
-                : "Las plantas solares que gestiones aparecerán aquí."
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
+            {hasFilters
+              ? <SearchOffOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
+              : <BoltOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
             }
-          />
+            <Typography fontSize="0.875rem" color="text.secondary">
+              {hasFilters ? "Ninguna planta coincide con los filtros aplicados." : "Las plantas solares que gestiones aparecerán aquí."}
+            </Typography>
+          </Box>
         ) : (
           <PlantTable plants={plants} portfolios={[]} customers={customers} canEdit={canEdit} />
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

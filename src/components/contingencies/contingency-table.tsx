@@ -2,20 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { TablePagination, DEFAULT_PAGE_SIZE, type PageSize } from "@/components/ui/table-pagination";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TablePagination from "@mui/material/TablePagination";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { formatDate, formatCLP } from "@/lib/utils/formatters";
 import { ContingencyRowActions } from "@/components/contingencies/contingency-row-actions";
-import { EmptyState } from "@/components/ui/empty-state";
-import { CheckCircle2 } from "lucide-react";
 
 interface Contingency {
   id: number;
@@ -30,10 +29,10 @@ interface Contingency {
   createdBy: { name: string };
 }
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  OPEN:        { label: "Abierta",     className: "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]" },
-  IN_PROGRESS: { label: "En progreso", className: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]" },
-  CLOSED:      { label: "Cerrada",     className: "bg-[var(--color-success)]/10 text-[var(--color-success)]" },
+const statusConfig: Record<string, { label: string; sx: object }> = {
+  OPEN:        { label: "Abierta",     sx: { backgroundColor: "#fee2e2", color: "#dc2626", fontWeight: 600 } },
+  IN_PROGRESS: { label: "En progreso", sx: { backgroundColor: "#fef9c3", color: "#a16207", fontWeight: 600 } },
+  CLOSED:      { label: "Cerrada",     sx: { backgroundColor: "#dcfce7", color: "#15803d", fontWeight: 600 } },
 };
 
 const typeLabels: Record<string, string> = {
@@ -41,97 +40,97 @@ const typeLabels: Record<string, string> = {
   CORRECTIVE: "Correctiva",
 };
 
-export function ContingencyTable({
-  contingencies,
-  canWrite = false,
-}: {
-  contingencies: Contingency[];
-  canWrite?: boolean;
-}) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+const PAGE_SIZES = [15, 25, 50];
+
+export function ContingencyTable({ contingencies, canWrite = false }: { contingencies: Contingency[]; canWrite?: boolean }) {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
 
   if (contingencies.length === 0) {
     return (
-      <EmptyState
-        icon={CheckCircle2}
-        title="Sin contingencias registradas"
-        description="Todas las plantas operan con normalidad. Las mantenciones y alertas activas aparecerán aquí."
-        size="sm"
-      />
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 1.5, color: "text.secondary" }}>
+        <CheckCircleOutlinedIcon sx={{ fontSize: 36 }} />
+        <Typography variant="body2" fontWeight={500}>Sin contingencias registradas</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", maxWidth: 320 }}>
+          Todas las plantas operan con normalidad. Las mantenciones y alertas activas aparecerán aquí.
+        </Typography>
+      </Box>
     );
   }
 
-  const paginated = contingencies.slice((page - 1) * pageSize, page * pageSize);
+  const paginated = contingencies.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex-1 min-h-0 overflow-auto">
-        <Table>
-          <TableHeader>
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+        <Table stickyHeader size="small">
+          <TableHead>
             <TableRow>
-              <TableHead className="text-[12px]">Planta</TableHead>
-              <TableHead className="text-[12px]">Tipo</TableHead>
-              <TableHead className="text-[12px]">Descripción</TableHead>
-              <TableHead className="text-[12px]">Estado</TableHead>
-              <TableHead className="text-[12px]">Costo</TableHead>
-              <TableHead className="text-[12px]">Proveedor</TableHead>
-              <TableHead className="text-[12px]">Creada</TableHead>
-              <TableHead className="w-10" />
+              <TableCell>Planta</TableCell>
+              <TableCell>Tipo</TableCell>
+              <TableCell>Descripción</TableCell>
+              <TableCell>Estado</TableCell>
+              <TableCell>Costo</TableCell>
+              <TableCell>Proveedor</TableCell>
+              <TableCell>Creada</TableCell>
+              <TableCell sx={{ width: 40 }} />
             </TableRow>
-          </TableHeader>
+          </TableHead>
           <TableBody>
             {paginated.map((c) => {
               const status = statusConfig[c.status] ?? statusConfig.OPEN;
               return (
-                <TableRow key={c.id} className="cursor-pointer hover:bg-[var(--color-secondary)]">
-                  <TableCell className="text-[13px]">
-                    <Link
-                      href={`/contingencies/${c.id}`}
-                      className="font-medium text-[var(--color-primary)] hover:underline"
+                <TableRow key={c.id} hover>
+                  <TableCell>
+                    <Link href={`/contingencies/${c.id}`} style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none", fontSize: "0.8125rem" }}
+                      onMouseOver={e => (e.currentTarget.style.textDecoration = "underline")}
+                      onMouseOut={e => (e.currentTarget.style.textDecoration = "none")}
                     >
                       {c.powerPlant.name}
                     </Link>
-                    <p className="text-[12px] text-[var(--color-muted-foreground)]">
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
                       {c.powerPlant.portfolio.name}
-                    </p>
+                    </Typography>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-[12px]">
-                      {typeLabels[c.type] ?? c.type}
-                    </Badge>
+                    <Chip label={typeLabels[c.type] ?? c.type} size="small" variant="outlined" sx={{ fontSize: "0.6875rem", height: 20 }} />
                   </TableCell>
-                  <TableCell className="text-[13px] max-w-[300px] truncate">{c.description}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={`text-[12px] ${status.className}`}>
-                      {status.label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-[13px]">{c.cost != null ? formatCLP(c.cost) : "—"}</TableCell>
-                  <TableCell className="text-[13px]">{c.provider ?? "—"}</TableCell>
-                  <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">
-                    {formatDate(c.createdAt)}
+                  <TableCell sx={{ maxWidth: 280 }}>
+                    <Typography fontSize="0.8125rem" noWrap title={c.description}>{c.description}</Typography>
                   </TableCell>
                   <TableCell>
-                    <ContingencyRowActions
-                      contingencyId={c.id}
-                      description={c.description}
-                      canWrite={canWrite}
-                    />
+                    <Chip label={status.label} size="small" sx={{ ...status.sx, fontSize: "0.6875rem", height: 20 }} />
+                  </TableCell>
+                  <TableCell sx={{ fontSize: "0.8125rem" }}>{c.cost != null ? formatCLP(c.cost) : "—"}</TableCell>
+                  <TableCell sx={{ fontSize: "0.8125rem", color: "text.secondary" }}>{c.provider ?? "—"}</TableCell>
+                  <TableCell sx={{ fontSize: "0.8125rem", color: "text.secondary", whiteSpace: "nowrap" }}>{formatDate(c.createdAt)}</TableCell>
+                  <TableCell>
+                    <ContingencyRowActions contingencyId={c.id} description={c.description} canWrite={canWrite} />
                   </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
-      </div>
+      </TableContainer>
+
       <TablePagination
-        total={contingencies.length}
+        component="div"
+        count={contingencies.length}
         page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        onPageChange={(_, p) => setPage(p)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
+        rowsPerPageOptions={PAGE_SIZES}
+        labelRowsPerPage="Filas:"
+        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+        sx={{
+          flexShrink: 0,
+          fontSize: "0.75rem",
+          "& .MuiTablePagination-toolbar": { minHeight: 40, px: 1.5 },
+          "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": { fontSize: "0.75rem" },
+        }}
       />
-    </div>
+    </Box>
   );
 }

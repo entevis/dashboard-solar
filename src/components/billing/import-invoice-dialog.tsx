@@ -2,30 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Download, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
+import Alert from "@mui/material/Alert";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { formatCLP } from "@/lib/utils/formatters";
 
-interface Portfolio {
-  id: number;
-  name: string;
-}
+interface Portfolio { id: number; name: string }
 
 interface InvoicePreview {
   duemintId: string;
@@ -54,11 +49,18 @@ type Step = "form" | "preview" | "success";
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return "—";
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(dateStr));
+  return new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(dateStr));
+}
+
+function PreviewRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <Box>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.625rem" }}>
+        {label}
+      </Typography>
+      <Typography fontSize="0.8125rem" fontWeight={500}>{value}</Typography>
+    </Box>
+  );
 }
 
 export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] }) {
@@ -66,12 +68,11 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("form");
 
-  // Form state
   const [portfolioId, setPortfolioId] = useState<string>(portfolios[0] ? String(portfolios[0].id) : "");
-  const [duemintId, setDuemintId] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<PreviewResult | null>(null);
+  const [duemintId, setDuemintId]     = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [result, setResult]           = useState<PreviewResult | null>(null);
 
   function reset() {
     setStep("form");
@@ -90,18 +91,10 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
     if (!duemintId.trim() || !portfolioId) return;
     setLoading(true);
     setError(null);
-
     try {
-      const res = await fetch(
-        `/api/billing/import?duemintId=${encodeURIComponent(duemintId.trim())}&portfolioId=${portfolioId}`
-      );
+      const res = await fetch(`/api/billing/import?duemintId=${encodeURIComponent(duemintId.trim())}&portfolioId=${portfolioId}`);
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Error al buscar la factura");
-        return;
-      }
-
+      if (!res.ok) { setError(data.error ?? "Error al buscar la factura"); return; }
       setResult(data);
       setStep("preview");
     } catch {
@@ -115,24 +108,14 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
     if (!result) return;
     setLoading(true);
     setError(null);
-
     try {
       const res = await fetch("/api/billing/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          duemintId: result.preview.duemintId,
-          portfolioId: result.portfolioId,
-          customerId: result.customer!.id,
-        }),
+        body: JSON.stringify({ duemintId: result.preview.duemintId, portfolioId: result.portfolioId, customerId: result.customer!.id }),
       });
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Error al importar la factura");
-        return;
-      }
-
+      if (!res.ok) { setError(data.error ?? "Error al importar la factura"); return; }
       setStep("success");
       router.refresh();
     } catch {
@@ -143,178 +126,111 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-label">
-          <Download className="w-3.5 h-3.5" />
-          Importar factura
-        </Button>
-      </DialogTrigger>
+    <>
+      <Button variant="outlined" size="small" startIcon={<DownloadOutlinedIcon />} onClick={() => setOpen(true)} color="inherit" sx={{ borderColor: "#c3c6d7" }}>
+        Importar factura
+      </Button>
 
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-body">Importar factura desde Duemint</DialogTitle>
-        </DialogHeader>
+      <Dialog open={open} onClose={() => handleOpenChange(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Typography fontWeight={700} fontSize="0.9375rem">Importar factura desde Duemint</Typography>
+        </DialogTitle>
 
-        {step === "form" && (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-label">Portafolio</Label>
-              <Select value={portfolioId} onValueChange={setPortfolioId}>
-                <SelectTrigger className="h-9 text-label">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+        <DialogContent sx={{ pt: "8px !important" }}>
+
+          {/* FORM */}
+          {step === "form" && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel>Portafolio</InputLabel>
+                <Select label="Portafolio" value={portfolioId} onChange={(e) => setPortfolioId(String(e.target.value))}>
                   {portfolios.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)} className="text-label">
-                      {p.name}
-                    </SelectItem>
+                    <MenuItem key={p.id} value={String(p.id)} sx={{ fontSize: "0.8125rem" }}>{p.name}</MenuItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </Select>
+              </FormControl>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-label">ID de factura en Duemint</Label>
-              <Input
-                className="h-9 text-label font-mono"
+              <TextField
+                size="small"
+                label="ID de factura en Duemint"
                 placeholder="ej. 43533878"
                 value={duemintId}
                 onChange={(e) => setDuemintId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleFetch()}
+                inputProps={{ style: { fontFamily: "monospace", fontSize: "0.8125rem" } }}
               />
-            </div>
 
-            {error && (
-              <div className="flex items-start gap-2 text-(--color-destructive) bg-destructive/10 rounded-lg px-3 py-2.5">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <p className="text-label">{error}</p>
-              </div>
-            )}
+              {error && <Alert severity="error" sx={{ fontSize: "0.8125rem" }}>{error}</Alert>}
+            </Box>
+          )}
 
-            <Button
-              className="w-full gap-2"
-              onClick={handleFetch}
-              disabled={loading || !duemintId.trim() || !portfolioId}
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {loading ? "Buscando..." : "Buscar factura"}
-            </Button>
-          </div>
-        )}
+          {/* PREVIEW */}
+          {step === "preview" && result && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, backgroundColor: "#eff4ff", borderRadius: 1.5, p: 2 }}>
+                <PreviewRow label="N° Factura" value={<Box component="span" sx={{ fontFamily: "monospace" }}>{result.preview.number ?? `#${result.preview.duemintId}`}</Box>} />
+                <PreviewRow label="Estado" value={result.preview.statusName ?? "—"} />
+                <PreviewRow label="Cliente" value={<><span>{result.preview.clientName ?? "—"}</span><Box component="span" sx={{ display: "block", fontSize: "0.75rem", color: "text.secondary" }}>{result.preview.clientTaxId ?? ""}</Box></>} />
+                <PreviewRow label="Portafolio" value={result.portfolioName} />
+                <PreviewRow label="Emisión" value={formatDate(result.preview.issueDate)} />
+                <PreviewRow label="Vencimiento" value={formatDate(result.preview.dueDate)} />
+                <PreviewRow label="Total" value={result.preview.total != null ? formatCLP(result.preview.total) : "—"} />
+                <PreviewRow label="Por cobrar" value={result.preview.amountDue != null ? formatCLP(result.preview.amountDue) : "—"} />
+              </Box>
 
-        {step === "preview" && result && (
-          <div className="flex flex-col gap-4">
-            {/* Invoice summary */}
-            <div className="rounded-lg border border-(--color-border) divide-y divide-(--color-border)">
-              <div className="grid grid-cols-2 gap-x-4 px-4 py-3">
-                <div>
-                  <p className="text-caption text-(--color-muted-foreground)">N° Factura</p>
-                  <p className="text-label font-medium font-mono">
-                    {result.preview.number ?? `#${result.preview.duemintId}`}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-caption text-(--color-muted-foreground)">Estado</p>
-                  <p className="text-label">{result.preview.statusName ?? "—"}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 px-4 py-3">
-                <div>
-                  <p className="text-caption text-(--color-muted-foreground)">Cliente</p>
-                  <p className="text-label font-medium">{result.preview.clientName ?? "—"}</p>
-                  <p className="text-caption text-(--color-muted-foreground)">{result.preview.clientTaxId ?? "—"}</p>
-                </div>
-                <div>
-                  <p className="text-caption text-(--color-muted-foreground)">Portafolio</p>
-                  <p className="text-label">{result.portfolioName}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 px-4 py-3">
-                <div>
-                  <p className="text-caption text-(--color-muted-foreground)">Emisión</p>
-                  <p className="text-label">{formatDate(result.preview.issueDate)}</p>
-                </div>
-                <div>
-                  <p className="text-caption text-(--color-muted-foreground)">Vencimiento</p>
-                  <p className="text-label">{formatDate(result.preview.dueDate)}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 px-4 py-3">
-                <div>
-                  <p className="text-caption text-(--color-muted-foreground)">Total</p>
-                  <p className="text-label font-semibold">
-                    {result.preview.total != null ? formatCLP(result.preview.total) : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-caption text-(--color-muted-foreground)">Por cobrar</p>
-                  <p className="text-label">
-                    {result.preview.amountDue != null ? formatCLP(result.preview.amountDue) : "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
+              {result.customer
+                ? <Alert severity="success" icon={<CheckCircleOutlinedIcon fontSize="small" />} sx={{ fontSize: "0.8125rem" }}>
+                    Cliente encontrado: <strong>{result.customer.name}</strong>
+                  </Alert>
+                : <Alert severity="error" sx={{ fontSize: "0.8125rem" }}>
+                    No hay cliente asociado al RUT <strong>{result.preview.clientTaxId ?? "desconocido"}</strong>. Créalo en Clientes y vuelve a intentarlo.
+                  </Alert>
+              }
 
-            {/* Customer match status */}
-            {result.customer ? (
-              <div className="flex items-start gap-2 text-(--color-success) bg-success/10 rounded-lg px-3 py-2.5">
-                <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
-                <p className="text-label">
-                  Cliente encontrado: <span className="font-medium">{result.customer.name}</span>
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-start gap-2 text-(--color-destructive) bg-destructive/10 rounded-lg px-3 py-2.5">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <p className="text-label">
-                  No hay cliente asociado al RUT{" "}
-                  <span className="font-mono font-medium">{result.preview.clientTaxId ?? "desconocido"}</span>.
-                  Créalo en Clientes y vuelve a intentarlo.
-                </p>
-              </div>
-            )}
+              {error && <Alert severity="error" sx={{ fontSize: "0.8125rem" }}>{error}</Alert>}
+            </Box>
+          )}
 
-            {error && (
-              <div className="flex items-start gap-2 text-(--color-destructive) bg-destructive/10 rounded-lg px-3 py-2.5">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <p className="text-label">{error}</p>
-              </div>
-            )}
+          {/* SUCCESS */}
+          {step === "success" && (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 3 }}>
+              <Box sx={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: "#dbe1ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CheckCircleOutlinedIcon sx={{ fontSize: 24, color: "#004ac6" }} />
+              </Box>
+              <Box sx={{ textAlign: "center" }}>
+                <Typography fontWeight={700} fontSize="0.9375rem">Factura importada</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  La factura fue agregada correctamente al sistema.
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
 
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setStep("form")} disabled={loading}>
-                Volver
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          {step === "form" && (
+            <>
+              <Button variant="outlined" size="small" color="inherit" onClick={() => handleOpenChange(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+              <Button variant="contained" size="small" onClick={handleFetch} disabled={loading || !duemintId.trim() || !portfolioId}
+                startIcon={loading ? <CircularProgress size={12} color="inherit" /> : undefined}>
+                {loading ? "Buscando..." : "Buscar factura"}
               </Button>
-              <Button
-                className="flex-1 gap-2"
-                onClick={handleConfirm}
-                disabled={loading || !result.customer}
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            </>
+          )}
+          {step === "preview" && (
+            <>
+              <Button variant="outlined" size="small" color="inherit" onClick={() => setStep("form")} disabled={loading} sx={{ borderColor: "#c3c6d7" }}>Volver</Button>
+              <Button variant="contained" size="small" onClick={handleConfirm} disabled={loading || !result?.customer}
+                startIcon={loading ? <CircularProgress size={12} color="inherit" /> : undefined}>
                 {loading ? "Importando..." : "Confirmar importación"}
               </Button>
-            </div>
-          </div>
-        )}
-
-        {step === "success" && (
-          <div className="flex flex-col items-center gap-4 py-4">
-            <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-(--color-success)" />
-            </div>
-            <div className="text-center">
-              <p className="text-body font-medium">Factura importada</p>
-              <p className="text-label text-(--color-muted-foreground) mt-1">
-                La factura fue agregada correctamente al sistema.
-              </p>
-            </div>
-            <Button className="w-full" onClick={() => handleOpenChange(false)}>
-              Cerrar
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+            </>
+          )}
+          {step === "success" && (
+            <Button variant="contained" size="small" onClick={() => handleOpenChange(false)} fullWidth>Cerrar</Button>
+          )}
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

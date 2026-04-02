@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { UserTable } from "@/components/admin/user-table";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 export default async function AdminUsersPage() {
   const currentUser = await requireAuth();
@@ -30,16 +32,14 @@ export default async function AdminUsersPage() {
   ]);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">Usuarios</h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
-            Gestión de accesos al sistema
-          </p>
-        </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Usuarios</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>Gestión de accesos al sistema</Typography>
+        </Box>
         <CreateUserDialog customers={customers} portfolios={portfolios} />
-      </div>
+      </Box>
 
       <UserTable
         users={users}
@@ -47,6 +47,6 @@ export default async function AdminUsersPage() {
         portfolios={portfolios}
         currentUserId={currentUser.id}
       />
-    </div>
+    </Box>
   );
 }

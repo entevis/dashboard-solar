@@ -2,63 +2,48 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Divider from "@mui/material/Divider";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MuiMenuItem from "@mui/material/MenuItem";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { toast } from "sonner";
 import type { UserRole } from "@prisma/client";
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: UserRole;
-  customerId: number | null;
-  assignedPortfolioId: number | null;
-}
+const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
+interface User { id: number; name: string; email: string; role: UserRole; customerId: number | null; assignedPortfolioId: number | null }
 interface Option { id: number; name: string }
-
-interface Props {
-  user: User;
-  customers: Option[];
-  portfolios: Option[];
-  currentUserId: number;
-}
+interface Props { user: User; customers: Option[]; portfolios: Option[]; currentUserId: number }
 
 const ROLES: UserRole[] = ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"];
 
 export function UserRowActions({ user, customers, portfolios, currentUserId }: Props) {
   const router = useRouter();
+  const [anchor, setAnchor] = useState<null | HTMLElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: user.name,
-    role: user.role,
+    role: user.role as string,
     customerId: user.customerId ? String(user.customerId) : "",
     assignedPortfolioId: user.assignedPortfolioId ? String(user.assignedPortfolioId) : "",
   });
@@ -72,12 +57,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
       const res = await fetch(`/api/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          role: form.role,
-          customerId: form.customerId || null,
-          assignedPortfolioId: form.assignedPortfolioId || null,
-        }),
+        body: JSON.stringify({ name: form.name, role: form.role, customerId: form.customerId || null, assignedPortfolioId: form.assignedPortfolioId || null }),
       });
       if (!res.ok) throw new Error();
       toast.success("Usuario actualizado");
@@ -92,106 +72,81 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
 
   async function handleDelete() {
     const res = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error);
-    }
+    if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
     toast.success("Usuario eliminado");
+    setDeleteOpen(false);
     router.refresh();
   }
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]" aria-label={`Acciones para ${user.name}`}>
-            <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-36">
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Pencil className="w-3.5 h-3.5 mr-2" />
-            Editar
-          </DropdownMenuItem>
-          {!isSelf && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setDeleteOpen(true)}
-                className="text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
-              >
-                <Trash2 className="w-3.5 h-3.5 mr-2" />
-                Eliminar
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)} aria-label={`Acciones para ${user.name}`}>
+        <MoreHorizOutlinedIcon sx={{ fontSize: 18 }} />
+      </IconButton>
+      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
+        <MenuItem dense onClick={() => { setAnchor(null); setEditOpen(true); }}>
+          <ListItemIcon><EditOutlinedIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ fontSize: "0.8125rem" }}>Editar</ListItemText>
+        </MenuItem>
+        {!isSelf && [
+          <Divider key="div" />,
+          <MenuItem key="del" dense onClick={() => { setAnchor(null); setDeleteOpen(true); }} sx={{ color: "error.main" }}>
+            <ListItemIcon><DeleteOutlinedIcon sx={{ fontSize: 16, color: "error.main" }} /></ListItemIcon>
+            <ListItemText primaryTypographyProps={{ fontSize: "0.8125rem" }}>Eliminar</ListItemText>
+          </MenuItem>,
+        ]}
+      </Menu>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-[440px]">
-          <DialogHeader>
-            <DialogTitle className="text-[15px] font-bold">Editar Usuario</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-[13px]">Nombre <span className="text-[var(--color-warning)]">*</span></Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Email</Label>
-              <Input value={user.email} disabled className="opacity-50" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Rol <span className="text-[var(--color-warning)]">*</span></Label>
-              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as UserRole, customerId: "", assignedPortfolioId: "" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((r) => (
-                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                  ))}
-                </SelectContent>
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Editar Usuario</DialogTitle>
+        <Box component="form" onSubmit={handleEdit}>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            <TextField label="Nombre" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} sx={inputSx} />
+            <TextField label="Email" size="small" value={user.email} disabled sx={inputSx} />
+            <FormControl size="small" required sx={inputSx}>
+              <InputLabel>Rol</InputLabel>
+              <Select label="Rol" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, customerId: "", assignedPortfolioId: "" })}>
+                {ROLES.map((r) => <MuiMenuItem key={r} value={r}>{ROLE_LABELS[r]}</MuiMenuItem>)}
               </Select>
-            </div>
+            </FormControl>
             {(form.role === "CLIENTE" || form.role === "CLIENTE_PERFILADO") && (
-              <div className="space-y-2">
-                <Label className="text-[13px]">Cliente</Label>
-                <Select value={form.customerId} onValueChange={(v) => setForm({ ...form, customerId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-                  </SelectContent>
+              <FormControl size="small" sx={inputSx}>
+                <InputLabel>Cliente</InputLabel>
+                <Select label="Cliente" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })}>
+                  {customers.map((c) => <MuiMenuItem key={c.id} value={String(c.id)}>{c.name}</MuiMenuItem>)}
                 </Select>
-              </div>
+              </FormControl>
             )}
             {form.role === "OPERATIVO" && (
-              <div className="space-y-2">
-                <Label className="text-[13px]">Portafolio asignado</Label>
-                <Select value={form.assignedPortfolioId} onValueChange={(v) => setForm({ ...form, assignedPortfolioId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar portafolio" /></SelectTrigger>
-                  <SelectContent>
-                    {portfolios.map((p) => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
-                  </SelectContent>
+              <FormControl size="small" sx={inputSx}>
+                <InputLabel>Portafolio asignado</InputLabel>
+                <Select label="Portafolio asignado" value={form.assignedPortfolioId} onChange={(e) => setForm({ ...form, assignedPortfolioId: e.target.value })}>
+                  {portfolios.map((p) => <MuiMenuItem key={p.id} value={String(p.id)}>{p.name}</MuiMenuItem>)}
                 </Select>
-              </div>
+              </FormControl>
             )}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(false)}>Cancelar</Button>
-              <Button type="submit" size="sm" disabled={loading} className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90">
-                {loading ? "Guardando..." : "Guardar"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button variant="outlined" color="inherit" size="small" onClick={() => setEditOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+            <Button type="submit" variant="contained" size="small" disabled={loading}>{loading ? "Guardando..." : "Guardar"}</Button>
+          </DialogActions>
+        </Box>
       </Dialog>
 
-      <ConfirmDeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Eliminar usuario"
-        description={`¿Eliminar a "${user.name}"? Perderá acceso al sistema.`}
-        onConfirm={handleDelete}
-      />
+      {/* Delete Confirm Dialog */}
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700 }}>Eliminar usuario</DialogTitle>
+        <DialogContent>
+          <Typography fontSize="0.875rem" color="text.secondary">
+            ¿Eliminar a <Box component="span" fontWeight={600} color="text.primary">&quot;{user.name}&quot;</Box>? Perderá acceso al sistema.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+          <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

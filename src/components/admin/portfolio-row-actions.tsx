@@ -2,36 +2,32 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Divider from "@mui/material/Divider";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { toast } from "sonner";
 
-interface Portfolio {
-  id: number;
-  name: string;
-  description: string | null;
-  duemintCompanyId: string | null;
-}
+const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
+
+interface Portfolio { id: number; name: string; description: string | null; duemintCompanyId: string | null }
 
 export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
   const router = useRouter();
+  const [anchor, setAnchor] = useState<null | HTMLElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,11 +44,7 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
       const res = await fetch(`/api/portfolios/${portfolio.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          description: form.description || null,
-          duemintCompanyId: form.duemintCompanyId || null,
-        }),
+        body: JSON.stringify({ name: form.name, description: form.description || null, duemintCompanyId: form.duemintCompanyId || null }),
       });
       if (!res.ok) throw new Error();
       toast.success("Portafolio actualizado");
@@ -69,72 +61,56 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
     const res = await fetch(`/api/portfolios/${portfolio.id}`, { method: "DELETE" });
     if (!res.ok) throw new Error();
     toast.success("Portafolio eliminado");
+    setDeleteOpen(false);
     router.refresh();
   }
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]" aria-label={`Acciones para ${portfolio.name}`}>
-            <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-36">
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Pencil className="w-3.5 h-3.5 mr-2" />
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => setDeleteOpen(true)}
-            className="text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-2" />
-            Eliminar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)} aria-label={`Acciones para ${portfolio.name}`}>
+        <MoreHorizOutlinedIcon sx={{ fontSize: 18 }} />
+      </IconButton>
+      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
+        <MenuItem dense onClick={() => { setAnchor(null); setEditOpen(true); }}>
+          <ListItemIcon><EditOutlinedIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ fontSize: "0.8125rem" }}>Editar</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem dense onClick={() => { setAnchor(null); setDeleteOpen(true); }} sx={{ color: "error.main" }}>
+          <ListItemIcon><DeleteOutlinedIcon sx={{ fontSize: 16, color: "error.main" }} /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ fontSize: "0.8125rem" }}>Eliminar</ListItemText>
+        </MenuItem>
+      </Menu>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle className="text-[15px] font-bold">Editar Portafolio</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-[13px]">Nombre <span className="text-[var(--color-warning)]">*</span></Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Descripción</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="min-h-[80px]" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[13px]">Duemint Company ID</Label>
-              <Input
-                value={form.duemintCompanyId}
-                onChange={(e) => setForm({ ...form, duemintCompanyId: e.target.value })}
-                placeholder="ej: 2908"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(false)}>Cancelar</Button>
-              <Button type="submit" size="sm" disabled={loading} className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90">
-                {loading ? "Guardando..." : "Guardar"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Editar Portafolio</DialogTitle>
+        <Box component="form" onSubmit={handleEdit}>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            <TextField label="Nombre" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} sx={inputSx} />
+            <TextField label="Descripción" size="small" multiline rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} sx={inputSx} />
+            <TextField label="Duemint Company ID" size="small" value={form.duemintCompanyId} onChange={(e) => setForm({ ...form, duemintCompanyId: e.target.value })} placeholder="ej: 2908" sx={inputSx} />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button variant="outlined" color="inherit" size="small" onClick={() => setEditOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+            <Button type="submit" variant="contained" size="small" disabled={loading}>{loading ? "Guardando..." : "Guardar"}</Button>
+          </DialogActions>
+        </Box>
       </Dialog>
 
-      <ConfirmDeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Eliminar portafolio"
-        description={`¿Eliminar "${portfolio.name}"? Esta acción no se puede deshacer.`}
-        onConfirm={handleDelete}
-      />
+      {/* Delete Confirm Dialog */}
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700 }}>Eliminar portafolio</DialogTitle>
+        <DialogContent>
+          <Typography fontSize="0.875rem" color="text.secondary">
+            ¿Eliminar <Box component="span" fontWeight={600} color="text.primary">&quot;{portfolio.name}&quot;</Box>? Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+          <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

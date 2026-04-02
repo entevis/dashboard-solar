@@ -2,15 +2,15 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useTransition } from "react";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search } from "lucide-react";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import SearchIcon from "@mui/icons-material/Search";
 
 interface Option { id: number; name: string }
 
@@ -24,7 +24,6 @@ export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = fa
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function updateParam(key: string, value: string) {
@@ -47,53 +46,59 @@ export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = fa
   }
 
   return (
-    <div className="flex flex-col sm:flex-row flex-wrap gap-2 items-stretch sm:items-center">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-muted-foreground)]" />
-        <Input
-          ref={inputRef}
-          defaultValue={searchParams.get("q") ?? ""}
-          onChange={handleSearch}
-          placeholder="Buscar planta..."
-          className="pl-8 h-9 text-[13px] w-full sm:w-52"
-        />
-      </div>
+    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
+      <TextField
+        size="small"
+        placeholder="Buscar planta..."
+        defaultValue={searchParams.get("q") ?? ""}
+        onChange={handleSearch}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+              </InputAdornment>
+            ),
+          },
+        }}
+        sx={{ width: 200 }}
+      />
 
       {!hidePortfolioFilter && (
-        <Select
-          defaultValue={searchParams.get("portfolioId") ?? "_all"}
-          onValueChange={(v) => updateParam("portfolioId", v)}
-        >
-          <SelectTrigger className="h-9 text-[13px] w-full sm:w-44">
-            <SelectValue placeholder="Portafolio" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="_all">Todos los portafolios</SelectItem>
+        <FormControl size="small" sx={{ width: 176 }}>
+          <InputLabel>Portafolio</InputLabel>
+          <Select
+            label="Portafolio"
+            defaultValue={searchParams.get("portfolioId") ?? "_all"}
+            onChange={(e) => updateParam("portfolioId", String(e.target.value))}
+          >
+            <MenuItem value="_all">Todos</MenuItem>
             {portfolios.map((p) => (
-              <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+              <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>
             ))}
-          </SelectContent>
-        </Select>
+          </Select>
+        </FormControl>
       )}
 
-      <Select
-        defaultValue={searchParams.get("customerId") ?? "_all"}
-        onValueChange={(v) => updateParam("customerId", v)}
-      >
-        <SelectTrigger className="h-9 text-[13px] w-full sm:w-52">
-          <SelectValue placeholder="Cliente" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="_all">Todos los clientes</SelectItem>
+      <FormControl size="small" sx={{ width: 200 }}>
+        <InputLabel>Cliente</InputLabel>
+        <Select
+          label="Cliente"
+          defaultValue={searchParams.get("customerId") ?? "_all"}
+          onChange={(e) => updateParam("customerId", String(e.target.value))}
+        >
+          <MenuItem value="_all">Todos</MenuItem>
           {customers.map((c) => (
-            <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+            <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>
           ))}
-        </SelectContent>
-      </Select>
+        </Select>
+      </FormControl>
 
       {isPending && (
-        <span className="text-[12px] text-[var(--color-muted-foreground)]">Filtrando...</span>
+        <Typography variant="caption" color="text.secondary">
+          Filtrando...
+        </Typography>
       )}
-    </div>
+    </Box>
   );
 }

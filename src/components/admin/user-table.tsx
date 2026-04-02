@@ -1,22 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { TablePagination, DEFAULT_PAGE_SIZE, type PageSize } from "@/components/ui/table-pagination";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TablePagination from "@mui/material/TablePagination";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { UserRowActions } from "@/components/admin/user-row-actions";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Search, Users } from "lucide-react";
 import type { UserRole } from "@prisma/client";
+
+const roleSx: Record<UserRole, { backgroundColor: string; color: string }> = {
+  MAESTRO: { backgroundColor: "#dbe1ff", color: "#004ac6" },
+  OPERATIVO: { backgroundColor: "#fef9c3", color: "#a16207" },
+  CLIENTE: { backgroundColor: "#dcfce7", color: "#15803d" },
+  CLIENTE_PERFILADO: { backgroundColor: "#dcfce7", color: "#15803d" },
+};
 
 interface UserWithRelations {
   id: number;
@@ -32,117 +40,90 @@ interface UserWithRelations {
 
 interface Option { id: number; name: string }
 
-interface UserTableProps {
+interface Props {
   users: UserWithRelations[];
   customers: Option[];
   portfolios: Option[];
   currentUserId: number;
 }
 
-const roleBadgeColors: Record<UserRole, string> = {
-  MAESTRO: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
-  OPERATIVO: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
-  CLIENTE: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
-  CLIENTE_PERFILADO: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
-};
-
-export function UserTable({ users, customers, portfolios, currentUserId }: UserTableProps) {
+export function UserTable({ users, customers, portfolios, currentUserId }: Props) {
   const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
 
   const filtered = q
-    ? users.filter(
-        (u) =>
-          u.name.toLowerCase().includes(q.toLowerCase()) ||
-          u.email.toLowerCase().includes(q.toLowerCase())
-      )
+    ? users.filter((u) => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()))
     : users;
 
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-  function handleSearch(value: string) {
-    setQ(value);
-    setPage(1);
-  }
+  const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 border border-[var(--color-border)] rounded-xl bg-white overflow-hidden shadow-sm">
-      <div className="shrink-0 p-3 border-b border-[var(--color-border)]">
-        <div className="relative max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-muted-foreground)]" aria-hidden="true" />
-          <Input
-            value={q}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Buscar por nombre o email..."
-            className="pl-8 h-9 text-[13px]"
-          />
-        </div>
-      </div>
+    <Box sx={{ display: "flex", flexDirection: "column", border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden" }}>
+      {/* Search */}
+      <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <TextField
+          size="small"
+          value={q}
+          onChange={(e) => { setQ(e.target.value); setPage(0); }}
+          placeholder="Buscar por nombre o email..."
+          sx={{ maxWidth: 320, "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } }}
+          InputProps={{ startAdornment: <InputAdornment position="start"><SearchOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} /></InputAdornment> }}
+        />
+      </Box>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title={q ? "Sin resultados" : "Sin usuarios registrados"}
-          description={
-            q
-              ? `Ningún usuario coincide con "${q}".`
-              : "Crea el primer usuario para dar acceso al sistema."
-          }
-          size="sm"
-        />
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
+          <GroupOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
+          <Typography fontSize="0.875rem" color="text.secondary">
+            {q ? `Ningún usuario coincide con "${q}".` : "Crea el primer usuario para dar acceso al sistema."}
+          </Typography>
+        </Box>
       ) : (
         <>
-          <div className="flex-1 min-h-0 overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-[12px]">Nombre</TableHead>
-                  <TableHead className="text-[12px]">Email</TableHead>
-                  <TableHead className="text-[12px]">Rol</TableHead>
-                  <TableHead className="text-[12px]">Cliente / Portafolio</TableHead>
-                  <TableHead className="w-10" />
+          <TableContainer sx={{ flex: 1 }}>
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow sx={{ "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600 } }}>
+                  <TableCell>Nombre</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Rol</TableCell>
+                  <TableCell>Cliente / Portafolio</TableCell>
+                  <TableCell sx={{ width: 48 }} />
                 </TableRow>
-              </TableHeader>
+              </TableHead>
               <TableBody>
                 {paginated.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="text-[13px] font-medium">{user.name}</TableCell>
-                    <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">{user.email}</TableCell>
+                  <TableRow key={user.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
+                    <TableCell sx={{ fontWeight: 500 }}>{user.name}</TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={`text-[12px] ${roleBadgeColors[user.role]}`}>
-                        {ROLE_LABELS[user.role]}
-                      </Badge>
+                      <Chip label={ROLE_LABELS[user.role]} size="small" sx={{ ...roleSx[user.role], fontSize: "0.75rem", height: 22, fontWeight: 600 }} />
                     </TableCell>
-                    <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">
-                      {user.customer
-                        ? user.customer.name
-                        : user.assignedPortfolio
-                          ? user.assignedPortfolio.name
-                          : "—"}
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {user.customer ? user.customer.name : user.assignedPortfolio ? user.assignedPortfolio.name : "—"}
                     </TableCell>
                     <TableCell>
-                      <UserRowActions
-                        user={user}
-                        customers={customers}
-                        portfolios={portfolios}
-                        currentUserId={currentUserId}
-                      />
+                      <UserRowActions user={user} customers={customers} portfolios={portfolios} currentUserId={currentUserId} />
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableContainer>
           <TablePagination
-            total={filtered.length}
+            component="div"
+            count={filtered.length}
             page={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+            rowsPerPage={rowsPerPage}
+            onPageChange={(_, p) => setPage(p)}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[10, 25, 50]}
+            labelRowsPerPage="Filas:"
+            sx={{ borderTop: "1px solid", borderColor: "divider", fontSize: "0.8125rem" }}
           />
         </>
       )}
-    </div>
+    </Box>
   );
 }

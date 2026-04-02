@@ -1,20 +1,24 @@
 import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { formatKwh, formatPeriod } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { FileText, Download, FileUp, SearchX } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Button from "@mui/material/Button";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 
 interface Props {
   searchParams: Promise<{ year?: string; powerPlantId?: string }>;
@@ -26,30 +30,14 @@ export default async function ReportsPage({ searchParams }: Props) {
 
   const plantFilter = await buildPlantAccessFilter(user);
 
-  const where: Record<string, unknown> = {
-    active: 1,
-    powerPlant: plantFilter,
-  };
+  const where: Record<string, unknown> = { active: 1, powerPlant: plantFilter };
+  if (params.year)         where.periodYear    = parseInt(params.year);
+  if (params.powerPlantId) where.powerPlantId  = parseInt(params.powerPlantId);
 
-  if (params.year) {
-    where.periodYear = parseInt(params.year);
-  }
-  if (params.powerPlantId) {
-    where.powerPlantId = parseInt(params.powerPlantId);
-  }
-
-  const [reports, totalKwh, totalCo2, accessiblePlants] = await Promise.all([
+  const [reports, totalKwh, totalCo2] = await Promise.all([
     prisma.generationReport.findMany({
       where,
-      include: {
-        powerPlant: {
-          select: {
-            id: true,
-            name: true,
-            portfolio: { select: { name: true } },
-          },
-        },
-      },
+      include: { powerPlant: { select: { id: true, name: true, portfolio: { select: { name: true } } } } },
       orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
     }),
     prisma.generationReport
@@ -58,137 +46,144 @@ export default async function ReportsPage({ searchParams }: Props) {
     prisma.generationReport
       .aggregate({ where: { active: 1, powerPlant: plantFilter }, _sum: { co2Avoided: true } })
       .then((r) => r._sum.co2Avoided ?? 0),
-    prisma.powerPlant.findMany({
-      where: plantFilter,
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
+    prisma.powerPlant.findMany({ where: plantFilter, select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
+  const accessiblePlants = await prisma.powerPlant.findMany({
+    where: plantFilter,
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+
+  const hasFilters = !!(params.year || params.powerPlantId);
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">
-            Reportes
-          </h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
-            Historial de producción energética del portafolio
-          </p>
-        </div>
-      </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+
+      {/* Header */}
+      <Box>
+        <Typography variant="h5" fontWeight={700} color="text.primary">Reportes</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+          Historial de producción energética del portafolio
+        </Typography>
+      </Box>
 
       <ReportFilterBar plants={accessiblePlants} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-[var(--color-border)] shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">Total generado</p>
-            <p className="text-[20px] font-bold text-[var(--color-foreground)]">
-              {formatKwh(totalKwh)}
-            </p>
+      {/* KPI Cards */}
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
+        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+          <CardContent>
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Total generado</Typography>
+            <Typography variant="h6" fontWeight={700} color="text.primary">{formatKwh(totalKwh)}</Typography>
           </CardContent>
         </Card>
-        <Card className="border-[var(--color-border)] shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">CO2 evitado</p>
-            <p className="text-[20px] font-bold text-[var(--color-success)]">
-              {totalCo2.toFixed(2)} ton
-            </p>
+        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+          <CardContent>
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>CO2 evitado</Typography>
+            <Typography variant="h6" fontWeight={700} sx={{ color: "#16a34a" }}>{totalCo2.toFixed(2)} ton</Typography>
           </CardContent>
         </Card>
-        <Card className="border-[var(--color-border)] shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">Reportes</p>
-            <p className="text-[20px] font-bold text-[var(--color-foreground)]">
-              {reports.length}
-            </p>
+        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+          <CardContent>
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Reportes</Typography>
+            <Typography variant="h6" fontWeight={700} color="text.primary">{reports.length}</Typography>
           </CardContent>
         </Card>
-      </div>
+      </Box>
 
-      <Card className="border-[var(--color-border)] shadow-sm">
-        <CardHeader className="pb-3">
-          <h3 className="text-[14px] font-medium">Historial</h3>
-        </CardHeader>
-        <CardContent className="p-0">
-          {reports.length === 0 ? (
-            <EmptyState
-              icon={params.year || params.powerPlantId ? SearchX : FileUp}
-              title={params.year || params.powerPlantId ? "Sin resultados" : "Sin reportes disponibles"}
-              description={
-                params.year || params.powerPlantId
-                  ? "Ningún reporte coincide con los filtros aplicados."
-                  : "Los reportes de generación mensual aparecerán aquí una vez que el equipo de S-Invest los cargue."
-              }
-              size="sm"
-            />
-          ) : (
-            <Table>
-              <TableHeader>
+      {/* Table */}
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+          <Typography variant="body2" fontWeight={600}>Historial</Typography>
+        </Box>
+
+        {reports.length === 0 ? (
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, gap: 1.5, color: "text.secondary" }}>
+            {hasFilters
+              ? <SearchOffOutlinedIcon sx={{ fontSize: 36 }} />
+              : <UploadFileOutlinedIcon sx={{ fontSize: 36 }} />
+            }
+            <Typography variant="body2" fontWeight={500}>
+              {hasFilters ? "Sin resultados" : "Sin reportes disponibles"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", maxWidth: 360 }}>
+              {hasFilters
+                ? "Ningún reporte coincide con los filtros aplicados."
+                : "Los reportes de generación mensual aparecerán aquí una vez que el equipo de S-Invest los cargue."}
+            </Typography>
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
                 <TableRow>
-                  <TableHead className="text-[12px]">Planta</TableHead>
-                  <TableHead className="text-[12px]">Portafolio</TableHead>
-                  <TableHead className="text-[12px]">Periodo</TableHead>
-                  <TableHead className="text-[12px] text-right">Generación</TableHead>
-                  <TableHead className="text-[12px] text-right">CO2 evitado</TableHead>
-                  <TableHead className="text-[12px]">Archivo</TableHead>
+                  <TableCell>Planta</TableCell>
+                  <TableCell>Portafolio</TableCell>
+                  <TableCell>Periodo</TableCell>
+                  <TableCell align="right">Generación</TableCell>
+                  <TableCell align="right">CO2 evitado</TableCell>
+                  <TableCell>Archivo</TableCell>
                 </TableRow>
-              </TableHeader>
+              </TableHead>
               <TableBody>
                 {reports.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="text-[13px]">
-                      <Link
-                        href={`/power-plants/${r.powerPlant.id}/generation`}
-                        className="font-medium text-[var(--color-primary)] hover:underline"
+                  <TableRow key={r.id} hover>
+                    <TableCell>
+                      <Link href={`/power-plants/${r.powerPlant.id}/generation`} style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none", fontSize: "0.8125rem" }}
+                        onMouseOver={e => (e.currentTarget.style.textDecoration = "underline")}
+                        onMouseOut={e => (e.currentTarget.style.textDecoration = "none")}
                       >
                         {r.powerPlant.name}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">
-                      {r.powerPlant.portfolio.name}
+                    <TableCell sx={{ color: "text.secondary" }}>{r.powerPlant.portfolio.name}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={formatPeriod(r.periodMonth, r.periodYear)}
+                        size="small"
+                        sx={{ backgroundColor: "#e6eeff", color: "#0d1c2e", fontWeight: 600, fontSize: "0.75rem", textTransform: "capitalize" }}
+                      />
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
+                      {formatKwh(r.kwhGenerated)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
+                      <Box component="span" fontWeight={500}>{r.co2Avoided.toFixed(2)}</Box>
+                      <Box component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", ml: 0.5 }}>ton</Box>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[12px] font-medium capitalize rounded-md">
-                        {formatPeriod(r.periodMonth, r.periodYear)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-[13px] text-right">
-                      <span className="font-medium">{formatKwh(r.kwhGenerated)}</span>
-                    </TableCell>
-                    <TableCell className="text-[13px] text-right">
-                      <span className="font-medium">{r.co2Avoided.toFixed(2)}</span>
-                      <span className="text-[12px] text-[var(--color-muted-foreground)] ml-1">ton</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <a
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <Button
+                          component="a"
                           href={r.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/8 transition-colors"
+                          size="small"
+                          startIcon={<OpenInNewOutlinedIcon sx={{ fontSize: "14px !important" }} />}
+                          sx={{ fontSize: "0.75rem", py: 0.25, px: 1, minWidth: 0 }}
                         >
-                          <FileText className="w-3.5 h-3.5" />
-                          Ver reporte
-                        </a>
-                        <span className="text-[var(--color-border)]">|</span>
-                        <a
+                          Ver
+                        </Button>
+                        <Button
+                          component="a"
                           href={r.fileUrl}
                           download={r.fileName}
-                          className="p-1 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/8 transition-colors"
+                          size="small"
+                          color="inherit"
+                          sx={{ fontSize: "0.75rem", py: 0.25, px: 0.75, minWidth: 0, color: "text.secondary" }}
                         >
-                          <Download className="w-3.5 h-3.5" />
-                        </a>
-                      </div>
+                          <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
+          </TableContainer>
+        )}
       </Card>
-    </div>
+    </Box>
   );
 }

@@ -5,9 +5,16 @@ import { KpiCard } from "@/components/dashboard/kpi-card";
 import { PortfolioVerticalCard } from "@/components/dashboard/portfolio-vertical-card";
 import { EnvironmentalImpact } from "@/components/dashboard/environmental-impact";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
-import { Zap, Leaf, AlertTriangle, ArrowRight } from "lucide-react";
 import { getPortfolioLogo } from "@/lib/portfolio-logos";
 import Link from "next/link";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import EnergySavingsLeafOutlinedIcon from "@mui/icons-material/EnergySavingsLeafOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 
 async function getMaestroDashboardData() {
   const [portfolios, openContingencies, generationReports] = await Promise.all([
@@ -31,7 +38,6 @@ async function getMaestroDashboardData() {
     }),
   ]);
 
-  // Aggregate per portfolio
   const contingenciesByPortfolio = new Map<number, number>();
   for (const c of openContingencies) {
     const pid = c.powerPlant.portfolioId;
@@ -54,10 +60,7 @@ async function getClienteDashboardData(customerId: number) {
       select: { id: true, name: true, status: true, capacityKw: true, location: true },
     }),
     prisma.generationReport.aggregate({
-      where: {
-        active: 1,
-        powerPlant: { customerId, active: 1 },
-      },
+      where: { active: 1, powerPlant: { customerId, active: 1 } },
       _sum: { kwhGenerated: true, co2Avoided: true },
     }),
   ]);
@@ -71,21 +74,20 @@ async function getClienteDashboardData(customerId: number) {
 export default async function DashboardPage() {
   const user = await requireAuth();
 
+  // MAESTRO
   if (user.role === UserRole.MAESTRO) {
     const data = await getMaestroDashboardData();
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">
-            Dashboard
-          </h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Dashboard</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             Vista consolidada de los portafolios
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }, gap: 3, alignItems: "start" }}>
           {data.portfolios.map((portfolio) => (
             <PortfolioVerticalCard
               key={portfolio.id}
@@ -100,99 +102,78 @@ export default async function DashboardPage() {
               href={`/${portfolio.id}/power-plants`}
             />
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 
-  // Cliente / Cliente Perfilado view
-  if (
-    (user.role === UserRole.CLIENTE ||
-      user.role === UserRole.CLIENTE_PERFILADO) &&
-    user.customerId
-  ) {
+  // CLIENTE / CLIENTE_PERFILADO
+  if ((user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) && user.customerId) {
     const data = await getClienteDashboardData(user.customerId);
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">
-            Mis Plantas
-          </h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Mis Plantas</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             Resumen de tus activos solares
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <KpiCard
-            label="Plantas"
-            value={String(data.plants.length)}
-            icon={<Zap className="w-5 h-5" />}
-          />
-          <KpiCard
-            label="Generación Total"
-            value={`${Math.round(data.totalKwh).toLocaleString("es-CL")} kWh`}
-            icon={<Zap className="w-5 h-5" />}
-          />
-          <KpiCard
-            label="CO2 Evitado"
-            value={`${data.totalCo2.toFixed(1)} ton`}
-            icon={<Leaf className="w-5 h-5" />}
-          />
-        </div>
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
+          <KpiCard label="Plantas" value={String(data.plants.length)} icon={<BoltOutlinedIcon sx={{ fontSize: 20 }} />} />
+          <KpiCard label="Generación Total" value={`${Math.round(data.totalKwh).toLocaleString("es-CL")} kWh`} icon={<BoltOutlinedIcon sx={{ fontSize: 20 }} />} />
+          <KpiCard label="CO2 Evitado" value={`${data.totalCo2.toFixed(1)} ton`} icon={<EnergySavingsLeafOutlinedIcon sx={{ fontSize: 20 }} />} />
+        </Box>
 
         <EnvironmentalImpact
           co2Tonnes={data.totalCo2}
           equivalentTrees={calculateEquivalentTrees(data.totalCo2)}
           equivalentCars={calculateEquivalentCars(data.totalCo2)}
         />
-      </div>
+      </Box>
     );
   }
 
-  // Operativo view
+  // OPERATIVO
   const opPid = user.assignedPortfolioId;
+  const quickLinks = [
+    { href: opPid ? `/${opPid}/power-plants` : "/power-plants", icon: <BoltOutlinedIcon sx={{ fontSize: 18, color: "#004ac6" }} />, iconBg: "#dbe1ff", label: "Plantas", sublabel: "Ver plantas asignadas", hoverBorder: "#004ac6" },
+    { href: opPid ? `/${opPid}/contingencies` : "/contingencies", icon: <WarningAmberOutlinedIcon sx={{ fontSize: 18, color: "#a16207" }} />, iconBg: "#fef9c3", label: "Contingencias", sublabel: "Revisar alertas activas", hoverBorder: "#a16207" },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-bold text-[var(--color-foreground)]">
-          Dashboard
-        </h1>
-        <p className="text-[13px] text-[var(--color-muted-foreground)]">
-          Tu portafolio asignado
-        </p>
-      </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box>
+        <Typography variant="h5" fontWeight={700} color="text.primary">Dashboard</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>Tu portafolio asignado</Typography>
+      </Box>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
-        <Link
-          href={opPid ? `/${opPid}/power-plants` : "/power-plants"}
-          className="flex items-center gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-white shadow-sm hover:border-[var(--color-primary)]/40 hover:shadow-md transition-all duration-150 group"
-        >
-          <div className="w-9 h-9 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center shrink-0">
-            <Zap className="w-4 h-4 text-[var(--color-primary)]" aria-hidden="true" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-[var(--color-foreground)]">Plantas</p>
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">Ver plantas asignadas</p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-[var(--color-muted-foreground)] group-hover:text-[var(--color-primary)] transition-colors shrink-0" aria-hidden="true" />
-        </Link>
-
-        <Link
-          href={opPid ? `/${opPid}/contingencies` : "/contingencies"}
-          className="flex items-center gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-white shadow-sm hover:border-[var(--color-warning)]/40 hover:shadow-md transition-all duration-150 group"
-        >
-          <div className="w-9 h-9 rounded-lg bg-[var(--color-warning)]/10 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-4 h-4 text-[var(--color-warning)]" aria-hidden="true" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-[var(--color-foreground)]">Contingencias</p>
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">Revisar alertas activas</p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-[var(--color-muted-foreground)] group-hover:text-[var(--color-warning)] transition-colors shrink-0" aria-hidden="true" />
-        </Link>
-      </div>
-    </div>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 2, maxWidth: 480 }}>
+        {quickLinks.map((item) => (
+          <Card
+            key={item.href}
+            component={Link}
+            href={item.href}
+            elevation={0}
+            sx={{
+              border: "1px solid", borderColor: "divider", textDecoration: "none", display: "flex",
+              transition: "all 150ms", "&:hover": { borderColor: item.hoverBorder, boxShadow: "0 4px 12px rgba(13,28,46,0.08)" },
+            }}
+          >
+            <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%" }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: 1.5, backgroundColor: item.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {item.icon}
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography fontSize="0.8125rem" fontWeight={600} color="text.primary">{item.label}</Typography>
+                <Typography variant="caption" color="text.secondary">{item.sublabel}</Typography>
+              </Box>
+              <ArrowForwardOutlinedIcon sx={{ fontSize: 16, color: "text.secondary", flexShrink: 0 }} />
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
+    </Box>
   );
 }

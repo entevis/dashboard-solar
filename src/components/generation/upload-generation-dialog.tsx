@@ -2,26 +2,25 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Upload, UploadCloud, FileText, X, AlertCircle, Loader2, Plus } from "lucide-react";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 const MONTHS = [
   { value: "1", label: "Enero" },
@@ -166,178 +165,167 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else setOpen(true); }}>
-      <DialogTrigger asChild>
-        <Button
-          size="sm"
-          className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Subir Reporte
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="text-[15px] font-bold">
-            Subir Reporte de Generación
-          </DialogTitle>
-          <p className="text-[12px] text-[var(--color-muted-foreground)]">{powerPlantName}</p>
-        </DialogHeader>
+    <>
+      <Button
+        variant="contained"
+        size="small"
+        startIcon={<AddOutlinedIcon />}
+        onClick={() => setOpen(true)}
+      >
+        Subir Reporte
+      </Button>
 
-        <form onSubmit={handleSubmit} className="space-y-5 w-full min-w-0">
-          {/* Periodo */}
-          <div className="space-y-1.5">
-            <Label className="text-[13px]">Periodo <span className="text-[var(--color-warning)]">*</span></Label>
-            <div className="grid grid-cols-2 gap-3">
-              <Select
-                value={form.periodMonth}
-                onValueChange={(v) => { setForm({ ...form, periodMonth: v }); setPeriodError(null); }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Mes" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={form.periodYear}
-                onValueChange={(v) => { setForm({ ...form, periodYear: v }); setPeriodError(null); }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {YEARS.map((y) => (
-                    <SelectItem key={y} value={y}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {periodError && (
-              <p className="flex items-center gap-1.5 text-[12px] text-[var(--color-destructive)] mt-1">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                {periodError}
-              </p>
-            )}
-          </div>
+      <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 0.5 }}>
+          <Typography fontWeight={700} fontSize="0.9375rem">Subir Reporte de Generación</Typography>
+          <Typography variant="caption" color="text.secondary">{powerPlantName}</Typography>
+        </DialogTitle>
 
-          {/* kWh */}
-          <div className="space-y-1.5">
-            <Label className="text-[13px]">Generación <span className="text-[var(--color-warning)]">*</span></Label>
-            <div className="flex items-center w-full border border-input rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-ring">
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.kwhGenerated}
-                onChange={(e) => setForm({ ...form, kwhGenerated: e.target.value })}
-                placeholder="0"
-                className="flex-1 px-3 py-2 text-[13px] bg-transparent outline-none"
-              />
-              <span className="px-3 text-[12px] text-[var(--color-muted-foreground)] border-l border-input bg-[var(--color-secondary)] h-full flex items-center py-2">
-                kWh
-              </span>
-            </div>
-          </div>
+        <DialogContent sx={{ pt: "16px !important" }}>
+          <Box component="form" id="upload-form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
 
-          {/* Drop zone */}
-          <div className="space-y-1.5">
-            <Label className="text-[13px]">Archivo PDF <span className="text-[var(--color-warning)]">*</span></Label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) selectFile(f); }}
-            />
-
-            {dropState === "selected" && file ? (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-success)] bg-[var(--color-success)]/5 w-full min-w-0">
-                <FileText className="w-5 h-5 text-[var(--color-success)] shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-[var(--color-foreground)] truncate">{file.name}</p>
-                  <p className="text-[12px] text-[var(--color-muted-foreground)]">{formatFileSize(file.size)} · PDF</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={clearFile}
-                  className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : dropState === "error" ? (
-              <div
-                className="flex flex-col items-center justify-center h-[120px] rounded-xl border-2 border-dashed border-[var(--color-destructive)]/50 bg-[var(--color-destructive)]/5 cursor-pointer transition-all"
-                onClick={() => { setDropState("idle"); setFileError(null); fileInputRef.current?.click(); }}
-              >
-                <AlertCircle className="w-5 h-5 text-[var(--color-destructive)] mb-1" />
-                <p className="text-[13px] text-[var(--color-destructive)]">{fileError}</p>
-                <p className="text-[12px] text-[var(--color-destructive)]/70 mt-0.5">Clic para intentar de nuevo</p>
-              </div>
-            ) : (
-              <div
-                className={cn(
-                  "flex flex-col items-center justify-center h-[120px] rounded-xl border-2 border-dashed cursor-pointer transition-all duration-150",
-                  dropState === "dragging"
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                    : "border-[var(--color-border)] bg-[var(--color-secondary)]"
-                )}
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <UploadCloud
-                  className={cn(
-                    "w-6 h-6 mb-2 transition-colors",
-                    dropState === "dragging" ? "text-[var(--color-primary)]" : "text-[var(--color-muted-foreground)]"
-                  )}
-                />
-                <p className="text-[13px] font-medium text-[var(--color-foreground)]">
-                  {dropState === "dragging" ? "Soltá el archivo aquí" : "Arrastrá el PDF aquí"}
-                </p>
-                <p className="text-[12px] text-[var(--color-muted-foreground)] mt-0.5">
-                  o hacé clic para seleccionar · máx. 10 MB
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleClose}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={loading}
-              className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90 min-w-[130px]"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                  Subiendo...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4 mr-1.5" />
-                  Subir Reporte
-                </>
+            {/* Periodo */}
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+                Periodo *
+              </Typography>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Mes</InputLabel>
+                  <Select
+                    label="Mes"
+                    value={form.periodMonth}
+                    onChange={(e) => { setForm({ ...form, periodMonth: e.target.value }); setPeriodError(null); }}
+                  >
+                    {MONTHS.map((m) => (
+                      <MenuItem key={m.value} value={m.value} sx={{ fontSize: "0.8125rem" }}>{m.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Año</InputLabel>
+                  <Select
+                    label="Año"
+                    value={form.periodYear}
+                    onChange={(e) => { setForm({ ...form, periodYear: e.target.value }); setPeriodError(null); }}
+                  >
+                    {YEARS.map((y) => (
+                      <MenuItem key={y} value={y} sx={{ fontSize: "0.8125rem" }}>{y}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              {periodError && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.75 }}>
+                  <ErrorOutlineOutlinedIcon sx={{ fontSize: 14, color: "error.main" }} />
+                  <Typography variant="caption" color="error">{periodError}</Typography>
+                </Box>
               )}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+            </Box>
+
+            {/* kWh */}
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+                Generación *
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "hidden", backgroundColor: "#eff4ff", "&:focus-within": { borderColor: "primary.main", borderWidth: 2 } }}>
+                <Box
+                  component="input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.kwhGenerated}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, kwhGenerated: e.target.value })}
+                  placeholder="0"
+                  sx={{ flex: 1, px: 1.5, py: 1, fontSize: "0.8125rem", border: "none", outline: "none", backgroundColor: "transparent", fontFamily: "Inter, sans-serif" }}
+                />
+                <Box sx={{ px: 1.5, py: 1, fontSize: "0.75rem", color: "text.secondary", borderLeft: "1px solid", borderColor: "divider", backgroundColor: "#e6eeff", whiteSpace: "nowrap" }}>
+                  kWh
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Drop zone */}
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1, fontWeight: 600 }}>
+                Archivo PDF *
+              </Typography>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                style={{ display: "none" }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) selectFile(f); }}
+              />
+
+              {dropState === "selected" && file ? (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2, py: 1.5, borderRadius: 1.5, border: "1px solid #16a34a", backgroundColor: "#f0fdf4" }}>
+                  <InsertDriveFileOutlinedIcon sx={{ fontSize: 20, color: "#16a34a", flexShrink: 0 }} />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography fontSize="0.8125rem" fontWeight={500} noWrap>{file.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">{formatFileSize(file.size)} · PDF</Typography>
+                  </Box>
+                  <Box
+                    component="button"
+                    type="button"
+                    onClick={clearFile}
+                    sx={{ p: 0.5, border: "none", background: "none", cursor: "pointer", color: "text.secondary", borderRadius: 1, "&:hover": { color: "text.primary", backgroundColor: "action.hover" }, display: "flex" }}
+                  >
+                    <CloseOutlinedIcon sx={{ fontSize: 16 }} />
+                  </Box>
+                </Box>
+              ) : dropState === "error" ? (
+                <Box
+                  sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 110, borderRadius: 1.5, border: "2px dashed", borderColor: "error.light", backgroundColor: "#fff5f5", cursor: "pointer" }}
+                  onClick={() => { setDropState("idle"); setFileError(null); fileInputRef.current?.click(); }}
+                >
+                  <ErrorOutlineOutlinedIcon sx={{ fontSize: 22, color: "error.main", mb: 0.5 }} />
+                  <Typography fontSize="0.8125rem" color="error">{fileError}</Typography>
+                  <Typography variant="caption" color="error" sx={{ opacity: 0.7, mt: 0.25 }}>Clic para intentar de nuevo</Typography>
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    height: 110, borderRadius: 1.5, border: "2px dashed", cursor: "pointer", transition: "all 150ms",
+                    borderColor: dropState === "dragging" ? "primary.main" : "divider",
+                    backgroundColor: dropState === "dragging" ? "#eff4ff" : "#fafafa",
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <CloudUploadOutlinedIcon sx={{ fontSize: 24, mb: 0.75, color: dropState === "dragging" ? "primary.main" : "text.secondary" }} />
+                  <Typography fontSize="0.8125rem" fontWeight={500}>
+                    {dropState === "dragging" ? "Soltá el archivo aquí" : "Arrastrá el PDF aquí"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25 }}>
+                    o hacé clic para seleccionar · máx. 10 MB
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" size="small" onClick={handleClose} disabled={loading} color="inherit">
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="upload-form"
+            variant="contained"
+            size="small"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <UploadOutlinedIcon />}
+            sx={{ minWidth: 130 }}
+          >
+            {loading ? "Subiendo..." : "Subir Reporte"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal, RefreshCw, ExternalLink, FileText, Loader2 } from "lucide-react";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Divider from "@mui/material/Divider";
+import CircularProgress from "@mui/material/CircularProgress";
+import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 
 interface Props {
   invoiceId: number;
@@ -21,9 +21,11 @@ interface Props {
 
 export function InvoiceRowActions({ invoiceId, isPaid, url, pdfUrl }: Props) {
   const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   async function handleRefresh() {
+    setAnchorEl(null);
     setRefreshing(true);
     try {
       await fetch(`/api/billing/invoices/${invoiceId}`, { method: "PATCH" });
@@ -34,51 +36,47 @@ export function InvoiceRowActions({ invoiceId, isPaid, url, pdfUrl }: Props) {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-(--color-muted-foreground)"
-          aria-label="Acciones"
-        >
-          {refreshing
-            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            : <MoreHorizontal className="w-3.5 h-3.5" />
-          }
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+    <>
+      <IconButton
+        size="small"
+        aria-label="Acciones"
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        sx={{ width: 28, height: 28, color: "text.secondary" }}
+      >
+        {refreshing
+          ? <CircularProgress size={14} color="inherit" />
+          : <MoreHorizOutlinedIcon sx={{ fontSize: 16 }} />
+        }
+      </IconButton>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        slotProps={{ paper: { sx: { width: 192, mt: 0.5 } } }}
+      >
         {!isPaid && (
-          <>
-            <DropdownMenuItem
-              className="text-label gap-2"
-              onSelect={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Actualizar estado
-            </DropdownMenuItem>
-            {(url || pdfUrl) && <DropdownMenuSeparator />}
-          </>
+          <MenuItem onClick={handleRefresh} disabled={refreshing} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+            <RefreshOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+            Actualizar estado
+          </MenuItem>
         )}
+        {!isPaid && (url || pdfUrl) && <Divider />}
         {url && (
-          <DropdownMenuItem className="text-label gap-2" asChild>
-            <a href={url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-3.5 h-3.5" />
-              Ver en Duemint
-            </a>
-          </DropdownMenuItem>
+          <MenuItem component="a" href={url} target="_blank" rel="noopener noreferrer" onClick={() => setAnchorEl(null)} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+            <OpenInNewOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+            Ver en Duemint
+          </MenuItem>
         )}
         {pdfUrl && (
-          <DropdownMenuItem className="text-label gap-2" asChild>
-            <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-              <FileText className="w-3.5 h-3.5" />
-              Descargar PDF
-            </a>
-          </DropdownMenuItem>
+          <MenuItem component="a" href={pdfUrl} target="_blank" rel="noopener noreferrer" onClick={() => setAnchorEl(null)} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+            <PictureAsPdfOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+            Descargar PDF
+          </MenuItem>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </Menu>
+    </>
   );
 }

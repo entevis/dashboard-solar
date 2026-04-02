@@ -2,31 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContentText from "@mui/material/DialogContentText";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { toast } from "sonner";
 
 interface PlantAddress {
@@ -70,9 +64,11 @@ function toDateInputValue(date: Date | null): string {
 
 export function PlantRowActions({ plant, portfolios, customers }: Props) {
   const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     name: plant.name,
     city: plant.city ?? "",
@@ -93,6 +89,9 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
     addrCounty: plant.address?.county ?? "",
     addrCountry: plant.address?.country ?? "Chile",
   });
+
+  const sf = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [field]: e.target.value });
 
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
@@ -144,174 +143,153 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-muted-foreground)]" aria-label={`Acciones para ${plant.name}`}>
-            <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-36">
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Pencil className="w-3.5 h-3.5 mr-2" />
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => setDeleteOpen(true)}
-            className="text-[var(--color-destructive)] focus:text-[var(--color-destructive)]"
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-2" />
-            Eliminar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <IconButton
+        size="small"
+        aria-label={`Acciones para ${plant.name}`}
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        sx={{ color: "text.secondary" }}
+      >
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-[15px] font-bold">Editar Planta</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEdit} className="space-y-4">
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        slotProps={{ paper: { sx: { minWidth: 160 } } }}
+      >
+        <MenuItem onClick={() => { setAnchorEl(null); setEditOpen(true); }}>
+          <EditOutlinedIcon fontSize="small" sx={{ mr: 1.5, color: "text.secondary" }} />
+          Editar
+        </MenuItem>
+        <MenuItem
+          onClick={() => { setAnchorEl(null); setDeleteOpen(true); }}
+          sx={{ color: "error.main" }}
+        >
+          <DeleteOutlineIcon fontSize="small" sx={{ mr: 1.5 }} />
+          Eliminar
+        </MenuItem>
+      </Menu>
 
-            {/* Identificación */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Nombre <span className="text-[var(--color-warning)]">*</span></Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">ID Solcor</Label>
-                <Input value={form.solcorId} onChange={(e) => setForm({ ...form, solcorId: e.target.value })} placeholder="Ej: SOL-001" />
-              </div>
-            </div>
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={handleEdit}>
+          <DialogTitle>Editar Planta</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ pt: 1 }}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Nombre *" value={form.name} onChange={sf("name")} required />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="ID Solcor" value={form.solcorId} onChange={sf("solcorId")} placeholder="Ej: SOL-001" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Comuna" value={form.city} onChange={sf("city")} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Región / Ubicación" value={form.location} onChange={sf("location")} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Distribuidora" value={form.distributorCompany} onChange={sf("distributorCompany")} placeholder="Ej: Enel" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="ID Tarifa" value={form.tariffId} onChange={sf("tariffId")} placeholder="Ej: BT1" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Potencia (kWp) *" type="number" inputProps={{ step: "0.1", min: 0 }} value={form.capacityKw} onChange={sf("capacityKw")} required />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Rendimiento (kWh/kWp)" type="number" inputProps={{ step: "0.01", min: 0 }} value={form.specificYield} onChange={sf("specificYield")} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Fecha Inicio (F6)" type="date" value={form.startDate} onChange={sf("startDate")} slotProps={{ inputLabel: { shrink: true } }} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Duración (Años)" type="number" inputProps={{ min: 1, max: 50 }} value={form.durationYears} onChange={sf("durationYears")} />
+              </Grid>
+              <Grid size={12}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Estado *</InputLabel>
+                  <Select label="Estado *" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                    <MenuItem value="active">Activa</MenuItem>
+                    <MenuItem value="maintenance">Mantenimiento</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Portafolio *</InputLabel>
+                  <Select label="Portafolio *" value={form.portfolioId} onChange={(e) => setForm({ ...form, portfolioId: e.target.value })}>
+                    {portfolios.map((p) => <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Cliente *</InputLabel>
+                  <Select label="Cliente *" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })}>
+                    {customers.map((c) => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Grid>
 
-            {/* Ubicación */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Comuna</Label>
-                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Ej: Santiago" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">Región / Ubicación</Label>
-                <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ej: Región Metropolitana" />
-              </div>
-            </div>
-
-            {/* Distribuidora y Tarifa */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Empresa Distribuidora</Label>
-                <Input value={form.distributorCompany} onChange={(e) => setForm({ ...form, distributorCompany: e.target.value })} placeholder="Ej: Enel, CGE" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">ID Tarifa</Label>
-                <Input value={form.tariffId} onChange={(e) => setForm({ ...form, tariffId: e.target.value })} placeholder="Ej: BT1" />
-              </div>
-            </div>
-
-            {/* Técnico */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Potencia (kWp) <span className="text-[var(--color-warning)]">*</span></Label>
-                <Input type="number" step="0.1" min="0" value={form.capacityKw} onChange={(e) => setForm({ ...form, capacityKw: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">Rendimiento Anual (kWh/kWp)</Label>
-                <Input type="number" step="0.01" min="0" value={form.specificYield} onChange={(e) => setForm({ ...form, specificYield: e.target.value })} placeholder="Ej: 1450.5" />
-              </div>
-            </div>
-
-            {/* Contrato */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Fecha Inicio (F6)</Label>
-                <Input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">Duración (Años)</Label>
-                <Input type="number" min="1" max="50" value={form.durationYears} onChange={(e) => setForm({ ...form, durationYears: e.target.value })} placeholder="Ej: 20" />
-              </div>
-            </div>
-
-            {/* Estado y asignaciones */}
-            <div className="space-y-2">
-              <Label className="text-[13px]">Estado <span className="text-[var(--color-warning)]">*</span></Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Activa</SelectItem>
-                  <SelectItem value="maintenance">Mantenimiento</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[13px]">Portafolio <span className="text-[var(--color-warning)]">*</span></Label>
-                <Select value={form.portfolioId} onValueChange={(v) => setForm({ ...form, portfolioId: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {portfolios.map((p) => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[13px]">Cliente <span className="text-[var(--color-warning)]">*</span></Label>
-                <Select value={form.customerId} onValueChange={(v) => setForm({ ...form, customerId: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Dirección */}
-            <div className="pt-1">
-              <p className="text-[12px] font-semibold text-[var(--color-muted-foreground)] uppercase tracking-wide mb-3">Dirección</p>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="text-[13px]">Dirección</Label>
-                  <Input value={form.addrAddress} onChange={(e) => setForm({ ...form, addrAddress: e.target.value })} placeholder="Ej: Av. El Sol 1234" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[13px]">Referencia</Label>
-                  <Input value={form.addrReference} onChange={(e) => setForm({ ...form, addrReference: e.target.value })} placeholder="Ej: Frente al galpón principal" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-[13px]">Comuna</Label>
-                    <Input value={form.addrCity} onChange={(e) => setForm({ ...form, addrCity: e.target.value })} placeholder="Ej: Rancagua" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[13px]">Región</Label>
-                    <Input value={form.addrCounty} onChange={(e) => setForm({ ...form, addrCounty: e.target.value })} placeholder="Ej: O'Higgins" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[13px]">País</Label>
-                  <Input value={form.addrCountry} onChange={(e) => setForm({ ...form, addrCountry: e.target.value })} placeholder="Chile" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(false)}>Cancelar</Button>
-              <Button type="submit" size="sm" disabled={loading} className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90">
-                {loading ? "Guardando..." : "Guardar"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
+              {/* Dirección */}
+              <Grid size={12}>
+                <Divider sx={{ my: 0.5 }} />
+                <Typography variant="overline" color="text.secondary">Dirección</Typography>
+              </Grid>
+              <Grid size={12}>
+                <TextField fullWidth size="small" label="Dirección" value={form.addrAddress} onChange={sf("addrAddress")} placeholder="Ej: Av. El Sol 1234" />
+              </Grid>
+              <Grid size={12}>
+                <TextField fullWidth size="small" label="Referencia" value={form.addrReference} onChange={sf("addrReference")} placeholder="Ej: Frente al galpón principal" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Comuna" value={form.addrCity} onChange={sf("addrCity")} placeholder="Ej: Rancagua" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Región" value={form.addrCounty} onChange={sf("addrCounty")} />
+              </Grid>
+              <Grid size={12}>
+                <TextField fullWidth size="small" label="País" value={form.addrCountry} onChange={sf("addrCountry")} />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button variant="text" onClick={() => setEditOpen(false)}>Cancelar</Button>
+            <Button variant="contained" type="submit" disabled={loading}>
+              {loading ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
-      <ConfirmDeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Eliminar planta"
-        description={`¿Eliminar "${plant.name}"? Esta acción no se puede deshacer.`}
-        onConfirm={handleDelete}
-      />
+      {/* Delete Dialog */}
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Eliminar planta</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Eliminar <strong>{plant.name}</strong>? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button variant="text" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={async () => {
+              try {
+                await handleDelete();
+                setDeleteOpen(false);
+              } catch {
+                toast.error("Error al eliminar la planta");
+              }
+            }}
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

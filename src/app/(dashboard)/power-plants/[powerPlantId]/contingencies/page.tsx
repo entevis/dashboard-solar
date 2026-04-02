@@ -2,37 +2,34 @@ import { requireAuth, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { UserRole } from "@prisma/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { formatDate, formatCLP } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { CreateContingencyDialog } from "@/components/contingencies/create-contingency-dialog";
-import { EmptyState } from "@/components/ui/empty-state";
-import { CheckCircle2 } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Card from "@mui/material/Card";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 
 interface Props {
   params: Promise<{ powerPlantId: string }>;
 }
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  OPEN: { label: "Abierta", className: "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]" },
-  IN_PROGRESS: { label: "En progreso", className: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]" },
-  CLOSED: { label: "Cerrada", className: "bg-[var(--color-success)]/10 text-[var(--color-success)]" },
+const statusSx: Record<string, { backgroundColor: string; color: string; fontWeight: number }> = {
+  OPEN: { backgroundColor: "#fee2e2", color: "#b91c1c", fontWeight: 600 },
+  IN_PROGRESS: { backgroundColor: "#fef9c3", color: "#a16207", fontWeight: 600 },
+  CLOSED: { backgroundColor: "#dcfce7", color: "#15803d", fontWeight: 600 },
 };
-
-const typeLabels: Record<string, string> = {
-  PREVENTIVE: "Preventiva",
-  CORRECTIVE: "Correctiva",
-};
+const statusLabel: Record<string, string> = { OPEN: "Abierta", IN_PROGRESS: "En progreso", CLOSED: "Cerrada" };
+const typeLabel: Record<string, string> = { PREVENTIVE: "Preventiva", CORRECTIVE: "Correctiva" };
 
 export default async function PlantContingenciesPage({ params }: Props) {
   const { powerPlantId } = await params;
@@ -40,15 +37,10 @@ export default async function PlantContingenciesPage({ params }: Props) {
   const user = await requireAuth();
 
   const accessibleIds = await getAccessiblePowerPlantIds(user);
-  if (accessibleIds !== "all" && !accessibleIds.includes(id)) {
-    notFound();
-  }
+  if (accessibleIds !== "all" && !accessibleIds.includes(id)) notFound();
 
   const [plant, contingencies] = await Promise.all([
-    prisma.powerPlant.findUnique({
-      where: { id, active: 1 },
-      select: { id: true, name: true },
-    }),
+    prisma.powerPlant.findUnique({ where: { id, active: 1 }, select: { id: true, name: true } }),
     prisma.contingency.findMany({
       where: { powerPlantId: id, active: 1 },
       include: { createdBy: { select: { name: true } } },
@@ -60,101 +52,74 @@ export default async function PlantContingenciesPage({ params }: Props) {
 
   const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO;
   const openCount = contingencies.filter((c) => c.status !== "CLOSED").length;
+  const base = `/power-plants/${plant.id}`;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">
-            {plant.name}
-          </h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">{plant.name}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Contingencias de la planta · {openCount} abierta{openCount !== 1 ? "s" : ""}
-          </p>
-        </div>
-        {canWrite && (
-          <CreateContingencyDialog powerPlants={[{ id: plant.id, name: plant.name }]} />
-        )}
-      </div>
+          </Typography>
+        </Box>
+        {canWrite && <CreateContingencyDialog powerPlants={[{ id: plant.id, name: plant.name }]} />}
+      </Box>
 
-      <Tabs defaultValue="contingencies">
-        <TabsList>
-          <TabsTrigger value="overview" asChild>
-            <Link href={`/power-plants/${plant.id}`}>General</Link>
-          </TabsTrigger>
-          <TabsTrigger value="generation" asChild>
-            <Link href={`/power-plants/${plant.id}/generation`}>Reportes</Link>
-          </TabsTrigger>
-          <TabsTrigger value="billing" asChild>
-            <Link href={`/power-plants/${plant.id}/billing`}>Facturación</Link>
-          </TabsTrigger>
-          <TabsTrigger value="contingencies" asChild>
-            <Link href={`/power-plants/${plant.id}/contingencies`}>Contingencias</Link>
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value="contingencies" sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tab label="General" value="overview" component={Link} href={base} />
+        <Tab label="Reportes" value="generation" component={Link} href={`${base}/generation`} />
+        <Tab label="Facturación" value="billing" component={Link} href={`${base}/billing`} />
+        <Tab label="Contingencias" value="contingencies" component={Link} href={`${base}/contingencies`} />
       </Tabs>
 
-      <Card className="border-[var(--color-border)] shadow-sm">
-        <CardContent className="p-0">
-          {contingencies.length === 0 ? (
-            <EmptyState
-              icon={CheckCircle2}
-              title="Sin contingencias registradas"
-              description="Esta planta no tiene mantenciones ni alertas activas."
-              size="sm"
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-[12px]">Tipo</TableHead>
-                  <TableHead className="text-[12px]">Descripción</TableHead>
-                  <TableHead className="text-[12px]">Estado</TableHead>
-                  <TableHead className="text-[12px]">Costo</TableHead>
-                  <TableHead className="text-[12px]">Creada por</TableHead>
-                  <TableHead className="text-[12px]">Fecha</TableHead>
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+        {contingencies.length === 0 ? (
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8, gap: 1.5 }}>
+            <CheckCircleOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
+            <Typography fontSize="0.875rem" color="text.secondary">Esta planta no tiene mantenciones ni alertas activas.</Typography>
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600 } }}>
+                  <TableCell>Tipo</TableCell>
+                  <TableCell>Descripción</TableCell>
+                  <TableCell>Estado</TableCell>
+                  <TableCell>Costo</TableCell>
+                  <TableCell>Creada por</TableCell>
+                  <TableCell>Fecha</TableCell>
                 </TableRow>
-              </TableHeader>
+              </TableHead>
               <TableBody>
-                {contingencies.map((c) => {
-                  const status = statusConfig[c.status] ?? statusConfig.OPEN;
-                  return (
-                    <TableRow key={c.id}>
-                      <TableCell>
-                        <Badge variant="outline" className="text-[12px]">
-                          {typeLabels[c.type] ?? c.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-[13px] max-w-[300px] truncate">
-                        <Link
-                          href={`/contingencies/${c.id}`}
-                          className="text-[var(--color-primary)] hover:underline"
-                        >
-                          {c.description}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={`text-[12px] ${status.className}`}>
-                          {status.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-[13px]">
-                        {c.cost != null ? formatCLP(c.cost) : "—"}
-                      </TableCell>
-                      <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">
-                        {c.createdBy.name}
-                      </TableCell>
-                      <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">
-                        {formatDate(c.createdAt)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {contingencies.map((c) => (
+                  <TableRow key={c.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
+                    <TableCell>
+                      <Chip label={typeLabel[c.type] ?? c.type} size="small" variant="outlined" sx={{ fontSize: "0.75rem", height: 22 }} />
+                    </TableCell>
+                    <TableCell sx={{ maxWidth: 300 }}>
+                      <Box
+                        component={Link}
+                        href={`/contingencies/${c.id}`}
+                        sx={{ color: "primary.main", textDecoration: "none", "&:hover": { textDecoration: "underline" }, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      >
+                        {c.description}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={statusLabel[c.status] ?? c.status} size="small" sx={{ ...statusSx[c.status] ?? statusSx.OPEN, fontSize: "0.75rem", height: 22 }} />
+                    </TableCell>
+                    <TableCell>{c.cost != null ? formatCLP(c.cost) : "—"}</TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>{c.createdBy.name}</TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>{formatDate(c.createdAt)}</TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
+          </TableContainer>
+        )}
       </Card>
-    </div>
+    </Box>
   );
 }

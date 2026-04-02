@@ -1,21 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { TablePagination, DEFAULT_PAGE_SIZE, type PageSize } from "@/components/ui/table-pagination";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TablePagination from "@mui/material/TablePagination";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
 import { formatRut } from "@/lib/utils/formatters";
 import { CustomerRowActions } from "@/components/admin/customer-row-actions";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Search, UserCircle } from "lucide-react";
 
 interface Customer {
   id: number;
@@ -28,73 +29,65 @@ interface Customer {
 
 export function CustomerTable({ customers }: { customers: Customer[] }) {
   const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
 
   const filtered = q
-    ? customers.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q.toLowerCase()) ||
-          c.rut.includes(q) ||
-          (c.altName ?? "").toLowerCase().includes(q.toLowerCase())
+    ? customers.filter((c) =>
+        c.name.toLowerCase().includes(q.toLowerCase()) ||
+        c.rut.includes(q) ||
+        (c.altName ?? "").toLowerCase().includes(q.toLowerCase())
       )
     : customers;
 
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-  function handleSearch(value: string) {
-    setQ(value);
-    setPage(1);
-  }
+  const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="shrink-0 p-3 border-b border-[var(--color-border)]">
-        <div className="relative max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-muted-foreground)]" aria-hidden="true" />
-          <Input
-            value={q}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Buscar por razón social o RUT..."
-            className="pl-8 h-9 text-[13px]"
-          />
-        </div>
-      </div>
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      {/* Search */}
+      <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+        <TextField
+          size="small"
+          value={q}
+          onChange={(e) => { setQ(e.target.value); setPage(0); }}
+          placeholder="Buscar por razón social o RUT..."
+          sx={{ maxWidth: 320, "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } }}
+          InputProps={{ startAdornment: <InputAdornment position="start"><SearchOutlinedIcon sx={{ fontSize: 16, color: "text.secondary" }} /></InputAdornment> }}
+        />
+      </Box>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={UserCircle}
-          title={q ? "Sin resultados" : "No hay clientes registrados"}
-          description={q ? `Ningún cliente coincide con "${q}"` : "Crea el primer cliente para comenzar."}
-          size="sm"
-        />
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
+          <PersonOffOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
+          <Typography fontSize="0.875rem" color="text.secondary">
+            {q ? `Ningún cliente coincide con "${q}"` : "Crea el primer cliente para comenzar."}
+          </Typography>
+        </Box>
       ) : (
         <>
-          <div className="flex-1 min-h-0 overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-[12px]">Razón Social</TableHead>
-                  <TableHead className="text-[12px]">RUT</TableHead>
-                  <TableHead className="text-[12px]">Nombre alternativo</TableHead>
-                  <TableHead className="text-[12px]">Plantas</TableHead>
-                  <TableHead className="text-[12px]">Usuarios</TableHead>
-                  <TableHead className="w-10" />
+          <TableContainer sx={{ flex: 1 }}>
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow sx={{ "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600 } }}>
+                  <TableCell>Razón Social</TableCell>
+                  <TableCell>RUT</TableCell>
+                  <TableCell>Nombre alternativo</TableCell>
+                  <TableCell>Plantas</TableCell>
+                  <TableCell>Usuarios</TableCell>
+                  <TableCell sx={{ width: 48 }} />
                 </TableRow>
-              </TableHeader>
+              </TableHead>
               <TableBody>
                 {paginated.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="text-[13px] font-medium">{c.name}</TableCell>
-                    <TableCell className="text-[13px] font-mono">{formatRut(c.rut)}</TableCell>
-                    <TableCell className="text-[13px] text-[var(--color-muted-foreground)]">
-                      {c.altName ?? "—"}
+                  <TableRow key={c.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
+                    <TableCell sx={{ fontWeight: 500 }}>{c.name}</TableCell>
+                    <TableCell sx={{ fontFamily: "monospace" }}>{formatRut(c.rut)}</TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>{c.altName ?? "—"}</TableCell>
+                    <TableCell>
+                      <Chip label={c._count.powerPlants} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.75rem", height: 20 }} />
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[12px]">{c._count.powerPlants}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="text-[12px]">{c._count.users}</Badge>
+                      <Chip label={c._count.users} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.75rem", height: 20 }} />
                     </TableCell>
                     <TableCell>
                       <CustomerRowActions customer={c} />
@@ -103,16 +96,20 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableContainer>
           <TablePagination
-            total={filtered.length}
+            component="div"
+            count={filtered.length}
             page={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+            rowsPerPage={rowsPerPage}
+            onPageChange={(_, p) => setPage(p)}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[10, 25, 50]}
+            labelRowsPerPage="Filas:"
+            sx={{ borderTop: "1px solid", borderColor: "divider", fontSize: "0.8125rem" }}
           />
         </>
       )}
-    </div>
+    </Box>
   );
 }

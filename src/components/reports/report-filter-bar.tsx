@@ -1,13 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import Box from "@mui/material/Box";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 
 interface Option { id: number; name: string }
 
@@ -20,45 +18,33 @@ export function ReportFilterBar({ plants }: { plants: Option[] }) {
 
   function updateParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== "_all") {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
+    if (value && value !== "_all") params.set(key, value); else params.delete(key);
     router.push(`/reports?${params.toString()}`);
   }
 
-  return (
-    <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-      <Select
-        defaultValue={searchParams.get("year") ?? "_all"}
-        onValueChange={(v) => updateParam("year", v)}
-      >
-        <SelectTrigger className="h-9 text-[13px] w-full sm:w-32">
-          <SelectValue placeholder="Año" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="_all">Todos los años</SelectItem>
-          {YEARS.map((y) => (
-            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+  const selectSx = { height: 36, fontSize: "0.8125rem", backgroundColor: "#eff4ff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" }, "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c3c6d7" } };
 
-      <Select
-        defaultValue={searchParams.get("powerPlantId") ?? "_all"}
-        onValueChange={(v) => updateParam("powerPlantId", v)}
-      >
-        <SelectTrigger className="h-9 text-[13px] w-full sm:w-52">
-          <SelectValue placeholder="Planta" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="_all">Todas las plantas</SelectItem>
-          {plants.map((p) => (
-            <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+  return (
+    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <InputLabel sx={{ fontSize: "0.8125rem" }}>Año</InputLabel>
+        <Select label="Año" defaultValue={searchParams.get("year") ?? "_all"} onChange={(e) => updateParam("year", String(e.target.value))} sx={selectSx}>
+          <MenuItem value="_all" sx={{ fontSize: "0.8125rem" }}>Todos los años</MenuItem>
+          {YEARS.map((y) => (
+            <MenuItem key={y} value={String(y)} sx={{ fontSize: "0.8125rem" }}>{y}</MenuItem>
           ))}
-        </SelectContent>
-      </Select>
-    </div>
+        </Select>
+      </FormControl>
+
+      <FormControl size="small" sx={{ minWidth: 200 }}>
+        <InputLabel sx={{ fontSize: "0.8125rem" }}>Planta</InputLabel>
+        <Select label="Planta" defaultValue={searchParams.get("powerPlantId") ?? "_all"} onChange={(e) => updateParam("powerPlantId", String(e.target.value))} sx={selectSx}>
+          <MenuItem value="_all" sx={{ fontSize: "0.8125rem" }}>Todas las plantas</MenuItem>
+          {plants.map((p) => (
+            <MenuItem key={p.id} value={String(p.id)} sx={{ fontSize: "0.8125rem" }}>{p.name}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Box>
   );
 }

@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Avatar from "@mui/material/Avatar";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
+import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import { ROLE_LABELS } from "@/lib/auth/roles";
-import { MessageSquare, Send } from "lucide-react";
 import type { UserRole } from "@prisma/client";
 
 interface Comment {
@@ -23,38 +27,22 @@ interface Props {
   currentUserId: number;
 }
 
-const roleColors: Record<UserRole, string> = {
-  MAESTRO:           "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
-  OPERATIVO:         "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
-  CLIENTE:           "bg-[var(--color-success)]/10 text-[var(--color-success)]",
-  CLIENTE_PERFILADO: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
+const roleChipSx: Record<UserRole, object> = {
+  MAESTRO:           { backgroundColor: "#dbe1ff", color: "#004ac6" },
+  OPERATIVO:         { backgroundColor: "#fef9c3", color: "#a16207" },
+  CLIENTE:           { backgroundColor: "#dcfce7", color: "#15803d" },
+  CLIENTE_PERFILADO: { backgroundColor: "#dcfce7", color: "#15803d" },
 };
 
 function getInitials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
+  return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 }
 
 function formatDateTime(iso: string) {
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso));
+  return new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
-export function ContingencyComments({
-  contingencyId,
-  initialComments,
-  canComment,
-  currentUserId,
-}: Props) {
+export function ContingencyComments({ contingencyId, initialComments, canComment, currentUserId }: Props) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -85,99 +73,92 @@ export function ContingencyComments({
   }
 
   return (
-    <div>
-      <Separator className="mb-6" />
-      <div className="flex items-center gap-2 mb-4">
-        <MessageSquare className="w-4 h-4 text-[var(--color-muted-foreground)]" />
-        <h3 className="text-[14px] font-medium">
+    <Box>
+      <Divider sx={{ mb: 3 }} />
+
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2.5 }}>
+        <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+        <Typography fontSize="0.875rem" fontWeight={600}>
           Comentarios
           {comments.length > 0 && (
-            <span className="ml-1.5 text-[var(--color-muted-foreground)] font-normal">
+            <Box component="span" sx={{ ml: 0.75, fontSize: "0.8125rem", color: "text.secondary", fontWeight: 400 }}>
               ({comments.length})
-            </span>
+            </Box>
           )}
-        </h3>
-      </div>
+        </Typography>
+      </Box>
 
       {comments.length === 0 && (
-        <p className="text-[13px] text-[var(--color-muted-foreground)] mb-6">
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Sin comentarios aún.
-        </p>
+        </Typography>
       )}
 
       {comments.length > 0 && (
-        <div className="space-y-5 mb-6">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mb: 3 }}>
           {comments.map((c) => (
-            <div key={c.id} className="flex gap-3">
-              <div
-                className="shrink-0 w-8 h-8 rounded-full bg-[var(--color-secondary)] flex items-center justify-center text-[11px] font-semibold text-[var(--color-foreground)]"
-                aria-hidden="true"
-              >
+            <Box key={c.id} sx={{ display: "flex", gap: 1.5 }}>
+              <Avatar sx={{ width: 32, height: 32, fontSize: "0.6875rem", fontWeight: 700, backgroundColor: "#e6eeff", color: "#004ac6", flexShrink: 0 }}>
                 {getInitials(c.user.name)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="text-[13px] font-medium">{c.user.name}</span>
-                  <Badge
-                    variant="secondary"
-                    className={`text-[11px] py-0 h-5 ${roleColors[c.user.role]}`}
-                  >
-                    {ROLE_LABELS[c.user.role]}
-                  </Badge>
-                  <span className="text-[12px] text-[var(--color-muted-foreground)]">
-                    {formatDateTime(c.createdAt)}
-                  </span>
-                </div>
-                <p className="text-[13px] text-[var(--color-foreground)] leading-relaxed whitespace-pre-wrap">
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", mb: 0.5 }}>
+                  <Typography fontSize="0.8125rem" fontWeight={600}>{c.user.name}</Typography>
+                  <Chip
+                    label={ROLE_LABELS[c.user.role]}
+                    size="small"
+                    sx={{ ...roleChipSx[c.user.role], fontSize: "0.625rem", fontWeight: 600, height: 18 }}
+                  />
+                  <Typography variant="caption" color="text.secondary">{formatDateTime(c.createdAt)}</Typography>
+                </Box>
+                <Typography fontSize="0.8125rem" sx={{ lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                   {c.body}
-                </p>
-              </div>
-            </div>
+                </Typography>
+              </Box>
+            </Box>
           ))}
-        </div>
+        </Box>
       )}
 
       {canComment && (
-        <div className="flex gap-3">
-          <div
-            className="shrink-0 w-8 h-8 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-[11px] font-semibold text-[var(--color-primary)]"
-            aria-hidden="true"
-          >
+        <Box sx={{ display: "flex", gap: 1.5 }}>
+          <Avatar sx={{ width: 32, height: 32, fontSize: "0.6875rem", fontWeight: 700, backgroundColor: "#dbe1ff", color: "#004ac6", flexShrink: 0 }}>
             Yo
-          </div>
-          <div className="flex-1 space-y-2">
-            <Textarea
+          </Avatar>
+          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+            <TextField
+              multiline
+              minRows={3}
+              size="small"
+              fullWidth
+              placeholder="Escribe un comentario..."
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Escribe un comentario..."
-              className="text-[13px] min-h-[80px] resize-none"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit(); }}
+              error={!!error}
+              helperText={error}
+              inputProps={{ style: { fontSize: "0.8125rem" } }}
             />
-            {error && (
-              <p className="text-[12px] text-[var(--color-destructive)]">{error}</p>
-            )}
-            <div className="flex justify-end">
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
               <Button
-                size="sm"
+                variant="contained"
+                size="small"
                 onClick={handleSubmit}
                 disabled={!body.trim() || isPending}
-                className="gap-1.5 text-[13px] h-8"
+                startIcon={<SendOutlinedIcon />}
               >
-                <Send className="w-3.5 h-3.5" />
                 {isPending ? "Publicando..." : "Comentar"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Box>
+        </Box>
       )}
 
       {!canComment && (
-        <p className="text-[12px] text-[var(--color-muted-foreground)] italic">
+        <Typography variant="caption" color="text.secondary" fontStyle="italic">
           La contingencia está cerrada. No se pueden agregar más comentarios.
-        </p>
+        </Typography>
       )}
-    </div>
+    </Box>
   );
 }

@@ -2,27 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tag,
-  Zap,
-  FileText,
-  Users,
-  MapPin,
-  Pencil,
-  Lock,
-  Loader2,
-} from "lucide-react";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Grid from "@mui/material/Grid";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { toast } from "sonner";
 
 interface PlantAddress {
@@ -70,26 +66,28 @@ function calcEndDate(startDate: Date | null, durationYears: number | null): stri
 
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
-    <div>
-      <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-0.5">
+    <Box>
+      <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
         {label}
-      </p>
-      <p className="text-[14px] font-medium text-[var(--color-foreground)]">
+      </Typography>
+      <Typography variant="body1" fontWeight={500} color="text.primary">
         {value ?? "—"}
-      </p>
-    </div>
+      </Typography>
+    </Box>
   );
 }
 
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div className="flex items-center gap-1 mb-0.5">
-        <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)]">{label}</p>
-        <Lock className="w-2.5 h-2.5 text-[var(--color-muted-foreground)]" />
-      </div>
-      <p className="text-[14px] font-medium text-[var(--color-foreground)]">{value || "—"}</p>
-    </div>
+    <Box>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+        <Typography variant="overline" color="text.secondary">{label}</Typography>
+        <LockOutlinedIcon sx={{ fontSize: 11, color: "text.secondary" }} />
+      </Box>
+      <Typography variant="body1" fontWeight={500} color="text.primary">
+        {value || "—"}
+      </Typography>
+    </Box>
   );
 }
 
@@ -97,52 +95,31 @@ function SectionCard({
   icon: Icon,
   title,
   children,
-  className,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ sx?: object }>;
   title: string;
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <Card className={`border-[var(--color-border)] shadow-sm bg-white ${className ?? ""}`}>
-      <CardContent className="p-5">
-        <div className="flex items-center gap-2 pb-3 mb-4 border-b border-[var(--color-border)]">
-          <Icon className="w-4 h-4 text-[var(--color-primary)]" />
-          <h3 className="text-[14px] font-semibold text-[var(--color-foreground)]">{title}</h3>
-        </div>
-        {children}
-      </CardContent>
+    <Card>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          px: 2,
+          py: 1.25,
+          backgroundColor: "#eff4ff",
+          borderRadius: "12px 12px 0 0",
+        }}
+      >
+        <Icon sx={{ fontSize: 16, color: "primary.dark" }} />
+        <Typography variant="body1" fontWeight={600} color="text.primary">
+          {title}
+        </Typography>
+      </Box>
+      <CardContent sx={{ pt: 2 }}>{children}</CardContent>
     </Card>
-  );
-}
-
-function EditInput({
-  label,
-  value,
-  onChange,
-  type = "text",
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
-  placeholder?: string;
-}) {
-  return (
-    <div>
-      <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">
-        {label}
-      </p>
-      <Input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-9 text-[13px]"
-      />
-    </div>
   );
 }
 
@@ -224,167 +201,188 @@ export function PlantDetailPanel({ plant, canEdit }: Props) {
     }
   }
 
-  const ef = (field: keyof typeof form) => (v: string) => setForm({ ...form, [field]: v });
+  const ef = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [field]: e.target.value });
 
   const addrCity = plant.address?.city ?? plant.city;
   const addrCounty = plant.address?.county ?? plant.location;
   const hasAddress = !!(plant.address?.address || plant.address?.city || addrCity);
 
   return (
-    <div className="space-y-4">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {/* Actions bar */}
-      <div className="flex justify-end">
+      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         {isEditing ? (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={handleCancel} disabled={saving}
-              className="text-[var(--color-muted-foreground)]">
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="text" size="small" onClick={handleCancel} disabled={saving}>
               Cancelar
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving}
-              className="bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90">
-              {saving ? (
-                <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Guardando...</>
-              ) : "Guardar cambios"}
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleSave}
+              disabled={saving}
+              startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
+            >
+              {saving ? "Guardando..." : "Guardar cambios"}
             </Button>
-          </div>
+          </Box>
         ) : canEdit ? (
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-            <Pencil className="w-3.5 h-3.5 mr-1.5" />
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<EditOutlinedIcon />}
+            onClick={() => setIsEditing(true)}
+          >
             Editar
           </Button>
         ) : null}
-      </div>
+      </Box>
 
       {/* Grid layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <Grid container spacing={2}>
+        {/* Left col (2/3) */}
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* Identificación */}
+            <SectionCard icon={LocalOfferOutlinedIcon} title="Identificación">
+              <Grid container spacing={3}>
+                {isEditing ? (
+                  <>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="Nombre de planta" value={form.name} onChange={ef("name")} />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="ID Solcor" value={form.solcorId} onChange={ef("solcorId")} placeholder="Ej: SOL-001" />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField select fullWidth size="small" label="Estado" value={form.status} onChange={ef("status")}>
+                        <MenuItem value="active">Activa</MenuItem>
+                        <MenuItem value="maintenance">En mantenimiento</MenuItem>
+                      </TextField>
+                    </Grid>
+                  </>
+                ) : (
+                  <>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Nombre de planta" value={plant.name} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="ID Solcor" value={plant.solcorId} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Box>
+                        <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                          Estado
+                        </Typography>
+                        <Chip
+                          label={plant.status === "active" ? "Activa" : "En mantenimiento"}
+                          size="small"
+                          sx={
+                            plant.status === "active"
+                              ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
+                              : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }
+                          }
+                        />
+                      </Box>
+                    </Grid>
+                  </>
+                )}
+              </Grid>
+            </SectionCard>
 
-        {/* Col left (2/3) */}
-        <div className="lg:col-span-2 space-y-4">
+            {/* Contrato */}
+            <SectionCard icon={DescriptionOutlinedIcon} title="Contrato">
+              <Grid container spacing={3}>
+                {isEditing ? (
+                  <>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="Fecha inicio (F6)" type="date" value={form.startDate} onChange={ef("startDate")} slotProps={{ inputLabel: { shrink: true } }} />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="Duración (años)" type="number" value={form.durationYears} onChange={ef("durationYears")} placeholder="Ej: 20" />
+                    </Grid>
+                  </>
+                ) : (
+                  <>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Fecha inicio (F6)" value={formatDate(plant.startDate)} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Duración" value={plant.durationYears != null ? `${plant.durationYears} años` : null} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Fecha término estimada" value={calcEndDate(plant.startDate, plant.durationYears)} /></Grid>
+                  </>
+                )}
+              </Grid>
+            </SectionCard>
+          </Box>
+        </Grid>
 
-          {/* Card: Identificación */}
-          <SectionCard icon={Tag} title="Identificación">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-              {isEditing ? (
-                <>
-                  <EditInput label="Nombre de planta" value={form.name} onChange={ef("name")} />
-                  <EditInput label="ID Solcor" value={form.solcorId} onChange={ef("solcorId")} placeholder="Ej: SOL-001" />
-                  <div>
-                    <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">Estado</p>
-                    <Select value={form.status} onValueChange={ef("status")}>
-                      <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Activa</SelectItem>
-                        <SelectItem value="maintenance">En mantenimiento</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Field label="Nombre de planta" value={plant.name} />
-                  <Field label="ID Solcor" value={plant.solcorId} />
-                  <div>
-                    <p className="text-[12px] uppercase tracking-wide text-[var(--color-muted-foreground)] mb-1">Estado</p>
-                    <Badge
-                      variant="secondary"
-                      className={`text-[12px] font-semibold px-2.5 rounded-full ${
-                        plant.status === "active"
-                          ? "bg-[var(--color-success)]/10 text-[var(--color-success)]"
-                          : "bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
-                      }`}
-                    >
-                      {plant.status === "active" ? "Activa" : "En mantenimiento"}
-                    </Badge>
-                  </div>
-                </>
-              )}
-            </div>
-          </SectionCard>
+        {/* Right col (1/3) */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* Técnico */}
+            <SectionCard icon={BoltOutlinedIcon} title="Técnico">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                {isEditing ? (
+                  <>
+                    <TextField fullWidth size="small" label="Capacidad (kWp)" type="number" value={form.capacityKw} onChange={ef("capacityKw")} />
+                    <TextField fullWidth size="small" label="Rendimiento (kWh/kWp)" type="number" value={form.specificYield} onChange={ef("specificYield")} placeholder="Ej: 1450" />
+                    <TextField fullWidth size="small" label="Distribuidora" value={form.distributorCompany} onChange={ef("distributorCompany")} placeholder="Ej: Enel" />
+                    <TextField fullWidth size="small" label="ID Tarifa" value={form.tariffId} onChange={ef("tariffId")} placeholder="Ej: BT1" />
+                  </>
+                ) : (
+                  <>
+                    <Field label="Capacidad" value={plant.capacityKw != null ? `${plant.capacityKw} kWp` : null} />
+                    <Field label="Rendimiento anual" value={plant.specificYield != null ? `${plant.specificYield.toLocaleString("es-CL")} kWh/kWp` : null} />
+                    <Field label="Distribuidora" value={plant.distributorCompany} />
+                    <Field label="ID Tarifa" value={plant.tariffId} />
+                  </>
+                )}
+              </Box>
+            </SectionCard>
 
-          {/* Card: Contrato */}
-          <SectionCard icon={FileText} title="Contrato">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-              {isEditing ? (
-                <>
-                  <EditInput label="Fecha inicio (F6)" value={form.startDate} onChange={ef("startDate")} type="date" />
-                  <EditInput label="Duración (años)" value={form.durationYears} onChange={ef("durationYears")} type="number" placeholder="Ej: 20" />
-                </>
-              ) : (
-                <>
-                  <Field label="Fecha inicio (F6)" value={formatDate(plant.startDate)} />
-                  <Field label="Duración" value={plant.durationYears != null ? `${plant.durationYears} años` : null} />
-                  <Field label="Fecha término estimada" value={calcEndDate(plant.startDate, plant.durationYears)} />
-                </>
-              )}
-            </div>
-          </SectionCard>
-        </div>
+            {/* Cliente & Portafolio */}
+            <SectionCard icon={GroupOutlinedIcon} title="Cliente & Portafolio">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <ReadonlyField label="Cliente" value={plant.customer.name} />
+                <ReadonlyField label="RUT" value={plant.customer.rut} />
+                <ReadonlyField label="Portafolio" value={plant.portfolio.name} />
+              </Box>
+            </SectionCard>
+          </Box>
+        </Grid>
 
-        {/* Col right (1/3) */}
-        <div className="space-y-4">
-
-          {/* Card: Técnico */}
-          <SectionCard icon={Zap} title="Técnico">
-            <div className="space-y-5">
-              {isEditing ? (
-                <>
-                  <EditInput label="Capacidad (kWp)" value={form.capacityKw} onChange={ef("capacityKw")} type="number" />
-                  <EditInput label="Rendimiento (kWh/kWp)" value={form.specificYield} onChange={ef("specificYield")} type="number" placeholder="Ej: 1450" />
-                  <EditInput label="Distribuidora" value={form.distributorCompany} onChange={ef("distributorCompany")} placeholder="Ej: Enel" />
-                  <EditInput label="ID Tarifa" value={form.tariffId} onChange={ef("tariffId")} placeholder="Ej: BT1" />
-                </>
-              ) : (
-                <>
-                  <Field label="Capacidad" value={plant.capacityKw != null ? `${plant.capacityKw} kWp` : null} />
-                  <Field label="Rendimiento anual" value={plant.specificYield != null ? `${plant.specificYield.toLocaleString("es-CL")} kWh/kWp` : null} />
-                  <Field label="Distribuidora" value={plant.distributorCompany} />
-                  <Field label="ID Tarifa" value={plant.tariffId} />
-                </>
-              )}
-            </div>
-          </SectionCard>
-
-          {/* Card: Cliente & Portafolio */}
-          <SectionCard icon={Users} title="Cliente & Portafolio">
-            <div className="space-y-5">
-              <ReadonlyField label="Cliente" value={plant.customer.name} />
-              <ReadonlyField label="RUT" value={plant.customer.rut} />
-              <ReadonlyField label="Portafolio" value={plant.portfolio.name} />
-            </div>
-          </SectionCard>
-        </div>
-
-        {/* Card: Dirección (full width) */}
-        <div className="lg:col-span-3">
-          <SectionCard icon={MapPin} title="Dirección">
+        {/* Dirección — full width */}
+        <Grid size={12}>
+          <SectionCard icon={PlaceOutlinedIcon} title="Dirección">
             {isEditing ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
-                <div className="sm:col-span-2 lg:col-span-2">
-                  <EditInput label="Dirección" value={form.addrAddress} onChange={ef("addrAddress")} placeholder="Ej: Av. El Sol 1234" />
-                </div>
-                <EditInput label="Referencia" value={form.addrReference} onChange={ef("addrReference")} placeholder="Ej: Frente al galpón" />
-                <EditInput label="Comuna" value={form.addrCity} onChange={ef("addrCity")} placeholder="Ej: Rancagua" />
-                <EditInput label="Región" value={form.addrCounty} onChange={ef("addrCounty")} placeholder="Ej: O'Higgins" />
-                <EditInput label="País" value={form.addrCountry} onChange={ef("addrCountry")} />
-              </div>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 8 }}>
+                  <TextField fullWidth size="small" label="Dirección" value={form.addrAddress} onChange={ef("addrAddress")} placeholder="Ej: Av. El Sol 1234" />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField fullWidth size="small" label="Referencia" value={form.addrReference} onChange={ef("addrReference")} placeholder="Ej: Frente al galpón" />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField fullWidth size="small" label="Comuna" value={form.addrCity} onChange={ef("addrCity")} placeholder="Ej: Rancagua" />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField fullWidth size="small" label="Región" value={form.addrCounty} onChange={ef("addrCounty")} placeholder="Ej: O'Higgins" />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField fullWidth size="small" label="País" value={form.addrCountry} onChange={ef("addrCountry")} />
+                </Grid>
+              </Grid>
             ) : !hasAddress ? (
-              <p className="text-[13px] italic text-[var(--color-muted-foreground)] text-center py-4">
+              <Typography variant="body2" color="text.secondary" fontStyle="italic" textAlign="center" py={2}>
                 Sin dirección registrada
-              </p>
+              </Typography>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
-                <div className="sm:col-span-2 lg:col-span-2">
-                  <Field label="Dirección" value={plant.address?.address} />
-                </div>
-                <Field label="Referencia" value={plant.address?.reference} />
-                <Field label="Comuna" value={addrCity} />
-                <Field label="Región" value={addrCounty} />
-                <Field label="País" value={plant.address?.country ?? "Chile"} />
-              </div>
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, sm: 8 }}><Field label="Dirección" value={plant.address?.address} /></Grid>
+                <Grid size={{ xs: 12, sm: 4 }}><Field label="Referencia" value={plant.address?.reference} /></Grid>
+                <Grid size={{ xs: 12, sm: 4 }}><Field label="Comuna" value={addrCity} /></Grid>
+                <Grid size={{ xs: 12, sm: 4 }}><Field label="Región" value={addrCounty} /></Grid>
+                <Grid size={{ xs: 12, sm: 4 }}><Field label="País" value={plant.address?.country ?? "Chile"} /></Grid>
+              </Grid>
             )}
           </SectionCard>
-        </div>
-      </div>
-    </div>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }

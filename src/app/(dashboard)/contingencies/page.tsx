@@ -5,6 +5,9 @@ import { ContingencyTable } from "@/components/contingencies/contingency-table";
 import { CreateContingencyDialog } from "@/components/contingencies/create-contingency-dialog";
 import { StatusTabs } from "@/components/contingencies/status-tabs";
 import { ContingencyFilterBar } from "@/components/contingencies/contingency-filter-bar";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
 
 interface Props {
   searchParams: Promise<{ status?: string; type?: string; powerPlantId?: string }>;
@@ -16,34 +19,25 @@ export default async function ContingenciesPage({ searchParams }: Props) {
 
   const plantFilter = await buildPlantAccessFilter(user);
 
-  const where: Record<string, unknown> = {
-    active: 1,
-    powerPlant: plantFilter,
-  };
-
-  if (params.status) where.status = params.status as ContingencyStatus;
-  if (params.type) where.type = params.type;
+  const where: Record<string, unknown> = { active: 1, powerPlant: plantFilter };
+  if (params.status)       where.status       = params.status as ContingencyStatus;
+  if (params.type)         where.type         = params.type;
   if (params.powerPlantId) where.powerPlantId = parseInt(params.powerPlantId);
 
-  const [contingencies, openCount, inProgressCount, closedCount, accessiblePlants] =
-    await Promise.all([
-      prisma.contingency.findMany({
-        where,
-        include: {
-          powerPlant: { select: { name: true, portfolio: { select: { name: true } } } },
-          createdBy: { select: { name: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.contingency.count({ where: { active: 1, powerPlant: plantFilter, status: "OPEN" } }),
-      prisma.contingency.count({ where: { active: 1, powerPlant: plantFilter, status: "IN_PROGRESS" } }),
-      prisma.contingency.count({ where: { active: 1, powerPlant: plantFilter, status: "CLOSED" } }),
-      prisma.powerPlant.findMany({
-        where: plantFilter,
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      }),
-    ]);
+  const [contingencies, openCount, inProgressCount, closedCount, accessiblePlants] = await Promise.all([
+    prisma.contingency.findMany({
+      where,
+      include: {
+        powerPlant: { select: { name: true, portfolio: { select: { name: true } } } },
+        createdBy: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.contingency.count({ where: { active: 1, powerPlant: plantFilter, status: "OPEN" } }),
+    prisma.contingency.count({ where: { active: 1, powerPlant: plantFilter, status: "IN_PROGRESS" } }),
+    prisma.contingency.count({ where: { active: 1, powerPlant: plantFilter, status: "CLOSED" } }),
+    prisma.powerPlant.findMany({ where: plantFilter, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  ]);
 
   const counts = { OPEN: openCount, IN_PROGRESS: inProgressCount, CLOSED: closedCount };
   const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO;
@@ -56,24 +50,25 @@ export default async function ContingenciesPage({ searchParams }: Props) {
   }));
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
-      <div className="shrink-0 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-bold text-[var(--color-foreground)]">Contingencias</h1>
-            <p className="text-[13px] text-[var(--color-muted-foreground)]">
-              Gestión de mantenciones preventivas y correctivas
-            </p>
-          </div>
-          {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
-        </div>
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 3 }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, flexShrink: 0 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Contingencias</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+            Gestión de mantenciones preventivas y correctivas
+          </Typography>
+        </Box>
+        {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
+      </Box>
+
+      <Box sx={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 2 }}>
         <StatusTabs counts={counts} />
         <ContingencyFilterBar plants={accessiblePlants} />
-      </div>
+      </Box>
 
-      <div className="flex-1 min-h-0 overflow-hidden border border-[var(--color-border)] rounded-xl bg-white shadow-sm flex flex-col">
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <ContingencyTable contingencies={serialized} canWrite={canWrite} />
-      </div>
-    </div>
+      </Card>
+    </Box>
   );
 }

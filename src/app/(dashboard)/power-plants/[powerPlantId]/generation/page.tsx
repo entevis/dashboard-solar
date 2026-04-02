@@ -2,21 +2,26 @@ import { requireAuth, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { UserRole } from "@prisma/client";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { formatKwh, formatPeriod } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { UploadGenerationDialog } from "@/components/generation/upload-generation-dialog";
-import { Badge } from "@/components/ui/badge";
-import { FileText, Download, FileUp } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Button from "@mui/material/Button";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 
 interface Props {
   params: Promise<{ powerPlantId: string }>;
@@ -47,133 +52,142 @@ export default async function PlantGenerationPage({ params }: Props) {
 
   const totalKwh = reports.reduce((sum, r) => sum + r.kwhGenerated, 0);
   const totalCo2 = reports.reduce((sum, r) => sum + r.co2Avoided, 0);
+  const base = `/power-plants/${plant.id}`;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Header */}
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">
             {plant.name}
-          </h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Reportes de generación energética
-          </p>
-        </div>
+          </Typography>
+        </Box>
         {user.role === UserRole.MAESTRO && (
           <UploadGenerationDialog powerPlantId={plant.id} powerPlantName={plant.name} />
         )}
-      </div>
+      </Box>
 
-      <Tabs defaultValue="generation">
-        <TabsList>
-          <TabsTrigger value="overview" asChild>
-            <Link href={`/power-plants/${plant.id}`}>General</Link>
-          </TabsTrigger>
-          <TabsTrigger value="generation" asChild>
-            <Link href={`/power-plants/${plant.id}/generation`}>Reportes</Link>
-          </TabsTrigger>
-          <TabsTrigger value="billing" asChild>
-            <Link href={`/power-plants/${plant.id}/billing`}>Facturación</Link>
-          </TabsTrigger>
-          <TabsTrigger value="contingencies" asChild>
-            <Link href={`/power-plants/${plant.id}/contingencies`}>Contingencias</Link>
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabs */}
+      <Tabs value="generation" sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tab label="General" value="overview" component={Link} href={base} />
+        <Tab label="Reportes" value="generation" component={Link} href={`${base}/generation`} />
+        <Tab label="Facturación" value="billing" component={Link} href={`${base}/billing`} />
+        <Tab label="Contingencias" value="contingencies" component={Link} href={`${base}/contingencies`} />
       </Tabs>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-[var(--color-border)] shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">Total generado</p>
-            <p className="text-[18px] font-bold text-[var(--color-foreground)]">
+      {/* KPI Cards */}
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
+        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+          <CardContent>
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              Total generado
+            </Typography>
+            <Typography variant="h6" fontWeight={700} color="text.primary">
               {formatKwh(totalKwh)}
-            </p>
+            </Typography>
           </CardContent>
         </Card>
-        <Card className="border-[var(--color-border)] shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">CO2 evitado</p>
-            <p className="text-[18px] font-bold text-[var(--color-success)]">
+        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+          <CardContent>
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              CO2 evitado
+            </Typography>
+            <Typography variant="h6" fontWeight={700} sx={{ color: "#16a34a" }}>
               {totalCo2.toFixed(2)} ton
-            </p>
+            </Typography>
           </CardContent>
         </Card>
-        <Card className="border-[var(--color-border)] shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">Reportes</p>
-            <p className="text-[18px] font-bold text-[var(--color-foreground)]">
+        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+          <CardContent>
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              Reportes
+            </Typography>
+            <Typography variant="h6" fontWeight={700} color="text.primary">
               {reports.length}
-            </p>
+            </Typography>
           </CardContent>
         </Card>
-      </div>
+      </Box>
 
-      <Card className="border-[var(--color-border)] shadow-sm">
-        <CardHeader className="pb-3">
-          <h3 className="text-[14px] font-medium">Historial de generación</h3>
-        </CardHeader>
-        <CardContent className="p-0">
-          {reports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[200px] gap-2 text-[var(--color-muted-foreground)]">
-              <FileUp className="w-8 h-8" />
-              <p className="text-[13px]">Sin reportes de generación</p>
-              {user.role === UserRole.MAESTRO && (
-                <p className="text-[12px]">Subí el primer reporte usando el botón superior</p>
-              )}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
+      {/* History table */}
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+          <Typography variant="body2" fontWeight={600} color="text.primary">
+            Historial de generación
+          </Typography>
+        </Box>
+        {reports.length === 0 ? (
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, gap: 1, color: "text.secondary" }}>
+            <UploadFileOutlinedIcon sx={{ fontSize: 32 }} />
+            <Typography variant="body2">Sin reportes de generación</Typography>
+            {user.role === UserRole.MAESTRO && (
+              <Typography variant="caption">Subí el primer reporte usando el botón superior</Typography>
+            )}
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
                 <TableRow>
-                  <TableHead className="text-[12px]">Periodo</TableHead>
-                  <TableHead className="text-[12px] text-right">Generación</TableHead>
-                  <TableHead className="text-[12px] text-right">CO2 evitado</TableHead>
-                  <TableHead className="text-[12px]">Archivo</TableHead>
+                  <TableCell>Periodo</TableCell>
+                  <TableCell align="right">Generación</TableCell>
+                  <TableCell align="right">CO2 evitado</TableCell>
+                  <TableCell>Archivo</TableCell>
                 </TableRow>
-              </TableHeader>
+              </TableHead>
               <TableBody>
                 {reports.map((r) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} hover>
                     <TableCell>
-                      <Badge variant="secondary" className="text-[12px] font-medium capitalize rounded-md">
-                        {formatPeriod(r.periodMonth, r.periodYear)}
-                      </Badge>
+                      <Chip
+                        label={formatPeriod(r.periodMonth, r.periodYear)}
+                        size="small"
+                        sx={{ backgroundColor: "#e6eeff", color: "#0d1c2e", fontWeight: 600, fontSize: "0.75rem", textTransform: "capitalize" }}
+                      />
                     </TableCell>
-                    <TableCell className="text-[13px] text-right">
-                      <span className="font-medium">{formatKwh(r.kwhGenerated)}</span>
+                    <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
+                      {formatKwh(r.kwhGenerated)}
                     </TableCell>
-                    <TableCell className="text-[13px] text-right">
-                      <span className="font-medium">{r.co2Avoided.toFixed(2)}</span>
-                      <span className="text-[12px] text-[var(--color-muted-foreground)] ml-1">ton</span>
+                    <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
+                      <Box component="span" fontWeight={500}>{r.co2Avoided.toFixed(2)}</Box>
+                      <Box component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", ml: 0.5 }}>ton</Box>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        <a
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <Button
+                          component="a"
                           href={r.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[12px] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/8 transition-colors"
+                          size="small"
+                          startIcon={<OpenInNewOutlinedIcon sx={{ fontSize: "14px !important" }} />}
+                          sx={{ fontSize: "0.75rem", py: 0.25, px: 1, minWidth: 0 }}
                         >
-                          <FileText className="w-3.5 h-3.5" />
-                          Ver reporte
-                        </a>
-                        <span className="text-[var(--color-border)]">|</span>
-                        <a
+                          Ver
+                        </Button>
+                        <Button
+                          component="a"
                           href={r.fileUrl}
                           download={r.fileName}
-                          className="p-1 rounded-md text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/8 transition-colors"
+                          size="small"
+                          color="inherit"
+                          sx={{ fontSize: "0.75rem", py: 0.25, px: 0.75, minWidth: 0, color: "text.secondary" }}
                         >
-                          <Download className="w-3.5 h-3.5" />
-                        </a>
-                      </div>
+                          <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
+          </TableContainer>
+        )}
       </Card>
-    </div>
+    </Box>
   );
 }

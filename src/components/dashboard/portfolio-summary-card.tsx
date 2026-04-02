@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
-import { Zap, ChevronRight } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import ChevronRightOutlinedIcon from "@mui/icons-material/ChevronRightOutlined";
 
 interface PortfolioSummaryCardProps {
   name: string;
@@ -13,92 +17,49 @@ interface PortfolioSummaryCardProps {
   href: string;
 }
 
-export function PortfolioSummaryCard({
-  name,
-  plantCount,
-  totalCapacityKw,
-  activePlants,
-  customerCount,
-  logoUrl,
-  href,
-}: PortfolioSummaryCardProps) {
-  const initials = name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
+export function PortfolioSummaryCard({ name, plantCount, totalCapacityKw, activePlants, customerCount, logoUrl, href }: PortfolioSummaryCardProps) {
+  const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
   return (
-    <Link href={href} className="block group">
-      <Card className="border-[var(--color-border)] shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:border-[var(--color-primary)]/30">
-        <CardContent className="p-4 space-y-3">
-          {/* Header: logo + name */}
-          <div className="flex items-center gap-3">
-            <div
-              className="shrink-0 overflow-hidden rounded-[8px] bg-[var(--color-secondary)] flex items-center justify-center"
-              style={{ width: 88, height: 40 }}
-            >
-              {logoUrl ? (
-                <Image
-                  src={logoUrl}
-                  alt={`Logo ${name}`}
-                  width={88}
-                  height={40}
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <span
-                  className="text-[13px] font-semibold text-[var(--color-primary)]"
-                >
-                  {initials}
-                </span>
-              )}
-            </div>
-            <h3 className="text-[14px] font-semibold text-[var(--color-foreground)] truncate">
-              {name}
-            </h3>
-          </div>
+    <Link href={href} style={{ display: "block", textDecoration: "none" }}>
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", transition: "all 200ms", "&:hover": { borderColor: "#004ac6", boxShadow: "0 4px 12px rgba(13,28,46,0.08)" } }}>
+        <CardContent sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ width: 88, height: 40, borderRadius: 1, overflow: "hidden", backgroundColor: "#eff4ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {logoUrl
+                ? <Image src={logoUrl} alt={`Logo ${name}`} width={88} height={40} style={{ objectFit: "contain", width: "100%", height: "100%" }} />
+                : <Typography fontSize="0.8125rem" fontWeight={600} color="primary.main">{initials}</Typography>
+              }
+            </Box>
+            <Typography fontSize="0.875rem" fontWeight={600} color="text.primary" noWrap>{name}</Typography>
+          </Box>
 
-          {/* Separator */}
-          <div className="border-t border-[var(--color-border)]/60" />
+          <Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />
 
-          {/* Stats grid + chevron */}
-          <div className="flex items-end justify-between gap-2">
-            <div className="grid grid-cols-3 gap-3 flex-1">
-              <div>
-                <p className="text-[12px] text-[var(--color-muted-foreground)] mb-0.5">
-                  clientes
-                </p>
-                <p className="text-[18px] font-bold text-[var(--color-foreground)] leading-none">
-                  {customerCount}
-                </p>
-              </div>
-              <div>
-                <p className="text-[12px] text-[var(--color-muted-foreground)] mb-0.5">
-                  plantas activas
-                </p>
-                <p className="text-[18px] font-bold text-[var(--color-foreground)] leading-none">
-                  {activePlants}
-                </p>
-              </div>
-              <div>
-                <p className="text-[12px] text-[var(--color-muted-foreground)] mb-0.5">
-                  capacidad
-                </p>
-                <div className="flex items-baseline gap-1 leading-none">
-                  <Zap className="w-3 h-3 text-[var(--color-warning)] shrink-0 mb-0.5" />
-                  <p className="text-[18px] font-bold text-[var(--color-foreground)]">
+          <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 1 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2, flex: 1 }}>
+              {[
+                { label: "clientes", value: customerCount },
+                { label: "plantas activas", value: activePlants },
+              ].map((s) => (
+                <Box key={s.label}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{s.label}</Typography>
+                  <Typography fontSize="1.125rem" fontWeight={700} color="text.primary" sx={{ lineHeight: 1 }}>{s.value}</Typography>
+                </Box>
+              ))}
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>capacidad</Typography>
+                <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                  <BoltOutlinedIcon sx={{ fontSize: 12, color: "#a16207", mb: 0.25 }} />
+                  <Typography fontSize="1.125rem" fontWeight={700} color="text.primary" sx={{ lineHeight: 1 }}>
                     {Math.round(totalCapacityKw).toLocaleString("es-CL")}
-                    <span className="text-[12px] font-normal text-[var(--color-muted-foreground)] ml-0.5">
-                      kW
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[var(--color-muted-foreground)] shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--color-primary)]" />
-          </div>
+                    <Box component="span" sx={{ fontSize: "0.75rem", fontWeight: 400, color: "text.secondary", ml: 0.5 }}>kW</Box>
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+            <ChevronRightOutlinedIcon sx={{ fontSize: 18, color: "text.secondary", flexShrink: 0, transition: "color 150ms", ".MuiCard-root:hover &": { color: "#004ac6" } }} />
+          </Box>
         </CardContent>
       </Card>
     </Link>

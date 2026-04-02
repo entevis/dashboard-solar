@@ -1,57 +1,120 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #F5F6FA;
-  --color-foreground: #0F1729;
-  --color-card: #FFFFFF;
-  --color-card-foreground: #0F1729;
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #0F1729;
-  --color-primary: #2A6EF5;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: #F5F6FA;
-  --color-secondary-foreground: #0F1729;
-  --color-muted: #F5F6FA;
-  --color-muted-foreground: #64748B;
-  --color-accent: #F5F6FA;
-  --color-accent-foreground: #0F1729;
-  --color-destructive: #EF4444;
-  --color-destructive-foreground: #FFFFFF;
-  --color-border: #E2E6F0;
-  --color-input: #E2E6F0;
-  --color-ring: #2A6EF5;
-  --color-success: #22C55E;
-  --color-success-foreground: #FFFFFF;
-  --color-warning: #F97316;
-  --color-warning-foreground: #FFFFFF;
-  --color-surface-dark: #1E2A3A;
+  /* ─── M3 Color Tokens ─────────────────────────────────────────── */
+  --color-primary:                    #004ac6;
+  --color-primary-container:          #2563eb;
+  --color-on-primary:                 #ffffff;
+  --color-on-primary-container:       #eeefff;
+  --color-primary-fixed:              #dbe1ff;
+  --color-primary-fixed-dim:          #b4c5ff;
 
-  /* Type scale — dashboard UI (fixed px via rem equivalents) */
-  --text-micro:   0.6875rem; /* 11px — avoid; use only for badges/pill counts */
-  --text-caption: 0.75rem;   /* 12px — metadata, table headers, timestamps     */
-  --text-label:   0.8125rem; /* 13px — form labels, table cells, secondary copy */
-  --text-body:    0.875rem;  /* 14px — primary body, field values, descriptions  */
-  --text-ui:      0.9375rem; /* 15px — dialog titles, sidebar nav                */
-  --text-heading: 1.125rem;  /* 18px — page h1 titles                            */
+  --color-secondary:                  #495c95;
+  --color-secondary-container:        #acbfff;
+  --color-on-secondary:               #ffffff;
+  --color-on-secondary-container:     #394c84;
 
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --color-tertiary:                   #943700;
+  --color-tertiary-container:         #bc4800;
+  --color-on-tertiary:                #ffffff;
+  --color-on-tertiary-container:      #ffede6;
+
+  --color-background:                 #f8f9ff;
+  --color-on-background:              #0d1c2e;
+
+  --color-surface:                    #f8f9ff;
+  --color-surface-bright:             #f8f9ff;
+  --color-surface-dim:                #ccdbf3;
+  --color-on-surface:                 #0d1c2e;
+  --color-on-surface-variant:         #434655;
+
+  --color-surface-container-lowest:   #ffffff;
+  --color-surface-container-low:      #eff4ff;
+  --color-surface-container:          #e6eeff;
+  --color-surface-container-high:     #dce9ff;
+  --color-surface-container-highest:  #d5e3fc;
+
+  --color-outline:                    #737686;
+  --color-outline-variant:            #c3c6d7;
+
+  --color-error:                      #ba1a1a;
+  --color-error-container:            #ffdad6;
+  --color-on-error:                   #ffffff;
+  --color-on-error-container:         #93000a;
+
+  /* ─── Semantic aliases (backwards compat) ─────────────────────── */
+  --color-foreground:                 #0d1c2e;
+  --color-muted-foreground:           #434655;
+  --color-border:                     #c3c6d7;   /* outline-variant */
+  --color-input:                      #eff4ff;   /* surface-container-low */
+  --color-ring:                       #004ac6;
+  --color-card:                       #ffffff;
+  --color-popover:                    #ffffff;
+  --color-popover-foreground:         #0d1c2e;
+  --color-muted:                      #e6eeff;
+  --color-accent:                     #e6eeff;
+  --color-accent-foreground:          #0d1c2e;
+  --color-destructive:                #ba1a1a;
+  --color-destructive-foreground:     #ffffff;
+  --color-success:                    #22C55E;
+  --color-success-foreground:         #ffffff;
+  --color-warning:                    #F97316;
+  --color-warning-foreground:         #ffffff;
+
+  /* ─── Typography ──────────────────────────────────────────────── */
+  /* Display & Headlines → Manrope */
+  --text-display-lg:   2rem;      /* 32px — hero/welcome screens      */
+  --text-headline-md:  1.5rem;    /* 24px — page h1 titles            */
+  --text-headline-sm:  1.25rem;   /* 20px — section / widget titles   */
+
+  /* Body & Labels → Inter */
+  --text-body-md:      0.875rem;  /* 14px — primary body, field values */
+  --text-body-sm:      0.8125rem; /* 13px — secondary descriptions     */
+  --text-label-lg:     0.8125rem; /* 13px — form labels, table cells   */
+  --text-label-sm:     0.75rem;   /* 12px — metadata, timestamps       */
+  --text-micro:        0.6875rem; /* 11px — badges, pill counts only   */
+
+  /* Legacy aliases (keep for existing components) */
+  --text-caption: 0.75rem;
+  --text-label:   0.8125rem;
+  --text-body:    0.875rem;
+  --text-ui:      0.9375rem;
+  --text-heading: 1.125rem;
+
+  /* ─── Radii ───────────────────────────────────────────────────── */
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+  --radius-2xl: 20px;
+  /* Note: full (9999px) only for chips/tags — not cards or buttons  */
+
+  /* ─── Elevation shadows (tinted, never pure black) ────────────── */
+  --shadow-ambient: 0 20px 40px rgba(13, 28, 46, 0.06);
+  --shadow-sm:      0 1px 3px rgba(13, 28, 46, 0.06);
+  --shadow-md:      0 4px 12px rgba(13, 28, 46, 0.08);
 }
 
+/* ─── Font families ─────────────────────────────────────────────── */
 body {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
+  color: var(--color-on-surface);
+  background-color: var(--color-background);
 }
 
-/* Focus-visible global styles */
+h1, h2, h3, h4, .font-headline {
+  font-family: "Manrope", sans-serif;
+}
+
+/* ─── Focus-visible ─────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 
-/* Reduced motion */
+/* ─── Reduced motion ────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

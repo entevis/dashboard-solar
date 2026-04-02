@@ -1,15 +1,11 @@
 "use client"
 
 import * as React from "react"
-
 import { cn } from "@/lib/utils"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
+    <div data-slot="table-container" className="relative w-full overflow-x-auto">
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}
@@ -23,7 +19,10 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("sticky top-0 z-10 bg-card [&_tr]:border-b [&_tr]:border-[var(--color-border)]", className)}
+      className={cn(
+        "sticky top-0 z-10 bg-[var(--color-surface-container-low)]",
+        className
+      )}
       {...props}
     />
   )
@@ -31,11 +30,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
 
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
   return (
-    <tbody
-      data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
-      {...props}
-    />
+    <tbody data-slot="table-body" className={cn("", className)} {...props} />
   )
 }
 
@@ -43,10 +38,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   return (
     <tfoot
       data-slot="table-footer"
-      className={cn(
-        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
-        className
-      )}
+      className={cn("bg-[var(--color-surface-container)] font-medium", className)}
       {...props}
     />
   )
@@ -57,7 +49,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b border-[var(--color-border)]/60 transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        "transition-colors hover:bg-[var(--color-surface-container-low)] data-[state=selected]:bg-[var(--color-surface-container)]",
         className
       )}
       {...props}
@@ -65,12 +57,15 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   )
 }
 
+// scope="col" added for proper screen reader association
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
+      scope="col"
       className={cn(
-        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "h-10 px-3 text-left align-middle font-semibold whitespace-nowrap text-[var(--color-on-surface-variant)] text-xs uppercase tracking-wide",
+        "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -83,7 +78,8 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "px-3 py-3 align-middle whitespace-nowrap text-[var(--color-on-surface)]",
+        "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -91,26 +87,14 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   )
 }
 
-function TableCaption({
-  className,
-  ...props
-}: React.ComponentProps<"caption">) {
+function TableCaption({ className, ...props }: React.ComponentProps<"caption">) {
   return (
     <caption
       data-slot="table-caption"
-      className={cn("mt-4 text-sm text-muted-foreground", className)}
+      className={cn("mt-4 text-sm text-[var(--color-on-surface-variant)]", className)}
       {...props}
     />
   )
 }
 
-export {
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-}
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption }

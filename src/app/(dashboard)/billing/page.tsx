@@ -1,24 +1,24 @@
 import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { formatCLP } from "@/lib/utils/formatters";
-import { EmptyState } from "@/components/ui/empty-state";
-import { ClipboardList } from "lucide-react";
 import { BillingPagination } from "@/components/billing/billing-pagination";
 import { BillingFilters } from "@/components/billing/billing-filters";
 import { ImportInvoiceDialog } from "@/components/billing/import-invoice-dialog";
 import { SyncSinceDialog } from "@/components/billing/sync-since-dialog";
 import { InvoiceRowActions } from "@/components/billing/invoice-row-actions";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 
 const PAGE_SIZE = 15;
 
@@ -29,33 +29,31 @@ const MONTHS = [
 
 function formatDate(date: Date | null) {
   if (!date) return "—";
-  return new Intl.DateTimeFormat("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(date));
+  return new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(date));
 }
 
-function StatusBadge({ statusName }: { statusName: string | null }) {
-  if (!statusName) return <span className="text-(--color-muted-foreground)">—</span>;
+function StatusChip({ statusName }: { statusName: string | null }) {
+  if (!statusName) return <Typography variant="caption" color="text.secondary">—</Typography>;
 
   const name = statusName.toLowerCase();
-  let className = "bg-gray-100 text-gray-600";
+  let sx = { backgroundColor: "#e6eeff", color: "#434655" };
 
   if (name.includes("pag") || name.includes("paid")) {
-    className = "bg-success/10 text-(--color-success)";
+    sx = { backgroundColor: "#dcfce7", color: "#15803d" };
   } else if (name.includes("venc") || name.includes("overdue")) {
-    className = "bg-destructive/10 text-(--color-destructive)";
+    sx = { backgroundColor: "#fee2e2", color: "#dc2626" };
   } else if (name.includes("pend") || name.includes("emiti") || name.includes("vencer")) {
-    className = "bg-warning/10 text-(--color-warning)";
+    sx = { backgroundColor: "#fef9c3", color: "#a16207" };
   } else if (name.includes("nul") || name.includes("cancel")) {
-    className = "bg-gray-200/60 text-gray-500";
+    sx = { backgroundColor: "#f1f5f9", color: "#64748b" };
   }
 
   return (
-    <Badge variant="secondary" className={`text-caption ${className}`}>
-      {statusName}
-    </Badge>
+    <Chip
+      label={statusName}
+      size="small"
+      sx={{ ...sx, fontSize: "0.6875rem", fontWeight: 600, height: 20 }}
+    />
   );
 }
 
@@ -84,8 +82,6 @@ export default async function BillingPage({
   const status = VALID_STATUSES.includes(params.status ?? "") ? params.status! : "all";
 
   const plantFilter = await buildPlantAccessFilter(user);
-
-  // Build invoice filter based on role
   const periodFilter = { gte: periodStart, lt: periodEnd };
   let invoiceWhere: Record<string, unknown> = { active: 1, issueDate: periodFilter };
 
@@ -100,7 +96,6 @@ export default async function BillingPage({
     invoiceWhere = { active: 1, customerId: { in: customerIds }, issueDate: periodFilter };
   }
 
-  // Status filter (applied to table/count only, not KPIs)
   const i = "insensitive" as const;
   const statusConditions: Record<string, object> = {
     pagada:    { OR: [{ statusName: { contains: "pag", mode: i } }, { statusName: { contains: "paid", mode: i } }] },
@@ -112,9 +107,7 @@ export default async function BillingPage({
       { statusName: { contains: "nul", mode: i } }, { statusName: { contains: "cancel", mode: i } },
     ]}},
   };
-  const tableWhere = status === "all"
-    ? invoiceWhere
-    : { ...invoiceWhere, ...statusConditions[status] };
+  const tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
 
   const isMaestro = user.role === UserRole.MAESTRO;
 
@@ -122,23 +115,14 @@ export default async function BillingPage({
     prisma.invoice.count({ where: tableWhere }),
     prisma.invoice.findMany({
       where: tableWhere,
-      include: {
-        customer: { select: { name: true } },
-        portfolio: { select: { name: true } },
-      },
+      include: { customer: { select: { name: true } }, portfolio: { select: { name: true } } },
       orderBy: { issueDate: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.invoice.findMany({
-      where: invoiceWhere,
-      select: { total: true, statusName: true },
-    }),
+    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusName: true } }),
     isMaestro
-      ? prisma.portfolio.findMany({
-          where: { active: 1, duemintCompanyId: { not: null } },
-          select: { id: true, name: true },
-        })
+      ? prisma.portfolio.findMany({ where: { active: 1, duemintCompanyId: { not: null } }, select: { id: true, name: true } })
       : Promise.resolve([]),
   ]);
 
@@ -151,20 +135,27 @@ export default async function BillingPage({
   }
 
   const kpis = { pagada: 0, porVencer: 0, vencida: 0, anulada: 0 };
-  for (const inv of allInvoices) {
-    kpis[categorize(inv.statusName)] += inv.total ?? 0;
-  }
+  for (const inv of allInvoices) kpis[categorize(inv.statusName)] += inv.total ?? 0;
+
+  const kpiCards = [
+    { label: "Pagada",          value: kpis.pagada,   color: "#15803d", bg: "#dcfce7" },
+    { label: "Por vencer",      value: kpis.porVencer,color: "#a16207", bg: "#fef9c3" },
+    { label: "Vencida",         value: kpis.vencida,  color: "#dc2626", bg: "#fee2e2" },
+    { label: "Nota de Crédito", value: kpis.anulada,  color: "#434655", bg: "#e6eeff" },
+  ];
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-(--color-foreground)">Facturación</h1>
-          <p className="text-label text-(--color-muted-foreground)">
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 3 }}>
+
+      {/* Header */}
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, flexShrink: 0 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Facturación</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             {total} {total === 1 ? "factura" : "facturas"} · {MONTHS[month - 1]} {year}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
           <BillingFilters month={month} year={year} status={status} />
           {isMaestro && maestroPortfolios.length > 0 && (
             <>
@@ -172,101 +163,76 @@ export default async function BillingPage({
               <ImportInvoiceDialog portfolios={maestroPortfolios} />
             </>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="border-(--color-border) shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-caption text-(--color-muted-foreground)">Pagada</p>
-            <p className="text-[20px] font-bold text-(--color-success)">{formatCLP(kpis.pagada)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-(--color-border) shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-caption text-(--color-muted-foreground)">Por vencer</p>
-            <p className="text-[20px] font-bold text-(--color-warning)">{formatCLP(kpis.porVencer)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-(--color-border) shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-caption text-(--color-muted-foreground)">Vencida</p>
-            <p className="text-[20px] font-bold text-(--color-destructive)">{formatCLP(kpis.vencida)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-(--color-border) shadow-sm">
-          <CardContent className="pt-4">
-            <p className="text-caption text-(--color-muted-foreground)">Nota de Crédito</p>
-            <p className="text-[20px] font-bold text-(--color-muted-foreground)">{formatCLP(kpis.anulada)}</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* KPI Cards */}
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, flexShrink: 0 }}>
+        {kpiCards.map((k) => (
+          <Card key={k.label} elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+            <CardContent>
+              <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                {k.label}
+              </Typography>
+              <Typography variant="h6" fontWeight={700} sx={{ color: k.color }}>
+                {formatCLP(k.value)}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
 
-      <div className="flex-1 min-h-0 overflow-hidden border border-(--color-border) rounded-xl bg-white shadow-sm flex flex-col">
+      {/* Table */}
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {invoices.length === 0 ? (
-          <EmptyState
-            icon={ClipboardList}
-            title="Sin facturas registradas"
-            description={
-              "El historial de facturación aparecerá aquí cuando esté disponible."
-            }
-            size="sm"
-          />
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 1.5, color: "text.secondary" }}>
+            <ReceiptLongOutlinedIcon sx={{ fontSize: 36 }} />
+            <Typography variant="body2" fontWeight={500}>Sin facturas registradas</Typography>
+            <Typography variant="caption" color="text.secondary">El historial de facturación aparecerá aquí cuando esté disponible.</Typography>
+          </Box>
         ) : (
           <>
-            <div className="flex-1 min-h-0 overflow-auto">
-              <Table>
-                <TableHeader>
+            <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+              <Table stickyHeader size="small">
+                <TableHead>
                   <TableRow>
-                    <TableHead className="text-caption">N° Factura</TableHead>
-                    <TableHead className="text-caption">Cliente</TableHead>
-                    <TableHead className="text-caption">Portafolio</TableHead>
-                    <TableHead className="text-caption">Emisión</TableHead>
-                    <TableHead className="text-caption">Vencimiento</TableHead>
-                    <TableHead className="text-caption">Total</TableHead>
-                    <TableHead className="text-caption">Por cobrar</TableHead>
-                    <TableHead className="text-caption">Estado</TableHead>
-                    <TableHead className="w-10" />
+                    <TableCell>N° Factura</TableCell>
+                    <TableCell>Cliente</TableCell>
+                    <TableCell>Portafolio</TableCell>
+                    <TableCell>Emisión</TableCell>
+                    <TableCell>Vencimiento</TableCell>
+                    <TableCell align="right">Total</TableCell>
+                    <TableCell align="right">Por cobrar</TableCell>
+                    <TableCell>Estado</TableCell>
+                    <TableCell sx={{ width: 40 }} />
                   </TableRow>
-                </TableHeader>
+                </TableHead>
                 <TableBody>
                   {invoices.map((inv) => (
-                    <TableRow key={inv.id}>
-                      <TableCell className="text-label font-medium font-mono">
+                    <TableRow key={inv.id} hover>
+                      <TableCell sx={{ fontFamily: "monospace", fontWeight: 500 }}>
                         {inv.number ?? `#${inv.duemintId}`}
                       </TableCell>
-                      <TableCell className="text-label">
-                        <p className="font-medium">{inv.customer.name}</p>
+                      <TableCell>
+                        <Typography fontSize="0.8125rem" fontWeight={500}>{inv.customer.name}</Typography>
                         {inv.clientTaxId && (
-                          <p className="text-caption text-(--color-muted-foreground)">{inv.clientTaxId}</p>
+                          <Typography variant="caption" color="text.secondary">{inv.clientTaxId}</Typography>
                         )}
                       </TableCell>
-                      <TableCell className="text-label text-(--color-muted-foreground)">
-                        {inv.portfolio?.name ?? "—"}
-                      </TableCell>
-                      <TableCell className="text-label text-(--color-muted-foreground)">
-                        {formatDate(inv.issueDate)}
-                      </TableCell>
-                      <TableCell className="text-label text-(--color-muted-foreground)">
-                        {formatDate(inv.dueDate)}
-                      </TableCell>
-                      <TableCell className="text-label font-medium">
+                      <TableCell sx={{ color: "text.secondary" }}>{inv.portfolio?.name ?? "—"}</TableCell>
+                      <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{formatDate(inv.issueDate)}</TableCell>
+                      <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{formatDate(inv.dueDate)}</TableCell>
+                      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
                         {inv.total != null ? formatCLP(inv.total) : "—"}
                       </TableCell>
-                      <TableCell className="text-label">
+                      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
                         {inv.amountDue != null ? formatCLP(inv.amountDue) : "—"}
                       </TableCell>
-                      <TableCell>
-                        <StatusBadge statusName={inv.statusName} />
-                      </TableCell>
+                      <TableCell><StatusChip statusName={inv.statusName} /></TableCell>
                       <TableCell>
                         <InvoiceRowActions
                           invoiceId={inv.id}
-                          isPaid={
-                            inv.statusName?.toLowerCase().includes("pag") ||
-                            inv.statusName?.toLowerCase().includes("paid") ||
-                            false
-                          }
+                          isPaid={inv.statusName?.toLowerCase().includes("pag") || inv.statusName?.toLowerCase().includes("paid") || false}
                           url={inv.url ?? null}
                           pdfUrl={inv.pdfUrl ?? null}
                         />
@@ -275,11 +241,11 @@ export default async function BillingPage({
                   ))}
                 </TableBody>
               </Table>
-            </div>
+            </TableContainer>
             <BillingPagination total={total} page={page} pageSize={pageSize} />
           </>
         )}
-      </div>
-    </div>
+      </Card>
+    </Box>
   );
 }

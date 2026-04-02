@@ -2,59 +2,34 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Pencil, Trash2, Plus, UserX } from "lucide-react";
+import Drawer from "@mui/material/Drawer";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Divider from "@mui/material/Divider";
+import CircularProgress from "@mui/material/CircularProgress";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
 import { toast } from "sonner";
 
-interface Contact {
-  id: number;
-  name: string;
-  rut: string | null;
-  phone: string | null;
-  role: string | null;
-  email: string | null;
-}
+const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
-interface Props {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  customerId: number;
-  customerName: string;
-}
+interface Contact { id: number; name: string; rut: string | null; phone: string | null; role: string | null; email: string | null }
+interface Props { open: boolean; onOpenChange: (open: boolean) => void; customerId: number; customerName: string }
 
 const emptyForm = { name: "", rut: "", phone: "", role: "", email: "" };
 
@@ -76,8 +51,7 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
     setLoading(true);
     try {
       const res = await fetch(`/api/customers/${customerId}/contacts`);
-      const data = await res.json();
-      setContacts(data);
+      setContacts(await res.json());
     } catch {
       toast.error("Error al cargar contactos");
     } finally {
@@ -85,48 +59,23 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
     }
   }
 
-  function openCreate() {
-    setEditing(null);
-    setForm(emptyForm);
-    setFormOpen(true);
-  }
-
+  function openCreate() { setEditing(null); setForm(emptyForm); setFormOpen(true); }
   function openEdit(c: Contact) {
     setEditing(c);
-    setForm({
-      name: c.name,
-      rut: c.rut ?? "",
-      phone: c.phone ?? "",
-      role: c.role ?? "",
-      email: c.email ?? "",
-    });
+    setForm({ name: c.name, rut: c.rut ?? "", phone: c.phone ?? "", role: c.role ?? "", email: c.email ?? "" });
     setFormOpen(true);
   }
 
   async function handleSave() {
-    if (!form.name.trim()) {
-      toast.error("El nombre es obligatorio");
-      return;
-    }
+    if (!form.name.trim()) { toast.error("El nombre es obligatorio"); return; }
     setSaving(true);
     try {
-      const url = editing
-        ? `/api/customers/${customerId}/contacts/${editing.id}`
-        : `/api/customers/${customerId}/contacts`;
-      const method = editing ? "PATCH" : "POST";
-
+      const url = editing ? `/api/customers/${customerId}/contacts/${editing.id}` : `/api/customers/${customerId}/contacts`;
       const res = await fetch(url, {
-        method,
+        method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          rut: form.rut || null,
-          phone: form.phone || null,
-          role: form.role || null,
-          email: form.email || null,
-        }),
+        body: JSON.stringify({ name: form.name, rut: form.rut || null, phone: form.phone || null, role: form.role || null, email: form.email || null }),
       });
-
       if (!res.ok) throw new Error();
       toast.success(editing ? "Contacto actualizado" : "Contacto creado");
       setFormOpen(false);
@@ -142,9 +91,7 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
   async function handleDelete() {
     if (!deleteContact) return;
     try {
-      const res = await fetch(`/api/customers/${customerId}/contacts/${deleteContact.id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/customers/${customerId}/contacts/${deleteContact.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       toast.success("Contacto eliminado");
       setDeleteContact(null);
@@ -157,201 +104,115 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-[500px] sm:w-[540px] p-0 flex flex-col">
-          <SheetHeader className="px-6 pt-6 pb-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[12px] text-[var(--color-muted-foreground)] uppercase tracking-wide mb-0.5">
-                  Contactos
-                </p>
-                <SheetTitle className="text-[15px] font-semibold text-[var(--color-foreground)] leading-tight">
-                  {customerName}
-                </SheetTitle>
-              </div>
-              <Button
-                size="sm"
-                onClick={openCreate}
-                className="bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white text-[12px] h-8 shrink-0"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Agregar contacto
+      <Drawer anchor="right" open={open} onClose={() => onOpenChange(false)} PaperProps={{ sx: { width: 520, display: "flex", flexDirection: "column" } }}>
+        {/* Header */}
+        <Box sx={{ px: 3, pt: 3, pb: 2.5, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
+          <Box>
+            <Typography variant="caption" sx={{ textTransform: "uppercase", letterSpacing: "0.06em", color: "text.secondary", display: "block", mb: 0.5 }}>
+              Contactos
+            </Typography>
+            <Typography fontSize="0.9375rem" fontWeight={600}>{customerName}</Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Button variant="contained" size="small" startIcon={<AddOutlinedIcon />} onClick={openCreate}>
+              Agregar contacto
+            </Button>
+            <IconButton size="small" onClick={() => onOpenChange(false)}>
+              <CloseOutlinedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Box>
+        </Box>
+
+        <Divider />
+
+        {/* Body */}
+        <Box sx={{ flex: 1, overflowY: "auto" }}>
+          {loading ? (
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", py: 10 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : contacts.length === 0 ? (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 2 }}>
+              <PersonOffOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
+              <Typography fontSize="0.875rem" color="text.secondary">Sin contactos registrados</Typography>
+              <Button variant="contained" size="small" startIcon={<AddOutlinedIcon />} onClick={openCreate}>
+                Agregar primer contacto
               </Button>
-            </div>
-          </SheetHeader>
-
-          <Separator />
-
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-16 text-[13px] text-[var(--color-muted-foreground)]">
-                Cargando...
-              </div>
-            ) : contacts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3">
-                <UserX className="w-8 h-8 text-[var(--color-border)]" />
-                <p className="text-[13px] text-[var(--color-muted-foreground)]">
-                  Sin contactos registrados
-                </p>
-                <Button
-                  size="sm"
-                  onClick={openCreate}
-                  className="bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white text-[12px] h-8"
-                >
-                  <Plus className="w-3.5 h-3.5 mr-1" />
-                  Agregar primer contacto
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-[12px] px-4">Nombre</TableHead>
-                    <TableHead className="text-[12px] px-4">Cargo</TableHead>
-                    <TableHead className="text-[12px] px-4">Email</TableHead>
-                    <TableHead className="text-[12px] px-4">Teléfono</TableHead>
-                    <TableHead className="w-16" />
+            </Box>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600, py: 1 } }}>
+                  <TableCell>Nombre</TableCell>
+                  <TableCell>Cargo</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Teléfono</TableCell>
+                  <TableCell sx={{ width: 72 }} />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {contacts.map((c) => (
+                  <TableRow key={c.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
+                    <TableCell sx={{ fontWeight: 500 }}>{c.name}</TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>{c.role ?? "—"}</TableCell>
+                    <TableCell sx={{ maxWidth: 160 }}>
+                      <Typography fontSize="inherit" noWrap title={c.email ?? ""}>{c.email ?? "—"}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>{c.phone ?? "—"}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                        <IconButton size="small" onClick={() => openEdit(c)} sx={{ color: "text.secondary", "&:hover": { color: "primary.main" } }}>
+                          <EditOutlinedIcon sx={{ fontSize: 15 }} />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => setDeleteContact(c)} sx={{ color: "text.secondary", "&:hover": { color: "error.main" } }}>
+                          <DeleteOutlinedIcon sx={{ fontSize: 15 }} />
+                        </IconButton>
+                      </Box>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contacts.map((c) => (
-                    <TableRow key={c.id} className="hover:bg-[var(--color-secondary)]">
-                      <TableCell className="text-[13px] font-medium px-4 py-2.5">
-                        {c.name}
-                      </TableCell>
-                      <TableCell className="text-[12px] text-[var(--color-muted-foreground)] px-4 py-2.5">
-                        {c.role ?? "—"}
-                      </TableCell>
-                      <TableCell className="text-[12px] px-4 py-2.5 max-w-[160px] truncate">
-                        {c.email ? (
-                          <span className="truncate block" title={c.email}>{c.email}</span>
-                        ) : "—"}
-                      </TableCell>
-                      <TableCell className="text-[12px] text-[var(--color-muted-foreground)] px-4 py-2.5 whitespace-nowrap">
-                        {c.phone ?? "—"}
-                      </TableCell>
-                      <TableCell className="px-4 py-2.5">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => openEdit(c)}
-                            className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-secondary)] transition-colors"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteContact(c)}
-                            className="p-1 rounded text-[var(--color-muted-foreground)] hover:text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/8 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </Box>
+      </Drawer>
 
       {/* Create / Edit Dialog */}
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle className="text-[15px] font-bold">
-              {editing ? "Editar contacto" : "Nuevo contacto"}
-            </DialogTitle>
-            <p className="text-[12px] text-[var(--color-muted-foreground)]">{customerName}</p>
-          </DialogHeader>
-
-          <div className="grid grid-cols-2 gap-4 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-medium">
-                Nombre completo <span className="text-[var(--color-warning)]">*</span>
-              </Label>
-              <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ej: Juan Pérez"
-                className="text-[13px]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-medium">RUT</Label>
-              <Input
-                value={form.rut}
-                onChange={(e) => setForm({ ...form, rut: e.target.value })}
-                placeholder="Ej: 12345678-9"
-                className="text-[13px]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-medium">Cargo</Label>
-              <Input
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                placeholder="Ej: Gerente Agrícola"
-                className="text-[13px]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-medium">Teléfono</Label>
-              <Input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="Ej: +56912345678"
-                className="text-[13px]"
-              />
-            </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label className="text-[12px] font-medium">Email</Label>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="Ej: juan@empresa.cl"
-                className="text-[13px]"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setFormOpen(false)}>
-              Cancelar
-            </Button>
-            <Button
-              size="sm"
-              disabled={saving}
-              onClick={handleSave}
-              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white"
-            >
-              {saving ? "Guardando..." : editing ? "Guardar cambios" : "Crear contacto"}
-            </Button>
-          </DialogFooter>
+      <Dialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 0.5 }}>
+          {editing ? "Editar contacto" : "Nuevo contacto"}
+          <Typography variant="caption" display="block" color="text.secondary">{customerName}</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+            <TextField label="Nombre completo *" size="small" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Juan Pérez" sx={inputSx} />
+            <TextField label="RUT" size="small" value={form.rut} onChange={(e) => setForm({ ...form, rut: e.target.value })} placeholder="Ej: 12345678-9" sx={inputSx} />
+            <TextField label="Cargo" size="small" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Ej: Gerente Agrícola" sx={inputSx} />
+            <TextField label="Teléfono" size="small" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Ej: +56912345678" sx={inputSx} />
+            <TextField label="Email" type="email" size="small" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Ej: juan@empresa.cl" sx={{ ...inputSx, gridColumn: "1 / -1" }} />
+          </Box>
         </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setFormOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+          <Button variant="contained" size="small" disabled={saving} onClick={handleSave}>
+            {saving ? "Guardando..." : editing ? "Guardar cambios" : "Crear contacto"}
+          </Button>
+        </DialogActions>
       </Dialog>
 
-      {/* Delete AlertDialog */}
-      <AlertDialog open={!!deleteContact} onOpenChange={(o) => !o && setDeleteContact(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-[15px]">¿Eliminar contacto?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[13px]">
-              Se eliminará a <span className="font-medium text-[var(--color-foreground)]">{deleteContact?.name}</span>. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="text-[13px]">Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/90 text-white text-[13px]"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete Confirm Dialog */}
+      <Dialog open={!!deleteContact} onClose={() => setDeleteContact(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700 }}>¿Eliminar contacto?</DialogTitle>
+        <DialogContent>
+          <Typography fontSize="0.875rem" color="text.secondary">
+            Se eliminará a <Box component="span" fontWeight={600} color="text.primary">{deleteContact?.name}</Box>. Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteContact(null)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+          <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

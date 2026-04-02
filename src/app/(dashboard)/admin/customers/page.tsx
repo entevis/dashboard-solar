@@ -2,6 +2,9 @@ import { requireRole } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { CustomerTable } from "@/components/admin/customer-table";
 import { CreateCustomerDialog } from "@/components/admin/create-customer-dialog";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
 
 export default async function CustomersPage() {
   await requireRole(["MAESTRO"]);
@@ -26,20 +29,20 @@ export default async function CustomersPage() {
   }));
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
-      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--color-foreground)]">Clientes</h1>
-          <p className="text-[13px] text-[var(--color-muted-foreground)]">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Clientes</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             {customers.length} {customers.length === 1 ? "cliente registrado" : "clientes registrados"}
-          </p>
-        </div>
+          </Typography>
+        </Box>
         <CreateCustomerDialog />
-      </div>
+      </Box>
 
-      <div className="flex-1 min-h-0 overflow-hidden border border-[var(--color-border)] rounded-xl bg-white shadow-sm flex flex-col">
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
         <CustomerTable customers={serialized} />
-      </div>
-    </div>
+      </Card>
+    </Box>
   );
 }
