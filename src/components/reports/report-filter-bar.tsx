@@ -1,11 +1,13 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useTransition } from "react";
 import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import Typography from "@mui/material/Typography";
 
 interface Option { id: number; name: string }
 
@@ -14,18 +16,26 @@ const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i);
 
 export function ReportFilterBar({ plants }: { plants: Option[] }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   function updateParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (value && value !== "_all") params.set(key, value); else params.delete(key);
-    router.push(`/reports?${params.toString()}`);
+    startTransition(() => router.push(`${pathname}?${params.toString()}`));
   }
 
-  const selectSx = { height: 36, fontSize: "0.8125rem", backgroundColor: "#eff4ff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" }, "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c3c6d7" } };
+  const selectSx = {
+    height: 36,
+    fontSize: "0.8125rem",
+    backgroundColor: "#eff4ff",
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c3c6d7" },
+  };
 
   return (
-    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
       <FormControl size="small" sx={{ minWidth: 120 }}>
         <InputLabel sx={{ fontSize: "0.8125rem" }}>Año</InputLabel>
         <Select label="Año" defaultValue={searchParams.get("year") ?? "_all"} onChange={(e) => updateParam("year", String(e.target.value))} sx={selectSx}>
@@ -45,6 +55,10 @@ export function ReportFilterBar({ plants }: { plants: Option[] }) {
           ))}
         </Select>
       </FormControl>
+
+      {isPending && (
+        <Typography variant="caption" color="text.secondary">Filtrando...</Typography>
+      )}
     </Box>
   );
 }

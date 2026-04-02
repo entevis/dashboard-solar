@@ -1,24 +1,14 @@
 import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
-import { formatKwh, formatPeriod } from "@/lib/utils/formatters";
-import Link from "next/link";
+import { formatKwh } from "@/lib/utils/formatters";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
+import { ReportTable } from "@/components/reports/report-table";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Button from "@mui/material/Button";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
-import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
-import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 
 interface Props {
   params: Promise<{ portfolioId: string }>;
@@ -53,12 +43,15 @@ export default async function PortfolioReportsPage({ params, searchParams }: Pro
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box>
-        <Typography variant="h5" fontWeight={700} color="text.primary">Reportes</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>Historial de producción energética del portafolio</Typography>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Reportes</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+            {reports.length} {reports.length === 1 ? "reporte encontrado" : "reportes encontrados"}
+          </Typography>
+        </Box>
+        <ReportFilterBar plants={accessiblePlants} />
       </Box>
-
-      <ReportFilterBar plants={accessiblePlants} />
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
         {[
@@ -76,9 +69,6 @@ export default async function PortfolioReportsPage({ params, searchParams }: Pro
       </Box>
 
       <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
-        <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-          <Typography variant="body2" fontWeight={600}>Historial</Typography>
-        </Box>
         {reports.length === 0 ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8, gap: 1.5 }}>
             {hasFilters
@@ -90,48 +80,7 @@ export default async function PortfolioReportsPage({ params, searchParams }: Pro
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600 } }}>
-                  <TableCell>Planta</TableCell>
-                  <TableCell>Portafolio</TableCell>
-                  <TableCell>Periodo</TableCell>
-                  <TableCell align="right">Generación</TableCell>
-                  <TableCell align="right">CO2 evitado</TableCell>
-                  <TableCell>Archivo</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {reports.map((r) => (
-                  <TableRow key={r.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
-                    <TableCell sx={{ fontWeight: 500 }}>
-                      <Box component={Link} href={`/${pid}/power-plants/${r.powerPlant.id}/generation`} sx={{ color: "primary.main", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
-                        {r.powerPlant.name}
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ color: "text.secondary" }}>{r.powerPlant.portfolio.name}</TableCell>
-                    <TableCell>
-                      <Chip label={formatPeriod(r.periodMonth, r.periodYear)} size="small" sx={{ backgroundColor: "#e6eeff", color: "#0d1c2e", fontWeight: 600, fontSize: "0.75rem", textTransform: "capitalize" }} />
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{formatKwh(r.kwhGenerated)}</TableCell>
-                    <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
-                      <Box component="span" fontWeight={500}>{r.co2Avoided.toFixed(2)}</Box>
-                      <Box component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", ml: 0.5 }}>ton</Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <Button component="a" href={r.fileUrl} target="_blank" rel="noopener noreferrer" size="small" startIcon={<OpenInNewOutlinedIcon sx={{ fontSize: "14px !important" }} />} sx={{ fontSize: "0.75rem", py: 0.25, px: 1, minWidth: 0 }}>Ver</Button>
-                        <Button component="a" href={r.fileUrl} download={r.fileName} size="small" color="inherit" sx={{ fontSize: "0.75rem", py: 0.25, px: 0.75, minWidth: 0, color: "text.secondary" }}>
-                          <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <ReportTable reports={reports} portfolioId={pid} />
         )}
       </Card>
     </Box>
