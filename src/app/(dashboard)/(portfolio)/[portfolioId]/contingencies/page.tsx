@@ -73,8 +73,10 @@ export default async function PortfolioContingenciesPage({ params, searchParams 
           </div>
           {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
         </div>
-        <StatusTabs counts={counts} />
-        <ContingencyFilterBar plants={accessiblePlants} />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <StatusTabs counts={counts} />
+          <ContingencyFilterBar plants={accessiblePlants} />
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden border border-[var(--color-border)] rounded-xl bg-white shadow-sm flex flex-col">

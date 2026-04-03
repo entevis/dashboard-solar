@@ -61,7 +61,7 @@ export default async function ContingenciesPage({ searchParams }: Props) {
         {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
       </Box>
 
-      <Box sx={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+      <Box sx={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
         <StatusTabs counts={counts} />
         <ContingencyFilterBar plants={accessiblePlants} />
       </Box>
