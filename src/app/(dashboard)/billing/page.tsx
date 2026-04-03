@@ -107,13 +107,18 @@ export default async function BillingPage({
   }
 
   const kpis = { pagada: 0, porVencer: 0, vencida: 0, anulada: 0 };
-  for (const inv of allInvoices) kpis[categorize(inv.statusName)] += inv.total ?? 0;
+  const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, anulada: 0 };
+  for (const inv of allInvoices) {
+    const cat = categorize(inv.statusName);
+    kpis[cat] += inv.total ?? 0;
+    kpiCounts[cat]++;
+  }
 
   const kpiCards = [
-    { label: "Pagada",          value: kpis.pagada,    color: "#15803d", bg: "#dcfce7" },
-    { label: "Por vencer",      value: kpis.porVencer, color: "#a16207", bg: "#fef9c3" },
-    { label: "Vencida",         value: kpis.vencida,   color: "#dc2626", bg: "#fee2e2" },
-    { label: "Nota de Crédito", value: kpis.anulada,   color: "#434655", bg: "#e6eeff" },
+    { label: "Pagada",          value: kpis.pagada,    count: kpiCounts.pagada,    color: "#15803d" },
+    { label: "Por vencer",      value: kpis.porVencer, count: kpiCounts.porVencer, color: "#a16207" },
+    { label: "Vencida",         value: kpis.vencida,   count: kpiCounts.vencida,   color: "#dc2626" },
+    { label: "Nota de crédito", value: kpis.anulada,   count: kpiCounts.anulada,   color: "#434655" },
   ];
 
   const serializedInvoices = invoices.map((inv) => ({
@@ -149,8 +154,9 @@ export default async function BillingPage({
         {kpiCards.map((k) => (
           <Card key={k.label} elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
             <CardContent>
-              <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>{k.label}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 600 }}>{k.label}</Typography>
               <Typography variant="h6" fontWeight={700} sx={{ color: k.color }}>{formatCLP(k.value)}</Typography>
+              <Typography variant="caption" color="text.secondary">{k.count} {k.count === 1 ? "factura" : "facturas"}</Typography>
             </CardContent>
           </Card>
         ))}
