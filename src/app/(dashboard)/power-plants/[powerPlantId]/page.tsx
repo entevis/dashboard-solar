@@ -1,15 +1,12 @@
 import { requireAuth, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
 import { PortfolioLogo } from "@/components/ui/portfolio-logo";
 import { getPortfolioLogo } from "@/lib/portfolio-logos";
-import { PlantDetailPanel } from "@/components/power-plants/plant-detail-panel";
+import { PlantTabsClient } from "@/components/power-plants/plant-tabs-client";
 import { UserRole } from "@prisma/client";
 
 interface Props {
@@ -70,15 +67,7 @@ export default async function PowerPlantDetailPage({ params }: Props) {
         />
       </Box>
 
-      {/* Tabs */}
-      <Tabs value="overview" sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tab label="General" value="overview" component={Link} href={base} />
-        <Tab label="Reportes" value="generation" component={Link} href={`${base}/generation`} />
-        <Tab label="Contingencias" value="contingencies" component={Link} href={`${base}/contingencies`} />
-      </Tabs>
-
-      {/* Detail panel */}
-      <PlantDetailPanel plant={plant} canEdit={canEdit} />
+      <PlantTabsClient plant={plant} canEdit={canEdit} base={base} />
     </Box>
   );
 }

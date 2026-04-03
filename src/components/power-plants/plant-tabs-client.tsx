@@ -1,0 +1,130 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import { PlantDetailPanel } from "@/components/power-plants/plant-detail-panel";
+import type { SerializedPlant, FormState } from "@/components/power-plants/plant-detail-panel";
+import { toast } from "@/lib/utils/toast";
+
+function buildInitialForm(plant: SerializedPlant): FormState {
+  return {
+    name: plant.name,
+    solcorId: plant.solcorId ?? "",
+    status: plant.status,
+    capacityKw: String(plant.capacityKw),
+    specificYield: plant.specificYield != null ? String(plant.specificYield) : "",
+    distributorCompany: plant.distributorCompany ?? "",
+    tariffId: plant.tariffId ?? "",
+    startDate: plant.startDate ? String(plant.startDate).slice(0, 10) : "",
+    durationYears: plant.durationYears != null ? String(plant.durationYears) : "",
+    addrAddress: plant.address?.address ?? "",
+    addrReference: plant.address?.reference ?? "",
+    addrCity: plant.address?.city ?? plant.city ?? "",
+    addrCounty: plant.address?.county ?? plant.location ?? "",
+    addrCountry: plant.address?.country ?? "Chile",
+  };
+}
+
+interface Props {
+  plant: SerializedPlant;
+  canEdit: boolean;
+  base: string;
+}
+
+export function PlantTabsClient({ plant, canEdit, base }: Props) {
+  const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<FormState>(() => buildInitialForm(plant));
+
+  function handleCancel() {
+    setForm(buildInitialForm(plant));
+    setIsEditing(false);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/power-plants/${plant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          solcorId: form.solcorId || null,
+          status: form.status,
+          capacityKw: parseFloat(form.capacityKw),
+          specificYield: form.specificYield ? parseFloat(form.specificYield) : null,
+          distributorCompany: form.distributorCompany || null,
+          tariffId: form.tariffId || null,
+          startDate: form.startDate || null,
+          durationYears: form.durationYears ? parseFloat(form.durationYears) : null,
+          address: {
+            address: form.addrAddress || null,
+            reference: form.addrReference || null,
+            city: form.addrCity || null,
+            county: form.addrCounty || null,
+            country: form.addrCountry || "Chile",
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al guardar");
+      toast.success("Planta actualizada");
+      setIsEditing(false);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al guardar los cambios");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function onField(field: keyof FormState, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  return (
+    <>
+      <Box sx={{ display: "flex", alignItems: "center", borderBottom: 1, borderColor: "divider" }}>
+        <Tabs value="overview" sx={{ flex: 1 }}>
+          <Tab label="General" value="overview" component={Link} href={base} />
+          <Tab label="Reportes" value="generation" component={Link} href={`${base}/generation`} />
+          <Tab label="Contingencias" value="contingencies" component={Link} href={`${base}/contingencies`} />
+        </Tabs>
+        {canEdit && (
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center", pl: 2 }}>
+            {isEditing ? (
+              <>
+                <Button variant="text" size="small" onClick={handleCancel} disabled={saving}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleSave}
+                  disabled={saving}
+                  startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
+                >
+                  {saving ? "Guardando..." : "Guardar cambios"}
+                </Button>
+              </>
+            ) : (
+              <Button variant="outlined" size="small" startIcon={<EditOutlinedIcon />} onClick={() => setIsEditing(true)}>
+                Editar
+              </Button>
+            )}
+          </Box>
+        )}
+      </Box>
+
+      <PlantDetailPanel plant={plant} isEditing={isEditing} saving={saving} form={form} onField={onField} />
+    </>
+  );
+}

@@ -75,7 +75,6 @@ export default async function PlantGenerationPage({ params }: Props) {
       <Tabs value="generation" sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tab label="General" value="overview" component={Link} href={base} />
         <Tab label="Reportes" value="generation" component={Link} href={`${base}/generation`} />
-        <Tab label="Facturación" value="billing" component={Link} href={`${base}/billing`} />
         <Tab label="Contingencias" value="contingencies" component={Link} href={`${base}/contingencies`} />
       </Tabs>
 

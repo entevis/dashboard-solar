@@ -1,16 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
-import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
@@ -18,10 +14,8 @@ import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import { toast } from "@/lib/utils/toast";
 
-interface PlantAddress {
+export interface PlantAddress {
   address: string | null;
   reference: string | null;
   city: string | null;
@@ -29,7 +23,7 @@ interface PlantAddress {
   country: string | null;
 }
 
-interface Plant {
+export interface SerializedPlant {
   id: number;
   name: string;
   status: string;
@@ -38,7 +32,7 @@ interface Plant {
   specificYield: number | null;
   distributorCompany: string | null;
   tariffId: string | null;
-  startDate: Date | null;
+  startDate: Date | string | null;
   durationYears: number | null;
   city: string | null;
   location: string | null;
@@ -47,19 +41,39 @@ interface Plant {
   address: PlantAddress | null;
 }
 
+export type FormState = {
+  name: string;
+  solcorId: string;
+  status: string;
+  capacityKw: string;
+  specificYield: string;
+  distributorCompany: string;
+  tariffId: string;
+  startDate: string;
+  durationYears: string;
+  addrAddress: string;
+  addrReference: string;
+  addrCity: string;
+  addrCounty: string;
+  addrCountry: string;
+};
+
 interface Props {
-  plant: Plant;
-  canEdit: boolean;
+  plant: SerializedPlant;
+  isEditing: boolean;
+  saving: boolean;
+  form: FormState;
+  onField: (field: keyof FormState, value: string) => void;
 }
 
-function formatDate(date: Date | null): string {
+function formatDate(date: Date | string | null): string {
   if (!date) return "—";
-  return new Intl.DateTimeFormat("es-CL").format(new Date(date));
+  return new Intl.DateTimeFormat("es-CL").format(new Date(date as string));
 }
 
-function calcEndDate(startDate: Date | null, durationYears: number | null): string {
+function calcEndDate(startDate: Date | string | null, durationYears: number | null): string {
   if (!startDate || !durationYears) return "—";
-  const end = new Date(startDate);
+  const end = new Date(startDate as string);
   end.setFullYear(end.getFullYear() + durationYears);
   return new Intl.DateTimeFormat("es-CL").format(end);
 }
@@ -91,118 +105,20 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SectionCard({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: React.ComponentType<{ sx?: object }>;
-  title: string;
-  children: React.ReactNode;
-}) {
+function SectionCard({ icon: Icon, title, children }: { icon: React.ComponentType<{ sx?: object }>; title: string; children: React.ReactNode }) {
   return (
     <Card>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          px: 2,
-          py: 1.25,
-          backgroundColor: "#eff4ff",
-          borderRadius: "12px 12px 0 0",
-        }}
-      >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 1.25, backgroundColor: "#eff4ff", borderRadius: "12px 12px 0 0" }}>
         <Icon sx={{ fontSize: 16, color: "primary.dark" }} />
-        <Typography variant="body1" fontWeight={600} color="text.primary">
-          {title}
-        </Typography>
+        <Typography variant="body1" fontWeight={600} color="text.primary">{title}</Typography>
       </Box>
       <CardContent sx={{ pt: 2 }}>{children}</CardContent>
     </Card>
   );
 }
 
-export function PlantDetailPanel({ plant, canEdit }: Props) {
-  const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const [form, setForm] = useState({
-    name: plant.name,
-    solcorId: plant.solcorId ?? "",
-    status: plant.status,
-    capacityKw: String(plant.capacityKw),
-    specificYield: plant.specificYield != null ? String(plant.specificYield) : "",
-    distributorCompany: plant.distributorCompany ?? "",
-    tariffId: plant.tariffId ?? "",
-    startDate: plant.startDate ? new Date(plant.startDate).toISOString().split("T")[0] : "",
-    durationYears: plant.durationYears != null ? String(plant.durationYears) : "",
-    addrAddress: plant.address?.address ?? "",
-    addrReference: plant.address?.reference ?? "",
-    addrCity: plant.address?.city ?? plant.city ?? "",
-    addrCounty: plant.address?.county ?? plant.location ?? "",
-    addrCountry: plant.address?.country ?? "Chile",
-  });
-
-  function handleCancel() {
-    setForm({
-      name: plant.name,
-      solcorId: plant.solcorId ?? "",
-      status: plant.status,
-      capacityKw: String(plant.capacityKw),
-      specificYield: plant.specificYield != null ? String(plant.specificYield) : "",
-      distributorCompany: plant.distributorCompany ?? "",
-      tariffId: plant.tariffId ?? "",
-      startDate: plant.startDate ? new Date(plant.startDate).toISOString().split("T")[0] : "",
-      durationYears: plant.durationYears != null ? String(plant.durationYears) : "",
-      addrAddress: plant.address?.address ?? "",
-      addrReference: plant.address?.reference ?? "",
-      addrCity: plant.address?.city ?? plant.city ?? "",
-      addrCounty: plant.address?.county ?? plant.location ?? "",
-      addrCountry: plant.address?.country ?? "Chile",
-    });
-    setIsEditing(false);
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/power-plants/${plant.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          solcorId: form.solcorId || null,
-          status: form.status,
-          capacityKw: parseFloat(form.capacityKw),
-          specificYield: form.specificYield ? parseFloat(form.specificYield) : null,
-          distributorCompany: form.distributorCompany || null,
-          tariffId: form.tariffId || null,
-          startDate: form.startDate || null,
-          durationYears: form.durationYears ? parseFloat(form.durationYears) : null,
-          address: {
-            address: form.addrAddress || null,
-            reference: form.addrReference || null,
-            city: form.addrCity || null,
-            county: form.addrCounty || null,
-            country: form.addrCountry || "Chile",
-          },
-        }),
-      });
-      if (!res.ok) throw new Error();
-      toast.success("Planta actualizada");
-      setIsEditing(false);
-      router.refresh();
-    } catch {
-      toast.error("Error al guardar los cambios. Intenta nuevamente.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const ef = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm({ ...form, [field]: e.target.value });
+export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
+  const ef = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => onField(field, e.target.value);
 
   const addrCity = plant.address?.city ?? plant.city;
   const addrCounty = plant.address?.county ?? plant.location;
@@ -210,36 +126,6 @@ export function PlantDetailPanel({ plant, canEdit }: Props) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {/* Actions bar */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        {isEditing ? (
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button variant="text" size="small" onClick={handleCancel} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleSave}
-              disabled={saving}
-              startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
-            >
-              {saving ? "Guardando..." : "Guardar cambios"}
-            </Button>
-          </Box>
-        ) : canEdit ? (
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<EditOutlinedIcon />}
-            onClick={() => setIsEditing(true)}
-          >
-            Editar
-          </Button>
-        ) : null}
-      </Box>
-
-      {/* Grid layout */}
       <Grid container spacing={2}>
         {/* Left col (2/3) */}
         <Grid size={{ xs: 12, lg: 8 }}>
@@ -268,17 +154,13 @@ export function PlantDetailPanel({ plant, canEdit }: Props) {
                     <Grid size={{ xs: 12, sm: 6 }}><Field label="ID Solcor" value={plant.solcorId} /></Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Box>
-                        <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
-                          Estado
-                        </Typography>
+                        <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Estado</Typography>
                         <Chip
                           label={plant.status === "active" ? "Activa" : "En mantenimiento"}
                           size="small"
-                          sx={
-                            plant.status === "active"
-                              ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
-                              : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }
-                          }
+                          sx={plant.status === "active"
+                            ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
+                            : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }}
                         />
                       </Box>
                     </Grid>
