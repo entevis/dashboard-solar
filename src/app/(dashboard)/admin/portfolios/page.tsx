@@ -18,18 +18,22 @@ import Link from "next/link";
 export default async function PortfoliosPage() {
   await requireRole(["MAESTRO"]);
 
-  const portfolios = await prisma.portfolio.findMany({
-    where: { active: 1 },
-    include: {
-      _count: {
-        select: {
-          powerPlants: { where: { active: 1 } },
-          users: { where: { active: 1 } },
+  const [portfolios, bankAccounts] = await Promise.all([
+    prisma.portfolio.findMany({
+      where: { active: 1 },
+      include: {
+        bankAccount: true,
+        _count: {
+          select: {
+            powerPlants: { where: { active: 1 } },
+            users: { where: { active: 1 } },
+          },
         },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    }),
+    prisma.bankAccount.findMany({ where: { active: 1 }, orderBy: { name: "asc" } }),
+  ]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
@@ -58,9 +62,10 @@ export default async function PortfoliosPage() {
               <TableHead>
                 <TableRow sx={{ "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600 } }}>
                   <TableCell>Nombre</TableCell>
-                  <TableCell>Descripción</TableCell>
+                  <TableCell>ID Tributario</TableCell>
+                  <TableCell>País</TableCell>
+                  <TableCell>Cuenta bancaria</TableCell>
                   <TableCell>Plantas</TableCell>
-                  <TableCell>Usuarios asignados</TableCell>
                   <TableCell sx={{ width: 48 }} />
                 </TableRow>
               </TableHead>
@@ -75,16 +80,27 @@ export default async function PortfoliosPage() {
                       >
                         {p.name}
                       </Box>
+                      {p.description && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>{p.description}</Typography>
+                      )}
                     </TableCell>
-                    <TableCell sx={{ color: "text.secondary" }}>{p.description ?? "—"}</TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>{p.taxIdentification ?? "—"}</TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>{p.country ?? "—"}</TableCell>
+                    <TableCell>
+                      {p.bankAccount ? (
+                        <Box>
+                          <Typography variant="body2" fontSize="0.8125rem" fontWeight={500}>{p.bankAccount.name}</Typography>
+                          <Typography variant="caption" color="text.secondary">{p.bankAccount.bankName} · {p.bankAccount.accountNumber}</Typography>
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" fontSize="0.8125rem" color="text.secondary">—</Typography>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Chip label={p._count.powerPlants} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.75rem", height: 20 }} />
                     </TableCell>
                     <TableCell>
-                      <Chip label={p._count.users} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.75rem", height: 20 }} />
-                    </TableCell>
-                    <TableCell>
-                      <PortfolioRowActions portfolio={p} />
+                      <PortfolioRowActions portfolio={p} bankAccounts={bankAccounts} />
                     </TableCell>
                   </TableRow>
                 ))}

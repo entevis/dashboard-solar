@@ -42,15 +42,37 @@ enum InvoiceStatus {
 // Models
 // ──────────────────────────────────────
 
+model BankAccount {
+  id            Int      @id @default(autoincrement())
+  name          String
+  bankName      String   @map("bank_name")
+  accountType   String   @map("account_type")
+  accountNumber String   @map("account_number")
+  rut           String   @unique
+  receiptEmail  String   @map("receipt_email")
+  active        Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  portfolios Portfolio[]
+
+  @@map("bank_accounts")
+}
+
 model Portfolio {
   id                Int      @id @default(autoincrement())
   name              String
   description       String?
+  taxIdentification String?  @map("tax_identification")
+  country           String?  @default("Chile")
+  contact           String?
+  bankAccountId     Int?     @map("bank_account_id")
   duemintCompanyId  String?  @map("duemint_company_id")
   active            Int      @default(1)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
+  bankAccount BankAccount? @relation(fields: [bankAccountId], references: [id])
   powerPlants PowerPlant[]
   users       User[]       @relation("AssignedPortfolio")
   invoices    Invoice[]

@@ -8,6 +8,10 @@ import { z } from "zod";
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().nullable().optional(),
+  taxIdentification: z.string().max(50).nullable().optional(),
+  country: z.string().max(100).nullable().optional(),
+  contact: z.string().max(200).nullable().optional(),
+  bankAccountId: z.number().int().nullable().optional(),
   duemintCompanyId: z.string().max(50).nullable().optional(),
 });
 
