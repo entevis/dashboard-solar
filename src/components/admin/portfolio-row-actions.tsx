@@ -16,7 +16,6 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import MuiMenuItem from "@mui/material/MenuItem";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -31,6 +30,7 @@ interface BankAccount {
   accountType: string;
   accountNumber: string;
   rut: string;
+  receiptEmail: string | null;
 }
 
 interface Portfolio {
@@ -41,15 +41,11 @@ interface Portfolio {
   country: string | null;
   contact: string | null;
   bankAccountId: number | null;
+  bankAccount: BankAccount | null;
   duemintCompanyId: string | null;
 }
 
-interface Props {
-  portfolio: Portfolio;
-  bankAccounts: BankAccount[];
-}
-
-export function PortfolioRowActions({ portfolio, bankAccounts }: Props) {
+export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
   const router = useRouter();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -61,18 +57,26 @@ export function PortfolioRowActions({ portfolio, bankAccounts }: Props) {
     taxIdentification: portfolio.taxIdentification ?? "",
     country: portfolio.country ?? "Chile",
     contact: portfolio.contact ?? "",
-    bankAccountId: portfolio.bankAccountId != null ? String(portfolio.bankAccountId) : "",
     duemintCompanyId: portfolio.duemintCompanyId ?? "",
+    baName: portfolio.bankAccount?.name ?? "",
+    baBankName: portfolio.bankAccount?.bankName ?? "",
+    baAccountType: portfolio.bankAccount?.accountType ?? "",
+    baAccountNumber: portfolio.bankAccount?.accountNumber ?? "",
+    baRut: portfolio.bankAccount?.rut ?? "",
+    baReceiptEmail: portfolio.bankAccount?.receiptEmail ?? "",
   });
 
   function f(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [field]: e.target.value });
   }
 
+  const hasBankData = !!(form.baName || form.baBankName || form.baAccountNumber || form.baRut);
+
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
+      const bankAccountFilled = form.baName && form.baBankName && form.baAccountType && form.baAccountNumber && form.baRut;
       const res = await fetch(`/api/portfolios/${portfolio.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -82,8 +86,15 @@ export function PortfolioRowActions({ portfolio, bankAccounts }: Props) {
           taxIdentification: form.taxIdentification || null,
           country: form.country || null,
           contact: form.contact || null,
-          bankAccountId: form.bankAccountId ? parseInt(form.bankAccountId) : null,
           duemintCompanyId: form.duemintCompanyId || null,
+          bankAccount: bankAccountFilled ? {
+            name: form.baName,
+            bankName: form.baBankName,
+            accountType: form.baAccountType,
+            accountNumber: form.baAccountNumber,
+            rut: form.baRut,
+            receiptEmail: form.baReceiptEmail || null,
+          } : null,
         }),
       });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Error al actualizar portafolio"); }
@@ -127,36 +138,36 @@ export function PortfolioRowActions({ portfolio, bankAccounts }: Props) {
         <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Editar portafolio</DialogTitle>
         <Box component="form" onSubmit={handleEdit}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            {/* Portafolio */}
             <TextField label="Nombre" size="small" required value={form.name} onChange={f("name")} sx={inputSx} />
             <TextField label="Descripción" size="small" multiline rows={2} value={form.description} onChange={f("description")} sx={inputSx} />
-
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
               <TextField label="ID Tributario (RUT)" size="small" value={form.taxIdentification} onChange={f("taxIdentification")} placeholder="Ej: 76813402-2" sx={inputSx} />
               <TextField label="País" size="small" value={form.country} onChange={f("country")} sx={inputSx} />
             </Box>
-
             <TextField label="Contacto" size="small" value={form.contact} onChange={f("contact")} placeholder="Nombre o email del contacto" sx={inputSx} />
-
-            <TextField
-              select
-              label="Cuenta bancaria"
-              size="small"
-              value={form.bankAccountId}
-              onChange={f("bankAccountId")}
-              sx={inputSx}
-            >
-              <MuiMenuItem value=""><em>Sin cuenta asignada</em></MuiMenuItem>
-              {bankAccounts.map((ba) => (
-                <MuiMenuItem key={ba.id} value={String(ba.id)}>
-                  <Box>
-                    <Typography fontSize="0.8125rem" fontWeight={500}>{ba.name}</Typography>
-                    <Typography variant="caption" color="text.secondary">{ba.bankName} · {ba.accountNumber} · {ba.rut}</Typography>
-                  </Box>
-                </MuiMenuItem>
-              ))}
-            </TextField>
-
             <TextField label="Duemint Company ID" size="small" value={form.duemintCompanyId} onChange={f("duemintCompanyId")} placeholder="Ej: 2908" sx={inputSx} />
+
+            {/* Cuenta bancaria */}
+            <Box sx={{ pt: 0.5 }}>
+              <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 1.5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Cuenta bancaria
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                  <TextField label="Nombre titular" size="small" required={hasBankData} value={form.baName} onChange={f("baName")} placeholder="Ej: S-INVEST CHILE SPA" sx={inputSx} />
+                  <TextField label="RUT" size="small" required={hasBankData} value={form.baRut} onChange={f("baRut")} placeholder="Ej: 76813402-2" sx={inputSx} />
+                </Box>
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                  <TextField label="Banco" size="small" required={hasBankData} value={form.baBankName} onChange={f("baBankName")} placeholder="Ej: Banco de Chile" sx={inputSx} />
+                  <TextField label="Tipo de cuenta" size="small" required={hasBankData} value={form.baAccountType} onChange={f("baAccountType")} placeholder="Ej: Cuenta Corriente" sx={inputSx} />
+                </Box>
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                  <TextField label="Número de cuenta" size="small" required={hasBankData} value={form.baAccountNumber} onChange={f("baAccountNumber")} placeholder="Ej: 1594154504" sx={inputSx} />
+                  <TextField label="Email comprobantes" size="small" type="email" value={form.baReceiptEmail} onChange={f("baReceiptEmail")} placeholder="Ej: cobranzas@empresa.cl" sx={inputSx} />
+                </Box>
+              </Box>
+            </Box>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
             <Button variant="outlined" color="inherit" size="small" onClick={() => setEditOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>

@@ -5,9 +5,22 @@ import { UserRole } from "@prisma/client";
 import { logAction } from "@/lib/services/audit.service";
 import { z } from "zod";
 
+const bankAccountSchema = z.object({
+  name: z.string().min(1).max(200),
+  bankName: z.string().min(1).max(200),
+  accountType: z.string().min(1).max(100),
+  accountNumber: z.string().min(1).max(50),
+  rut: z.string().min(1).max(20),
+  receiptEmail: z.string().email().max(200).nullable().optional(),
+});
+
 const createSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().nullable().optional(),
+  taxIdentification: z.string().max(50).nullable().optional(),
+  country: z.string().max(100).nullable().optional(),
+  contact: z.string().max(200).nullable().optional(),
+  bankAccount: bankAccountSchema.nullable().optional(),
 });
 
 export async function GET() {
@@ -39,8 +52,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  const { bankAccount, ...portfolioFields } = parsed.data;
+
+  let bankAccountId: number | undefined;
+  if (bankAccount) {
+    const created = await prisma.bankAccount.create({ data: bankAccount });
+    bankAccountId = created.id;
+  }
+
   const portfolio = await prisma.portfolio.create({
-    data: parsed.data,
+    data: { ...portfolioFields, ...(bankAccountId !== undefined ? { bankAccountId } : {}) },
   });
 
   logAction(user.id, "CREATE", "portfolio", portfolio.id, { name: parsed.data.name });

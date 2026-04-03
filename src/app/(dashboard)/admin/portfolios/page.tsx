@@ -18,22 +18,19 @@ import Link from "next/link";
 export default async function PortfoliosPage() {
   await requireRole(["MAESTRO"]);
 
-  const [portfolios, bankAccounts] = await Promise.all([
-    prisma.portfolio.findMany({
-      where: { active: 1 },
-      include: {
-        bankAccount: true,
-        _count: {
-          select: {
-            powerPlants: { where: { active: 1 } },
-            users: { where: { active: 1 } },
-          },
+  const portfolios = await prisma.portfolio.findMany({
+    where: { active: 1 },
+    include: {
+      bankAccount: true,
+      _count: {
+        select: {
+          powerPlants: { where: { active: 1 } },
+          users: { where: { active: 1 } },
         },
       },
-      orderBy: { name: "asc" },
-    }),
-    prisma.bankAccount.findMany({ where: { active: 1 }, orderBy: { name: "asc" } }),
-  ]);
+    },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
@@ -100,7 +97,7 @@ export default async function PortfoliosPage() {
                       <Chip label={p._count.powerPlants} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.75rem", height: 20 }} />
                     </TableCell>
                     <TableCell>
-                      <PortfolioRowActions portfolio={p} bankAccounts={bankAccounts} />
+                      <PortfolioRowActions portfolio={p} />
                     </TableCell>
                   </TableRow>
                 ))}
