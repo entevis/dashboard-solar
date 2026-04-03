@@ -13,8 +13,12 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import { toast } from "sonner";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import { toast } from "@/lib/utils/toast";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
@@ -33,6 +37,7 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
   const [role, setRole] = useState("");
   const [form, setForm] = useState({ name: "", email: "", password: "", customerId: "", assignedPortfolioId: "" });
 
+  const [showPassword, setShowPassword] = useState(false);
   const showCustomer = role === "CLIENTE" || role === "CLIENTE_PERFILADO";
   const showPortfolio = role === "OPERATIVO";
 
@@ -81,7 +86,14 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <TextField label="Nombre" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo" sx={inputSx} />
             <TextField label="Correo electrónico" type="email" size="small" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@empresa.cl" sx={inputSx} />
-            <TextField label="Contraseña" type="password" size="small" required inputProps={{ minLength: 6 }} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" sx={inputSx} />
+            <TextField label="Contraseña" type={showPassword ? "text" : "password"} size="small" required inputProps={{ minLength: 6 }} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" sx={inputSx}
+              InputProps={{ endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small" edge="end" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}>
+                    {showPassword ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
+                  </IconButton>
+                </InputAdornment>
+              )}} />
             <FormControl size="small" required sx={inputSx}>
               <InputLabel>Rol</InputLabel>
               <Select label="Rol" value={role} onChange={(e) => { setRole(e.target.value); setForm((f) => ({ ...f, customerId: "", assignedPortfolioId: "" })); }}>

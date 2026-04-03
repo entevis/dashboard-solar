@@ -19,7 +19,7 @@ import Typography from "@mui/material/Typography";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
@@ -46,7 +46,7 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: form.name, description: form.description || null, duemintCompanyId: form.duemintCompanyId || null }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Error al actualizar portafolio"); }
       toast.success("Portafolio actualizado");
       setEditOpen(false);
       router.refresh();
@@ -107,8 +107,8 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
           <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
         </DialogActions>
       </Dialog>
     </>

@@ -20,7 +20,7 @@ import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 const MONTHS = [
   { value: "1", label: "Enero" },

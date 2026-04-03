@@ -21,7 +21,7 @@ import Divider from "@mui/material/Divider";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 interface PlantAddress {
   address: string | null;
@@ -123,7 +123,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
           },
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Error al actualizar planta"); }
       toast.success("Planta actualizada");
       setEditOpen(false);
       router.refresh();
@@ -178,7 +178,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
           <DialogContent>
             <Grid container spacing={2} sx={{ pt: 1 }}>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField fullWidth size="small" label="Nombre *" value={form.name} onChange={sf("name")} required />
+                <TextField fullWidth size="small" label="Nombre" value={form.name} onChange={sf("name")} required />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField fullWidth size="small" label="ID Solcor" value={form.solcorId} onChange={sf("solcorId")} placeholder="Ej: SOL-001" />
@@ -196,7 +196,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
                 <TextField fullWidth size="small" label="ID Tarifa" value={form.tariffId} onChange={sf("tariffId")} placeholder="Ej: BT1" />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField fullWidth size="small" label="Potencia (kWp) *" type="number" inputProps={{ step: "0.1", min: 0 }} value={form.capacityKw} onChange={sf("capacityKw")} required />
+                <TextField fullWidth size="small" label="Potencia (kWp)" type="number" inputProps={{ step: "0.1", min: 0 }} value={form.capacityKw} onChange={sf("capacityKw")} required />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField fullWidth size="small" label="Rendimiento (kWh/kWp)" type="number" inputProps={{ step: "0.01", min: 0 }} value={form.specificYield} onChange={sf("specificYield")} />
@@ -208,26 +208,26 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
                 <TextField fullWidth size="small" label="Duración (Años)" type="number" inputProps={{ min: 1, max: 50 }} value={form.durationYears} onChange={sf("durationYears")} />
               </Grid>
               <Grid size={12}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Estado *</InputLabel>
-                  <Select label="Estado *" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                <FormControl fullWidth size="small" required>
+                  <InputLabel>Estado</InputLabel>
+                  <Select label="Estado" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                     <MenuItem value="active">Activa</MenuItem>
                     <MenuItem value="maintenance">Mantenimiento</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Portafolio *</InputLabel>
-                  <Select label="Portafolio *" value={form.portfolioId} onChange={(e) => setForm({ ...form, portfolioId: e.target.value })}>
+                <FormControl fullWidth size="small" required>
+                  <InputLabel>Portafolio</InputLabel>
+                  <Select label="Portafolio" value={form.portfolioId} onChange={(e) => setForm({ ...form, portfolioId: e.target.value })}>
                     {portfolios.map((p) => <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Cliente *</InputLabel>
-                  <Select label="Cliente *" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })}>
+                <FormControl fullWidth size="small" required>
+                  <InputLabel>Cliente</InputLabel>
+                  <Select label="Cliente" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })}>
                     {customers.map((c) => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
                   </Select>
                 </FormControl>
@@ -273,7 +273,6 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button variant="text" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
           <Button
             variant="contained"
             color="error"
@@ -288,6 +287,7 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
           >
             Eliminar
           </Button>
+          <Button variant="text" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
         </DialogActions>
       </Dialog>
     </>

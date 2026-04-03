@@ -15,7 +15,7 @@ import Typography from "@mui/material/Typography";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 interface Props {
   contingencyId: number;
@@ -81,11 +81,11 @@ export function ContingencyRowActions({ contingencyId, description, canWrite }: 
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="outlined" size="small" color="inherit" onClick={() => setDeleteOpen(false)} disabled={deleting} sx={{ borderColor: "#c3c6d7" }}>
-            Cancelar
-          </Button>
           <Button variant="contained" size="small" color="error" onClick={handleDelete} disabled={deleting}>
             {deleting ? "Eliminando..." : "Eliminar"}
+          </Button>
+          <Button variant="outlined" size="small" color="inherit" onClick={() => setDeleteOpen(false)} disabled={deleting} sx={{ borderColor: "#c3c6d7" }}>
+            Cancelar
           </Button>
         </DialogActions>
       </Dialog>

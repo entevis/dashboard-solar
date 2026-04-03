@@ -9,7 +9,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import PlayArrowOutlinedIcon from "@mui/icons-material/PlayArrowOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 interface Props {
   contingencyId: number;

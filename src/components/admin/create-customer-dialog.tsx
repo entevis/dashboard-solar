@@ -10,7 +10,7 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 

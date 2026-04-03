@@ -21,7 +21,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import { CustomerContactsSheet } from "@/components/admin/customer-contacts-sheet";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
@@ -45,7 +45,7 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: form.name, rut: form.rut, altName: form.altName || null }),
       });
-      if (!res.ok) throw new Error("Error al actualizar");
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Error al actualizar cliente"); }
       toast.success("Cliente actualizado");
       setEditOpen(false);
       router.refresh();
@@ -90,7 +90,7 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
         <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Editar Cliente</DialogTitle>
         <Box component="form" onSubmit={handleEdit}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-            <TextField label="Razón Social" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} sx={inputSx} />
+            <TextField label="Razón social" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} sx={inputSx} />
             <TextField label="RUT" size="small" required value={form.rut} onChange={(e) => setForm({ ...form, rut: e.target.value })} sx={inputSx} />
             <TextField label="Nombre alternativo" size="small" value={form.altName} onChange={(e) => setForm({ ...form, altName: e.target.value })} placeholder="Alias opcional" sx={inputSx} />
           </DialogContent>
@@ -113,8 +113,8 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
           <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
         </DialogActions>
       </Dialog>
     </>

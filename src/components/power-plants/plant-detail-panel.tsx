@@ -19,7 +19,7 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 interface PlantAddress {
   address: string | null;

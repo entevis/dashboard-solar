@@ -132,8 +132,11 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
       </Button>
 
       <Dialog open={open} onClose={() => handleOpenChange(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 3 }}>
           <Typography fontWeight={700} fontSize="0.9375rem">Importar factura desde Duemint</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+            Paso {step === "form" ? 1 : step === "preview" ? 2 : 3} de 3
+          </Typography>
         </DialogTitle>
 
         <DialogContent sx={{ pt: "8px !important" }}>

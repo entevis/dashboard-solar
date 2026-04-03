@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -61,6 +62,7 @@ interface Props {
 export function BillingTable({ invoices, total, page, pageSize }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const sortBy = (VALID_SORT_KEYS.includes(searchParams.get("sortBy") as BillingSortKey)
     ? searchParams.get("sortBy") as BillingSortKey
@@ -76,7 +78,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
       params.set("sortDir", "asc");
     }
     params.set("page", "1");
-    router.push(`?${params.toString()}`);
+    startTransition(() => { router.push(`?${params.toString()}`); });
   }
 
   function col(key: BillingSortKey) {
@@ -89,7 +91,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
 
   return (
     <>
-      <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+      <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto", opacity: isPending ? 0.6 : 1, transition: "opacity 0.15s" }}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow

@@ -17,7 +17,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 interface PowerPlant { id: number; name: string }
 

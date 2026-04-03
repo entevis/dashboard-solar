@@ -9,7 +9,11 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import Image from "next/image";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
@@ -23,6 +27,7 @@ const inputSx = {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -115,7 +120,7 @@ export default function LoginPage() {
             <TextField
               id="password"
               label="Contraseña"
-              type="password"
+              type={showPassword ? "text" : "password"}
               size="small"
               placeholder="••••••••"
               value={password}
@@ -123,6 +128,13 @@ export default function LoginPage() {
               required
               autoComplete="current-password"
               inputProps={{ "aria-required": "true" }}
+              InputProps={{ endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small" edge="end" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}>
+                    {showPassword ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
+                  </IconButton>
+                </InputAdornment>
+              )}}
               sx={inputSx}
             />
 

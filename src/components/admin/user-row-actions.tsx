@@ -24,7 +24,7 @@ import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { ROLE_LABELS } from "@/lib/auth/roles";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 import type { UserRole } from "@prisma/client";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
@@ -59,7 +59,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: form.name, role: form.role, customerId: form.customerId || null, assignedPortfolioId: form.assignedPortfolioId || null }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Error al actualizar usuario"); }
       toast.success("Usuario actualizado");
       setEditOpen(false);
       router.refresh();
@@ -143,8 +143,8 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
           <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
         </DialogActions>
       </Dialog>
     </>

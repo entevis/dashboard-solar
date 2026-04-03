@@ -24,7 +24,7 @@ import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
@@ -185,7 +185,7 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-            <TextField label="Nombre completo *" size="small" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Juan Pérez" sx={inputSx} />
+            <TextField label="Nombre completo" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Juan Pérez" sx={inputSx} />
             <TextField label="RUT" size="small" value={form.rut} onChange={(e) => setForm({ ...form, rut: e.target.value })} placeholder="Ej: 12345678-9" sx={inputSx} />
             <TextField label="Cargo" size="small" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Ej: Gerente Agrícola" sx={inputSx} />
             <TextField label="Teléfono" size="small" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Ej: +56912345678" sx={inputSx} />
@@ -209,8 +209,8 @@ export function CustomerContactsSheet({ open, onOpenChange, customerId, customer
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteContact(null)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
           <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteContact(null)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
         </DialogActions>
       </Dialog>
     </>
