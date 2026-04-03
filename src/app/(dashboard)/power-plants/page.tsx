@@ -2,6 +2,7 @@ import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { PlantFilterBar } from "@/components/power-plants/plant-filter-bar";
 import { PlantTable } from "@/components/power-plants/plant-table";
+import { CreatePlantDialog } from "@/components/power-plants/create-plant-dialog";
 import { UserRole } from "@prisma/client";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -50,7 +51,10 @@ export default async function PowerPlantsPage({ searchParams }: Props) {
             {plants.length} {plants.length === 1 ? "planta encontrada" : "plantas encontradas"}
           </Typography>
         </Box>
-        <PlantFilterBar portfolios={portfolios} customers={customers} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <PlantFilterBar portfolios={portfolios} customers={customers} />
+          {canEdit && <CreatePlantDialog portfolios={portfolios} customers={customers} />}
+        </Box>
       </Box>
 
       <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
