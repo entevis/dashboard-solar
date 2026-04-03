@@ -1,7 +1,6 @@
 import { requireAuth, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { PortfolioLogo } from "@/components/ui/portfolio-logo";
@@ -56,15 +55,6 @@ export default async function PowerPlantDetailPage({ params }: Props) {
             </Typography>
           </Box>
         </Box>
-        <Chip
-          label={plant.status === "active" ? "Activa" : "En mantenimiento"}
-          size="small"
-          sx={
-            plant.status === "active"
-              ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
-              : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }
-          }
-        />
       </Box>
 
       <PlantTabsClient plant={plant} canEdit={canEdit} base={base} />

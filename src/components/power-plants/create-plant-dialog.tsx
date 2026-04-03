@@ -152,9 +152,14 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth size="small" required disabled={!!fixedPortfolioId}>
+                <FormControl fullWidth size="small" required>
                   <InputLabel>Portafolio</InputLabel>
-                  <Select label="Portafolio" value={form.portfolioId} onChange={(e) => setForm({ ...form, portfolioId: e.target.value })}>
+                  <Select
+                    label="Portafolio"
+                    value={form.portfolioId}
+                    onChange={(e) => { if (!fixedPortfolioId) setForm({ ...form, portfolioId: e.target.value }); }}
+                    inputProps={fixedPortfolioId ? { readOnly: true } : {}}
+                  >
                     {portfolios.map((p) => <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>)}
                   </Select>
                 </FormControl>

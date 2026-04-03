@@ -29,7 +29,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
     ...(sParams.customerId ? { customerId: parseInt(sParams.customerId) } : {}),
   };
 
-  const [plants, customers] = await Promise.all([
+  const [plants, customers, portfolio] = await Promise.all([
     prisma.powerPlant.findMany({
       where,
       include: {
@@ -40,6 +40,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
       orderBy: { name: "asc" },
     }),
     prisma.customer.findMany({ where: { active: 1 }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.portfolio.findUnique({ where: { id: pid }, select: { id: true, name: true } }),
   ]);
 
   const canEdit = user.role === UserRole.MAESTRO;
@@ -56,7 +57,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <PlantFilterBar portfolios={[]} customers={customers} hidePortfolioFilter />
-          {canEdit && <CreatePlantDialog portfolios={[{ id: pid, name: "" }]} customers={customers} fixedPortfolioId={pid} />}
+          {canEdit && <CreatePlantDialog portfolios={portfolio ? [portfolio] : []} customers={customers} fixedPortfolioId={pid} />}
         </Box>
       </Box>
 

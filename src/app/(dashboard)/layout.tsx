@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { Toaster } from "@/components/ui/sonner";
+import NextTopLoader from "nextjs-toploader";
 import { UserRole } from "@prisma/client";
 
 export default async function DashboardLayout({
@@ -46,6 +47,7 @@ export default async function DashboardLayout({
         Saltar al contenido principal
       </a>
 
+      <NextTopLoader color="#004ac6" height={3} showSpinner={false} shadow={false} />
       <Sidebar
         userRole={user.role}
         selectedPortfolioId={selectedPortfolioId}

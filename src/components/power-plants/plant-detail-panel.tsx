@@ -81,7 +81,7 @@ function calcEndDate(startDate: Date | string | null, durationYears: number | nu
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
     <Box>
-      <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: "block", mb: 0.5, letterSpacing: "0.04em" }}>
         {label}
       </Typography>
       <Typography variant="body1" fontWeight={500} color="text.primary">
@@ -95,7 +95,7 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
     <Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-        <Typography variant="overline" color="text.secondary">{label}</Typography>
+        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ letterSpacing: "0.04em" }}>{label}</Typography>
         <LockOutlinedIcon sx={{ fontSize: 11, color: "text.secondary" }} />
       </Box>
       <Typography variant="body1" fontWeight={500} color="text.primary">
@@ -154,7 +154,7 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                     <Grid size={{ xs: 12, sm: 6 }}><Field label="ID Solcor" value={plant.solcorId} /></Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Box>
-                        <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Estado</Typography>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: "block", mb: 0.5, letterSpacing: "0.04em" }}>Estado</Typography>
                         <Chip
                           label={plant.status === "active" ? "Activa" : "En mantenimiento"}
                           size="small"
