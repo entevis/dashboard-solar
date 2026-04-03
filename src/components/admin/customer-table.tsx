@@ -80,7 +80,7 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
         </Box>
       ) : (
         <>
-          <TableContainer sx={{ flex: 1 }}>
+          <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow

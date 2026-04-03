@@ -46,8 +46,8 @@ export default async function CustomersPage({ searchParams }: Props) {
   }));
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2, flexWrap: "wrap", flexShrink: 0 }}>
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary">Clientes</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
@@ -60,7 +60,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         </Box>
       </Box>
 
-      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
         <CustomerTable customers={serialized} />
       </Card>
     </Box>

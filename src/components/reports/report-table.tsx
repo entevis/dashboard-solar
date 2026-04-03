@@ -73,7 +73,7 @@ export function ReportTable({ reports, portfolioId }: Props) {
   const sorted = useMemo(() => sortReports(reports, sortKey, sortDir), [reports, sortKey, sortDir]);
 
   return (
-    <TableContainer>
+    <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
       <Table size="small" stickyHeader>
         <TableHead>
           <TableRow

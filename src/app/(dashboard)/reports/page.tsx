@@ -50,10 +50,10 @@ export default async function ReportsPage({ searchParams }: Props) {
   const hasFilters = !!(params.year || params.powerPlantId);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
 
       {/* Header */}
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2 }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2, flexShrink: 0 }}>
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary">Reportes</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
@@ -64,7 +64,7 @@ export default async function ReportsPage({ searchParams }: Props) {
       </Box>
 
       {/* KPI Cards */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2, flexShrink: 0 }}>
         <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
           <CardContent>
             <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Total generado</Typography>
@@ -86,7 +86,7 @@ export default async function ReportsPage({ searchParams }: Props) {
       </Box>
 
       {/* Table */}
-      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {reports.length === 0 ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 200, gap: 1.5, color: "text.secondary" }}>
             {hasFilters
