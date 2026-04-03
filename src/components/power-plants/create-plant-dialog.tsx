@@ -16,6 +16,7 @@ import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { toast } from "@/lib/utils/toast";
 
 interface Option { id: number; name: string }
@@ -48,6 +49,7 @@ const emptyForm = {
 
 export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: Props) {
   const router = useRouter();
+  const isMobile = useMediaQuery("(max-width:599px)");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ ...emptyForm, portfolioId: fixedPortfolioId ? String(fixedPortfolioId) : "" });
@@ -106,7 +108,7 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
         Nueva planta
       </Button>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <form onSubmit={handleSubmit}>
           <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700 }}>Nueva planta solar</DialogTitle>
           <DialogContent>

@@ -23,7 +23,7 @@ export function ContingencyFilterBar({ plants }: { plants: Option[] }) {
 
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
-      <FormControl size="small" sx={{ minWidth: 200 }}>
+      <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 }, width: { xs: "100%", sm: "auto" } }}>
         <InputLabel sx={{ fontSize: "0.8125rem" }}>Planta</InputLabel>
         <Select
           label="Planta"
@@ -38,7 +38,7 @@ export function ContingencyFilterBar({ plants }: { plants: Option[] }) {
         </Select>
       </FormControl>
 
-      <FormControl size="small" sx={{ minWidth: 160 }}>
+      <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 160 }, width: { xs: "100%", sm: "auto" } }}>
         <InputLabel sx={{ fontSize: "0.8125rem" }}>Tipo</InputLabel>
         <Select
           label="Tipo"

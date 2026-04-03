@@ -63,7 +63,7 @@ export function Topbar({ userName, userEmail, userRole, portfolios = [], selecte
         sx={{ minHeight: 52, px: { xs: 2, lg: 3 }, gap: 1.5 }}
       >
         {/* Mobile menu trigger */}
-        <MobileNav userRole={userRole} />
+        <MobileNav userRole={userRole} selectedPortfolioId={selectedPortfolioId} />
 
         {/* Spacer */}
         <Box sx={{ flex: 1 }} />

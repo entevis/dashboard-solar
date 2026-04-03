@@ -92,14 +92,40 @@ export function PlantTabsClient({ plant, canEdit, base }: Props) {
 
   return (
     <>
-      <Box sx={{ display: "flex", alignItems: "center", borderBottom: 1, borderColor: "divider" }}>
-        <Tabs value="overview" sx={{ flex: 1 }}>
-          <Tab label="General" value="overview" component={Link} href={base} />
-          <Tab label="Reportes" value="generation" component={Link} href={`${base}/generation`} />
-          <Tab label="Contingencias" value="contingencies" component={Link} href={`${base}/contingencies`} />
-        </Tabs>
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Tabs value="overview" variant="scrollable" scrollButtons={false} sx={{ flex: 1, minWidth: 0 }}>
+            <Tab label="General" value="overview" component={Link} href={base} />
+            <Tab label="Reportes" value="generation" component={Link} href={`${base}/generation`} />
+            <Tab label="Contingencias" value="contingencies" component={Link} href={`${base}/contingencies`} />
+          </Tabs>
+          {canEdit && (
+            <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 1, alignItems: "center", pl: 2, flexShrink: 0 }}>
+              {isEditing ? (
+                <>
+                  <Button variant="text" size="small" onClick={handleCancel} disabled={saving}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleSave}
+                    disabled={saving}
+                    startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
+                  >
+                    {saving ? "Guardando..." : "Guardar cambios"}
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outlined" size="small" startIcon={<EditOutlinedIcon />} onClick={() => setIsEditing(true)}>
+                  Editar
+                </Button>
+              )}
+            </Box>
+          )}
+        </Box>
         {canEdit && (
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", pl: 2 }}>
+          <Box sx={{ display: { xs: "flex", sm: "none" }, gap: 1, pb: 1, pt: 0.5 }}>
             {isEditing ? (
               <>
                 <Button variant="text" size="small" onClick={handleCancel} disabled={saving}>

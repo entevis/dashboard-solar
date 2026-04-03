@@ -17,12 +17,14 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { toast } from "@/lib/utils/toast";
 
 interface PowerPlant { id: number; name: string }
 
 export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPlant[] }) {
   const router = useRouter();
+  const isMobile = useMediaQuery("(max-width:599px)");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -84,7 +86,7 @@ export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPla
         Nueva contingencia
       </Button>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle>
           <Typography fontWeight={700} fontSize="0.9375rem">Crear contingencia</Typography>
         </DialogTitle>

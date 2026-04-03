@@ -36,43 +36,54 @@ type NavSection = {
   items: NavItem[];
 };
 
-const navSections: NavSection[] = [
-  {
-    roles: "all",
-    items: [
-      { label: "Dashboard",  href: "/dashboard",     icon: DashboardOutlinedIcon },
-      { label: "Plantas",    href: "/power-plants",   icon: BoltOutlinedIcon },
-    ],
-  },
-  {
-    roles: ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"],
-    items: [
-      { label: "Reportes",    href: "/reports",  icon: DescriptionOutlinedIcon },
-      { label: "Facturación", href: "/billing",  icon: ReceiptLongOutlinedIcon },
-    ],
-  },
-  {
-    roles: ["MAESTRO", "OPERATIVO"],
-    items: [
-      { label: "Contingencias", href: "/contingencies", icon: WarningAmberOutlinedIcon },
-    ],
-  },
-  {
-    title: "Configuraciones",
-    roles: ["MAESTRO"],
-    items: [
-      { label: "Usuarios",    href: "/admin/users",      icon: PeopleAltOutlinedIcon },
-      { label: "Clientes",    href: "/admin/customers",  icon: AccountCircleOutlinedIcon },
-      { label: "Portafolios", href: "/admin/portfolios", icon: ApartmentOutlinedIcon },
-    ],
-  },
-];
 
-export function MobileNav({ userRole }: { userRole: UserRole }) {
+interface MobileNavProps {
+  userRole: UserRole;
+  selectedPortfolioId?: number | null;
+}
+
+export function MobileNav({ userRole, selectedPortfolioId }: MobileNavProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const visibleSections = navSections.filter(
+  const urlMatch = pathname.match(/^\/(\d+)(\/|$)/);
+  const urlPid = urlMatch?.[1];
+  const pid = urlPid ?? (selectedPortfolioId ? String(selectedPortfolioId) : null);
+  const p = (path: string) => (pid ? `/${pid}${path}` : path);
+
+  const sections: NavSection[] = [
+    {
+      roles: "all",
+      items: [
+        { label: "Dashboard",  href: "/dashboard",      icon: DashboardOutlinedIcon },
+        { label: "Plantas",    href: p("/power-plants"), icon: BoltOutlinedIcon },
+      ],
+    },
+    {
+      roles: ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"],
+      items: [
+        { label: "Reportes",    href: p("/reports"),  icon: DescriptionOutlinedIcon },
+        { label: "Facturación", href: p("/billing"),  icon: ReceiptLongOutlinedIcon },
+      ],
+    },
+    {
+      roles: ["MAESTRO", "OPERATIVO"],
+      items: [
+        { label: "Contingencias", href: p("/contingencies"), icon: WarningAmberOutlinedIcon },
+      ],
+    },
+    {
+      title: "Configuraciones",
+      roles: ["MAESTRO"],
+      items: [
+        { label: "Usuarios",    href: "/admin/users",      icon: PeopleAltOutlinedIcon },
+        { label: "Clientes",    href: "/admin/customers",  icon: AccountCircleOutlinedIcon },
+        { label: "Portafolios", href: "/admin/portfolios", icon: ApartmentOutlinedIcon },
+      ],
+    },
+  ];
+
+  const visibleSections = sections.filter(
     (s) => s.roles === "all" || s.roles.includes(userRole)
   );
 

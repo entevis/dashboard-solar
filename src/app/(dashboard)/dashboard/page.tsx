@@ -120,7 +120,7 @@ export default async function DashboardPage() {
           </Typography>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
           <KpiCard label="Plantas" value={String(data.plants.length)} icon={<BoltOutlinedIcon sx={{ fontSize: 20 }} />} />
           <KpiCard label="Generación Total" value={`${Math.round(data.totalKwh).toLocaleString("es-CL")} kWh`} icon={<BoltOutlinedIcon sx={{ fontSize: 20 }} />} />
           <KpiCard label="CO2 Evitado" value={`${data.totalCo2.toFixed(1)} ton`} icon={<EnergySavingsLeafOutlinedIcon sx={{ fontSize: 20 }} />} />
