@@ -19,6 +19,11 @@ const updateSchema = z.object({
   startDate: z.string().nullable().optional(),
   durationYears: z.number().positive().nullable().optional(),
   specificYield: z.number().positive().nullable().optional(),
+  panelCount: z.number().int().positive().nullable().optional(),
+  installationType: z.string().nullable().optional(),
+  surfaceM2: z.number().positive().nullable().optional(),
+  economicSector: z.string().nullable().optional(),
+  economicSector2: z.string().nullable().optional(),
   address: z.object({
     address: z.string().nullable().optional(),
     reference: z.string().nullable().optional(),

@@ -14,6 +14,7 @@ import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 
 export interface PlantAddress {
   address: string | null;
@@ -36,6 +37,11 @@ export interface SerializedPlant {
   durationYears: number | null;
   city: string | null;
   location: string | null;
+  panelCount: number | null;
+  installationType: string | null;
+  surfaceM2: number | null;
+  economicSector: string | null;
+  economicSector2: string | null;
   portfolio: { id: number; name: string };
   customer: { name: string; rut: string };
   address: PlantAddress | null;
@@ -51,6 +57,11 @@ export type FormState = {
   tariffId: string;
   startDate: string;
   durationYears: string;
+  panelCount: string;
+  installationType: string;
+  surfaceM2: string;
+  economicSector: string;
+  economicSector2: string;
   addrAddress: string;
   addrReference: string;
   addrCity: string;
@@ -212,6 +223,29 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                     <Field label="Rendimiento anual" value={plant.specificYield != null ? `${plant.specificYield.toLocaleString("es-CL")} kWh/kWp` : null} />
                     <Field label="Distribuidora" value={plant.distributorCompany} />
                     <Field label="ID Tarifa" value={plant.tariffId} />
+                  </>
+                )}
+              </Box>
+            </SectionCard>
+
+            {/* Instalación */}
+            <SectionCard icon={BusinessOutlinedIcon} title="Instalación">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                {isEditing ? (
+                  <>
+                    <TextField fullWidth size="small" label="N° Paneles" type="number" value={form.panelCount} onChange={ef("panelCount")} placeholder="Ej: 400" />
+                    <TextField fullWidth size="small" label="Tipo instalación" value={form.installationType} onChange={ef("installationType")} placeholder="Techo / Suelo" />
+                    <TextField fullWidth size="small" label="Superficie (m²)" type="number" value={form.surfaceM2} onChange={ef("surfaceM2")} placeholder="Ej: 2500" />
+                    <TextField fullWidth size="small" label="Sector económico" value={form.economicSector} onChange={ef("economicSector")} />
+                    <TextField fullWidth size="small" label="Sector económico 2" value={form.economicSector2} onChange={ef("economicSector2")} />
+                  </>
+                ) : (
+                  <>
+                    <Field label="N° Paneles" value={plant.panelCount != null ? plant.panelCount.toLocaleString("es-CL") : null} />
+                    <Field label="Tipo instalación" value={plant.installationType} />
+                    <Field label="Superficie" value={plant.surfaceM2 != null ? `${plant.surfaceM2.toLocaleString("es-CL")} m²` : null} />
+                    <Field label="Sector económico" value={plant.economicSector} />
+                    <Field label="Sector económico 2" value={plant.economicSector2} />
                   </>
                 )}
               </Box>
