@@ -65,7 +65,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary">Usuarios</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            {users.length} {users.length === 1 ? "usuario encontrado" : "usuarios encontrados"}
+            {total} {total === 1 ? "usuario encontrado" : "usuarios encontrados"}
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
@@ -74,7 +74,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
         </Box>
       </Box>
 
-      <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden" }}>
+      <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white" }}>
         <UserTable
           users={users}
           customers={customers}
