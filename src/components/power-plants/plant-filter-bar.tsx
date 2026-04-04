@@ -18,9 +18,10 @@ interface Props {
   portfolios: Option[];
   customers: Option[];
   hidePortfolioFilter?: boolean;
+  hideCustomerFilter?: boolean;
 }
 
-export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = false }: Props) {
+export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = false, hideCustomerFilter = false }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -80,19 +81,21 @@ export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = fa
         </FormControl>
       )}
 
-      <FormControl size="small" sx={{ width: 200 }}>
-        <InputLabel>Cliente</InputLabel>
-        <Select
-          label="Cliente"
-          defaultValue={searchParams.get("customerId") ?? "_all"}
-          onChange={(e) => updateParam("customerId", String(e.target.value))}
-        >
-          <MenuItem value="_all">Todos</MenuItem>
-          {customers.map((c) => (
-            <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {!hideCustomerFilter && (
+        <FormControl size="small" sx={{ width: 200 }}>
+          <InputLabel>Cliente</InputLabel>
+          <Select
+            label="Cliente"
+            defaultValue={searchParams.get("customerId") ?? "_all"}
+            onChange={(e) => updateParam("customerId", String(e.target.value))}
+          >
+            <MenuItem value="_all">Todos</MenuItem>
+            {customers.map((c) => (
+              <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
 
       {isPending && (
         <Typography variant="caption" color="text.secondary">

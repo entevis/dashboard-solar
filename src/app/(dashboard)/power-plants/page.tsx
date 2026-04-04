@@ -40,6 +40,7 @@ export default async function PowerPlantsPage({ searchParams }: Props) {
   ]);
 
   const canEdit = user.role === UserRole.MAESTRO;
+  const isCliente = user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO;
   const hasFilters = !!(params.q || params.portfolioId || params.customerId);
 
   return (
@@ -52,7 +53,7 @@ export default async function PowerPlantsPage({ searchParams }: Props) {
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <PlantFilterBar portfolios={portfolios} customers={customers} />
+          <PlantFilterBar portfolios={portfolios} customers={customers} hidePortfolioFilter={isCliente} hideCustomerFilter={isCliente} />
           {canEdit && <CreatePlantDialog portfolios={portfolios} customers={customers} />}
         </Box>
       </Box>
