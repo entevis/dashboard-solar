@@ -10,6 +10,8 @@ const updateSchema = z.object({
   role: z.nativeEnum(UserRole).optional(),
   customerId: z.coerce.number().int().positive().nullable().optional(),
   assignedPortfolioId: z.coerce.number().int().positive().nullable().optional(),
+  phone: z.string().max(50).nullable().optional(),
+  jobTitle: z.string().max(200).nullable().optional(),
 });
 
 interface RouteContext {

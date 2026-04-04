@@ -31,6 +31,8 @@ interface UserWithRelations {
   role: UserRole;
   customerId: number | null;
   assignedPortfolioId: number | null;
+  phone: string | null;
+  jobTitle: string | null;
   customer: { id: number; name: string; rut: string } | null;
   assignedPortfolio: { id: number; name: string } | null;
   createdAt: Date;
@@ -119,6 +121,8 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
                 >
                   <TableCell><TableSortLabel {...col("name")}>Nombre</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("email")}>Email</TableSortLabel></TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Teléfono</TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Cargo</TableCell>
                   <TableCell><TableSortLabel {...col("role")}>Rol</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("customer")}>Cliente / Portafolio</TableSortLabel></TableCell>
                   <TableCell sx={{ width: 48 }} />
@@ -129,6 +133,8 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
                   <TableRow key={user.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
                     <TableCell sx={{ fontWeight: 500 }}>{user.name}</TableCell>
                     <TableCell sx={{ color: "text.secondary" }}>{user.email}</TableCell>
+                    <TableCell sx={{ color: "text.secondary", display: { xs: "none", lg: "table-cell" } }}>{user.phone ?? "—"}</TableCell>
+                    <TableCell sx={{ color: "text.secondary", display: { xs: "none", lg: "table-cell" } }}>{user.jobTitle ?? "—"}</TableCell>
                     <TableCell>
                       <Chip label={ROLE_LABELS[user.role]} size="small" sx={{ ...roleSx[user.role], fontSize: "0.6875rem", height: 20, fontWeight: 600 }} />
                     </TableCell>

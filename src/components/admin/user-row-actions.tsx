@@ -29,7 +29,7 @@ import type { UserRole } from "@prisma/client";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
-interface User { id: number; name: string; email: string; role: UserRole; customerId: number | null; assignedPortfolioId: number | null }
+interface User { id: number; name: string; email: string; role: UserRole; customerId: number | null; assignedPortfolioId: number | null; phone: string | null; jobTitle: string | null }
 interface Option { id: number; name: string }
 interface Props { user: User; customers: Option[]; portfolios: Option[]; currentUserId: number }
 
@@ -46,6 +46,8 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
     role: user.role as string,
     customerId: user.customerId ? String(user.customerId) : "",
     assignedPortfolioId: user.assignedPortfolioId ? String(user.assignedPortfolioId) : "",
+    phone: user.phone ?? "",
+    jobTitle: user.jobTitle ?? "",
   });
 
   const isSelf = user.id === currentUserId;
@@ -57,7 +59,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
       const res = await fetch(`/api/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, role: form.role, customerId: form.customerId || null, assignedPortfolioId: form.assignedPortfolioId || null }),
+        body: JSON.stringify({ name: form.name, role: form.role, customerId: form.customerId || null, assignedPortfolioId: form.assignedPortfolioId || null, phone: form.phone || null, jobTitle: form.jobTitle || null }),
       });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Error al actualizar usuario"); }
       toast.success("Usuario actualizado");
@@ -104,6 +106,8 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <TextField label="Nombre" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} sx={inputSx} />
             <TextField label="Email" size="small" value={user.email} disabled sx={inputSx} />
+            <TextField label="Teléfono" size="small" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} sx={inputSx} inputProps={{ inputMode: "tel" }} />
+            <TextField label="Cargo" size="small" value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} sx={inputSx} />
             <FormControl size="small" required sx={inputSx}>
               <InputLabel>Rol</InputLabel>
               <Select label="Rol" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, customerId: "", assignedPortfolioId: "" })}>

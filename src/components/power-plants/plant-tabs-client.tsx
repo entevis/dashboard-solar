@@ -183,7 +183,7 @@ export function PlantTabsClient({ plant, canEdit, base }: Props) {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 1, backgroundColor: "#eff4ff", borderBottom: "2px solid #004ac6", borderRadius: "0 0 4px 4px" }}>
           <EditNoteOutlinedIcon sx={{ fontSize: 16, color: "primary.main" }} />
           <Typography variant="caption" fontWeight={600} color="primary.main">
-            Modo edición — los cambios no se guardan hasta que presiones "Guardar cambios"
+            Modo edición — los cambios no se guardan hasta que presiones &quot;Guardar cambios&quot;
           </Typography>
         </Box>
       )}
