@@ -51,19 +51,18 @@ export default async function ContingenciesPage({ searchParams }: Props) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 3 }}>
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, flexShrink: 0 }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2, flexWrap: "wrap", flexShrink: 0 }}>
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary">Contingencias</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             Gestión de mantenciones preventivas y correctivas
           </Typography>
         </Box>
-        {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
-      </Box>
-
-      <Box sx={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
-        <StatusTabs counts={counts} />
-        <ContingencyFilterBar plants={accessiblePlants} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+          <StatusTabs counts={counts} />
+          <ContingencyFilterBar plants={accessiblePlants} />
+          {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
+        </Box>
       </Box>
 
       <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>

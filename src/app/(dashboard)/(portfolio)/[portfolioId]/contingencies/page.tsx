@@ -64,18 +64,18 @@ export default async function PortfolioContingenciesPage({ params, searchParams 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-4">
       <div className="shrink-0 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-lg font-bold text-[var(--color-foreground)]">Contingencias</h1>
             <p className="text-[13px] text-[var(--color-muted-foreground)]">
               Gestión de mantenciones preventivas y correctivas
             </p>
           </div>
-          {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
-        </div>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <StatusTabs counts={counts} />
-          <ContingencyFilterBar plants={accessiblePlants} />
+          <div className="flex items-center gap-3 flex-wrap">
+            <StatusTabs counts={counts} />
+            <ContingencyFilterBar plants={accessiblePlants} />
+            {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
+          </div>
         </div>
       </div>
 
