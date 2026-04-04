@@ -8,10 +8,11 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 
 interface Props {
-  searchParams: Promise<{ q?: string; role?: string }>;
+  searchParams: Promise<{ q?: string; role?: string; page?: string; pageSize?: string }>;
 }
 
 const VALID_ROLES = ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"] as const;
+const VALID_PAGE_SIZES = [10, 25, 50];
 
 export default async function AdminUsersPage({ searchParams }: Props) {
   const currentUser = await requireAuth();
@@ -20,25 +21,32 @@ export default async function AdminUsersPage({ searchParams }: Props) {
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
   const role = VALID_ROLES.includes(params.role as UserRole) ? (params.role as UserRole) : undefined;
+  const pageSize = VALID_PAGE_SIZES.includes(parseInt(params.pageSize ?? "")) ? parseInt(params.pageSize!) : 25;
+  const page = Math.max(0, parseInt(params.page ?? "0") || 0);
 
-  const [users, customers, portfolios] = await Promise.all([
+  const where = {
+    active: 1,
+    ...(role ? { role } : {}),
+    ...(q ? {
+      OR: [
+        { name: { contains: q, mode: "insensitive" as const } },
+        { email: { contains: q, mode: "insensitive" as const } },
+      ],
+    } : {}),
+  };
+
+  const [users, total, customers, portfolios] = await Promise.all([
     prisma.user.findMany({
-      where: {
-        active: 1,
-        ...(role ? { role } : {}),
-        ...(q ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { email: { contains: q, mode: "insensitive" } },
-          ],
-        } : {}),
-      },
+      where,
       include: {
         customer: { select: { id: true, name: true, rut: true } },
         assignedPortfolio: { select: { id: true, name: true } },
       },
       orderBy: { name: "asc" },
+      skip: page * pageSize,
+      take: pageSize,
     }),
+    prisma.user.count({ where }),
     prisma.customer.findMany({
       where: { active: 1 },
       select: { id: true, name: true, rut: true },
@@ -72,6 +80,9 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           customers={customers}
           portfolios={portfolios}
           currentUserId={currentUser.id}
+          total={total}
+          page={page}
+          rowsPerPage={pageSize}
         />
       </Box>
     </Box>

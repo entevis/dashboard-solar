@@ -29,6 +29,7 @@ export function UserFilterBar() {
     } else {
       params.delete(key);
     }
+    params.delete("page");
     startTransition(() => router.push(`?${params.toString()}`));
   }
 
