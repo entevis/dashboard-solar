@@ -71,11 +71,9 @@ export default async function PortfolioContingenciesPage({ params, searchParams 
               Gestión de mantenciones preventivas y correctivas
             </p>
           </div>
-          <div className="flex items-center justify-between gap-3 flex-wrap w-full">
-            <div className="flex items-center gap-3 flex-wrap">
-              <StatusTabs counts={counts} />
-              <ContingencyFilterBar plants={accessiblePlants} />
-            </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <StatusTabs counts={counts} />
+            <ContingencyFilterBar plants={accessiblePlants} />
             {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
           </div>
         </div>
