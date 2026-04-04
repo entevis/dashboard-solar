@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useTransition } from "react";
+import { useRef, useTransition, useState } from "react";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
@@ -10,7 +10,11 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Badge from "@mui/material/Badge";
+import Button from "@mui/material/Button";
+import Collapse from "@mui/material/Collapse";
 import SearchIcon from "@mui/icons-material/Search";
+import TuneIcon from "@mui/icons-material/Tune";
 
 interface Option { id: number; name: string }
 
@@ -26,6 +30,13 @@ export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = fa
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const hasDropdownFilters = !hidePortfolioFilter || !hideCustomerFilter;
+  const activeFilterCount = [
+    !hidePortfolioFilter && searchParams.get("portfolioId"),
+    !hideCustomerFilter && searchParams.get("customerId"),
+  ].filter(Boolean).length;
 
   function updateParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -46,27 +57,10 @@ export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = fa
     }, 350);
   }
 
-  return (
-    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
-      <TextField
-        size="small"
-        placeholder="Buscar planta..."
-        defaultValue={searchParams.get("q") ?? ""}
-        onChange={handleSearch}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-              </InputAdornment>
-            ),
-          },
-        }}
-        sx={{ width: 200 }}
-      />
-
+  const dropdownFilters = (
+    <>
       {!hidePortfolioFilter && (
-        <FormControl size="small" sx={{ width: 176 }}>
+        <FormControl size="small" sx={{ width: { xs: "100%", sm: 176 } }}>
           <InputLabel>Portafolio</InputLabel>
           <Select
             label="Portafolio"
@@ -82,7 +76,7 @@ export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = fa
       )}
 
       {!hideCustomerFilter && (
-        <FormControl size="small" sx={{ width: 200 }}>
+        <FormControl size="small" sx={{ width: { xs: "100%", sm: 200 } }}>
           <InputLabel>Cliente</InputLabel>
           <Select
             label="Cliente"
@@ -96,11 +90,70 @@ export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = fa
           </Select>
         </FormControl>
       )}
+    </>
+  );
 
-      {isPending && (
-        <Typography variant="caption" color="text.secondary">
-          Filtrando...
-        </Typography>
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      {/* Row: search + filter toggle (mobile) / search + dropdowns (desktop) */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
+        <TextField
+          size="small"
+          placeholder="Buscar planta..."
+          defaultValue={searchParams.get("q") ?? ""}
+          onChange={handleSearch}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+          sx={{ width: { xs: "100%", sm: 200 } }}
+        />
+
+        {/* Desktop: inline dropdowns */}
+        {hasDropdownFilters && (
+          <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 1.5, alignItems: "center" }}>
+            {dropdownFilters}
+          </Box>
+        )}
+
+        {/* Mobile: toggle button */}
+        {hasDropdownFilters && (
+          <Badge
+            badgeContent={activeFilterCount}
+            color="primary"
+            sx={{ display: { xs: "flex", sm: "none" } }}
+          >
+            <Button
+              variant={showFilters ? "contained" : "outlined"}
+              size="small"
+              startIcon={<TuneIcon />}
+              onClick={() => setShowFilters((v) => !v)}
+              sx={{ minHeight: 40, borderColor: "#c3c6d7", color: showFilters ? undefined : "text.secondary" }}
+            >
+              Filtros
+            </Button>
+          </Badge>
+        )}
+
+        {isPending && (
+          <Typography variant="caption" color="text.secondary">
+            Filtrando...
+          </Typography>
+        )}
+      </Box>
+
+      {/* Mobile: collapsible dropdowns */}
+      {hasDropdownFilters && (
+        <Collapse in={showFilters} sx={{ display: { xs: "block", sm: "none" } }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, pt: 0.5 }}>
+            {dropdownFilters}
+          </Box>
+        </Collapse>
       )}
     </Box>
   );

@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import { PlantDetailPanel } from "@/components/power-plants/plant-detail-panel";
 import type { SerializedPlant, FormState } from "@/components/power-plants/plant-detail-panel";
 import { toast } from "@/lib/utils/toast";
@@ -48,6 +49,23 @@ export function PlantTabsClient({ plant, canEdit, base }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(() => buildInitialForm(plant));
+
+  // Guard browser unload while editing
+  useEffect(() => {
+    if (!isEditing) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isEditing]);
+
+  const guardedNavigate = useCallback((href: string) => {
+    if (isEditing) {
+      if (!window.confirm("Tienes cambios sin guardar. ¿Salir de todas formas?")) return;
+      setIsEditing(false);
+      setForm(buildInitialForm(plant));
+    }
+    router.push(href);
+  }, [isEditing, plant, router]);
 
   function handleCancel() {
     setForm(buildInitialForm(plant));
@@ -105,9 +123,9 @@ export function PlantTabsClient({ plant, canEdit, base }: Props) {
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Tabs value="overview" variant="scrollable" scrollButtons={false} sx={{ flex: 1, minWidth: 0 }}>
-            <Tab label="General" value="overview" component={Link} href={base} />
-            <Tab label="Reportes" value="generation" component={Link} href={`${base}/generation`} />
-            <Tab label="Contingencias" value="contingencies" component={Link} href={`${base}/contingencies`} />
+            <Tab label="General" value="overview" onClick={() => guardedNavigate(base)} />
+            <Tab label="Reportes" value="generation" onClick={() => guardedNavigate(`${base}/generation`)} />
+            <Tab label="Contingencias" value="contingencies" onClick={() => guardedNavigate(`${base}/contingencies`)} />
           </Tabs>
           {canEdit && (
             <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 1, alignItems: "center", pl: 2, flexShrink: 0 }}>
@@ -138,21 +156,22 @@ export function PlantTabsClient({ plant, canEdit, base }: Props) {
           <Box sx={{ display: { xs: "flex", sm: "none" }, gap: 1, pb: 1, pt: 0.5 }}>
             {isEditing ? (
               <>
-                <Button variant="text" size="small" onClick={handleCancel} disabled={saving}>
+                <Button variant="text" size="medium" onClick={handleCancel} disabled={saving} sx={{ minHeight: 44 }}>
                   Cancelar
                 </Button>
                 <Button
                   variant="contained"
-                  size="small"
+                  size="medium"
                   onClick={handleSave}
                   disabled={saving}
                   startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
+                  sx={{ minHeight: 44 }}
                 >
                   {saving ? "Guardando..." : "Guardar cambios"}
                 </Button>
               </>
             ) : (
-              <Button variant="outlined" size="small" startIcon={<EditOutlinedIcon />} onClick={() => setIsEditing(true)}>
+              <Button variant="outlined" size="medium" startIcon={<EditOutlinedIcon />} onClick={() => setIsEditing(true)} sx={{ minHeight: 44 }}>
                 Editar
               </Button>
             )}
@@ -160,6 +179,14 @@ export function PlantTabsClient({ plant, canEdit, base }: Props) {
         )}
       </Box>
 
+      {isEditing && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 1, backgroundColor: "#eff4ff", borderBottom: "2px solid #004ac6", borderRadius: "0 0 4px 4px" }}>
+          <EditNoteOutlinedIcon sx={{ fontSize: 16, color: "primary.main" }} />
+          <Typography variant="caption" fontWeight={600} color="primary.main">
+            Modo edición — los cambios no se guardan hasta que presiones "Guardar cambios"
+          </Typography>
+        </Box>
+      )}
       <PlantDetailPanel plant={plant} isEditing={isEditing} saving={saving} form={form} onField={onField} />
     </>
   );

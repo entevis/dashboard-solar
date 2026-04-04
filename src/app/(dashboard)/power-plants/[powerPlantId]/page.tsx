@@ -1,8 +1,11 @@
 import { requireAuth, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import { PortfolioLogo } from "@/components/ui/portfolio-logo";
 import { getPortfolioLogo } from "@/lib/portfolio-logos";
 import { PlantTabsClient } from "@/components/power-plants/plant-tabs-client";
@@ -38,8 +41,22 @@ export default async function PowerPlantDetailPage({ params }: Props) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Back button */}
+      <Box>
+        <Button
+          component={Link}
+          href="/power-plants"
+          variant="text"
+          size="small"
+          startIcon={<ArrowBackOutlinedIcon />}
+          sx={{ color: "text.secondary", fontWeight: 500, pl: 0, "&:hover": { color: "text.primary", backgroundColor: "transparent" } }}
+        >
+          Plantas
+        </Button>
+      </Box>
+
       {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mt: -1 }}>
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary" gutterBottom={false}>
             {plant.name}

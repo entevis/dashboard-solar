@@ -13,6 +13,8 @@ import TablePagination from "@mui/material/TablePagination";
 import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { PlantRowActions } from "@/components/power-plants/plant-row-actions";
 
 interface PlantAddress {
@@ -140,9 +142,88 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
     ...(align === "center" && { textAlign: "center" }),
   });
 
+  // Mobile card list (xs/sm)
+  const MobileList = (
+    <Box sx={{ display: { xs: "flex", md: "none" }, flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <Box sx={{ flex: 1, overflowY: "auto" }}>
+        {paginated.map((plant) => (
+          <Box
+            key={plant.id}
+            component={Link}
+            href={`/power-plants/${plant.id}`}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              px: 2,
+              py: 1.5,
+              minHeight: 64,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              textDecoration: "none",
+              color: "inherit",
+              "&:hover": { backgroundColor: "#eff4ff" },
+              "&:active": { backgroundColor: "#dbe1ff" },
+            }}
+          >
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                fontSize="0.875rem"
+                fontWeight={600}
+                color="primary.main"
+                sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              >
+                {plant.name}
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
+                {(plant.city ?? plant.location) && (
+                  <Typography variant="caption" color="text.secondary">
+                    {plant.city ?? plant.location}
+                  </Typography>
+                )}
+                <Typography variant="caption" color="text.secondary">·</Typography>
+                <Typography variant="caption" color="text.secondary">{plant.capacityKw} kWp</Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+              <Chip
+                label={plant.status === "active" ? "Activa" : "En mantenimiento"}
+                size="small"
+                sx={plant.status === "active"
+                  ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
+                  : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }}
+              />
+              <ChevronRightIcon sx={{ fontSize: 18, color: "text.disabled" }} />
+            </Box>
+          </Box>
+        ))}
+      </Box>
+      <TablePagination
+        component="div"
+        count={plants.length}
+        page={page}
+        onPageChange={(_, p) => setPage(p)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setPage(0); }}
+        rowsPerPageOptions={PAGE_SIZES}
+        labelRowsPerPage="Filas:"
+        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+        sx={{
+          borderTop: "1px solid",
+          borderColor: "divider",
+          flexShrink: 0,
+          "& .MuiTablePagination-toolbar": { minHeight: 52, px: 1.5 },
+          "& .MuiTablePagination-actions button": { minWidth: 44, minHeight: 44 },
+          "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": { fontSize: "0.8125rem" },
+        }}
+      />
+    </Box>
+  );
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-      <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+      {MobileList}
+      <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto", display: { xs: "none", md: "block" } }}>
         <MuiTable stickyHeader size="small" sx={{ tableLayout: "fixed", minWidth: 900 }}>
           <TableHead>
             <TableRow
@@ -226,7 +307,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
                 </TableCell>
                 <TableCell sx={{ width: W.status, maxWidth: W.status, p: "6px 12px" }}>
                   <Chip
-                    label={plant.status === "active" ? "Activa" : "Mantención"}
+                    label={plant.status === "active" ? "Activa" : "En mantenimiento"}
                     size="small"
                     sx={plant.status === "active"
                       ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
@@ -255,10 +336,11 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
         labelRowsPerPage="Filas:"
         labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
         sx={{
+          display: { xs: "none", md: "flex" },
           borderTop: "none",
           flexShrink: 0,
-          fontSize: "0.75rem",
-          "& .MuiTablePagination-toolbar": { minHeight: 40, px: 1.5 },
+          "& .MuiTablePagination-toolbar": { minHeight: 44, px: 1.5 },
+          "& .MuiTablePagination-actions button": { minWidth: 44, minHeight: 44 },
           "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
             fontSize: "0.75rem",
           },

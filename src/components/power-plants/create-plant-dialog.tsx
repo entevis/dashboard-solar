@@ -47,23 +47,40 @@ const emptyForm = {
   addrCountry: "Chile",
 };
 
+type FormErrors = Partial<Record<keyof typeof emptyForm, string>>;
+
 export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: Props) {
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width:599px)");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ ...emptyForm, portfolioId: fixedPortfolioId ? String(fixedPortfolioId) : "" });
+  const [errors, setErrors] = useState<FormErrors>({});
 
-  const sf = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const sf = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [field]: e.target.value });
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  function validate(): FormErrors {
+    const e: FormErrors = {};
+    if (!form.name.trim()) e.name = "El nombre es obligatorio";
+    if (!form.capacityKw || parseFloat(form.capacityKw) <= 0) e.capacityKw = "Ingresa una potencia mayor a 0";
+    if (!form.portfolioId) e.portfolioId = "Selecciona un portafolio";
+    if (!form.customerId) e.customerId = "Selecciona un cliente";
+    return e;
+  }
 
   function handleClose() {
     setOpen(false);
+    setErrors({});
     setForm({ ...emptyForm, portfolioId: fixedPortfolioId ? String(fixedPortfolioId) : "" });
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const validation = validate();
+    if (Object.keys(validation).length > 0) { setErrors(validation); return; }
     setLoading(true);
     try {
       const res = await fetch("/api/power-plants", {
@@ -115,7 +132,7 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
             <Grid container spacing={2} sx={{ pt: 1 }}>
               {/* Identificación */}
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField fullWidth size="small" label="Nombre" value={form.name} onChange={sf("name")} required />
+                <TextField fullWidth size="small" label="Nombre" value={form.name} onChange={sf("name")} error={!!errors.name} helperText={errors.name} />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField fullWidth size="small" label="ID Solcor" value={form.solcorId} onChange={sf("solcorId")} placeholder="Ej: SOL-001" />
@@ -123,7 +140,7 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
 
               {/* Técnico */}
               <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField fullWidth size="small" label="Potencia (kWp)" type="number" inputProps={{ step: "0.1", min: 0 }} value={form.capacityKw} onChange={sf("capacityKw")} required />
+                <TextField fullWidth size="small" label="Potencia (kWp)" type="number" inputProps={{ step: "0.1", min: 0 }} value={form.capacityKw} onChange={sf("capacityKw")} error={!!errors.capacityKw} helperText={errors.capacityKw} />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField fullWidth size="small" label="Rendimiento (kWh/kWp)" type="number" inputProps={{ step: "0.01", min: 0 }} value={form.specificYield} onChange={sf("specificYield")} />
@@ -154,24 +171,26 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth size="small" required>
+                <FormControl fullWidth size="small" error={!!errors.portfolioId}>
                   <InputLabel>Portafolio</InputLabel>
                   <Select
                     label="Portafolio"
                     value={form.portfolioId}
-                    onChange={(e) => { if (!fixedPortfolioId) setForm({ ...form, portfolioId: e.target.value }); }}
+                    onChange={(e) => { if (!fixedPortfolioId) { setForm({ ...form, portfolioId: e.target.value }); setErrors((prev) => ({ ...prev, portfolioId: undefined })); } }}
                     inputProps={fixedPortfolioId ? { readOnly: true } : {}}
                   >
                     {portfolios.map((p) => <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>)}
                   </Select>
+                  {errors.portfolioId && <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>{errors.portfolioId}</Typography>}
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth size="small" required>
+                <FormControl fullWidth size="small" error={!!errors.customerId}>
                   <InputLabel>Cliente</InputLabel>
-                  <Select label="Cliente" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })}>
+                  <Select label="Cliente" value={form.customerId} onChange={(e) => { setForm({ ...form, customerId: e.target.value }); setErrors((prev) => ({ ...prev, customerId: undefined })); }}>
                     {customers.map((c) => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
                   </Select>
+                  {errors.customerId && <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>{errors.customerId}</Typography>}
                 </FormControl>
               </Grid>
 

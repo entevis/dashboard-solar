@@ -8,7 +8,9 @@ import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
+import Tooltip from "@mui/material/Tooltip";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
@@ -89,12 +91,19 @@ function calcEndDate(startDate: Date | string | null, durationYears: number | nu
   return new Intl.DateTimeFormat("es-CL").format(end);
 }
 
-function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
+function Field({ label, value, tip }: { label: string; value: string | number | null | undefined; tip?: string }) {
   return (
     <Box>
-      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: "block", mb: 0.5, letterSpacing: "0.04em" }}>
-        {label}
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ letterSpacing: "0.04em" }}>
+          {label}
+        </Typography>
+        {tip && (
+          <Tooltip title={tip} placement="top" arrow>
+            <InfoOutlinedIcon sx={{ fontSize: 13, color: "text.disabled", cursor: "help", flexShrink: 0 }} />
+          </Tooltip>
+        )}
+      </Box>
       <Typography variant="body1" fontWeight={500} color="text.primary">
         {value ?? "—"}
       </Typography>
@@ -162,7 +171,7 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                 ) : (
                   <>
                     <Grid size={{ xs: 12, sm: 6 }}><Field label="Nombre de planta" value={plant.name} /></Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}><Field label="ID Solcor" value={plant.solcorId} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="ID Solcor" value={plant.solcorId} tip="Identificador interno de la planta en el sistema de monitoreo Solcor." /></Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Box>
                         <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: "block", mb: 0.5, letterSpacing: "0.04em" }}>Estado</Typography>
@@ -189,7 +198,7 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                       <TextField fullWidth size="small" label="Fecha inicio (F6)" type="date" value={form.startDate} onChange={ef("startDate")} slotProps={{ inputLabel: { shrink: true } }} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField fullWidth size="small" label="Duración (años)" type="number" value={form.durationYears} onChange={ef("durationYears")} placeholder="Ej: 20" />
+                      <TextField fullWidth size="small" label="Duración (años)" type="number" value={form.durationYears} onChange={ef("durationYears")} placeholder="Ej: 20" inputProps={{ min: 1, max: 50, inputMode: "numeric" }} />
                     </Grid>
                   </>
                 ) : (
@@ -208,13 +217,13 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                 {isEditing ? (
                   <>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField fullWidth size="small" label="N° Paneles" type="number" value={form.panelCount} onChange={ef("panelCount")} placeholder="Ej: 400" />
+                      <TextField fullWidth size="small" label="N° Paneles" type="number" value={form.panelCount} onChange={ef("panelCount")} placeholder="Ej: 400" inputProps={{ min: 0, inputMode: "numeric" }} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField fullWidth size="small" label="Tipo instalación" value={form.installationType} onChange={ef("installationType")} placeholder="Techo / Suelo" />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField fullWidth size="small" label="Superficie (m²)" type="number" value={form.surfaceM2} onChange={ef("surfaceM2")} placeholder="Ej: 2500" />
+                      <TextField fullWidth size="small" label="Superficie (m²)" type="number" value={form.surfaceM2} onChange={ef("surfaceM2")} placeholder="Ej: 2500" inputProps={{ min: 0, inputMode: "decimal" }} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField fullWidth size="small" label="Sector económico" value={form.economicSector} onChange={ef("economicSector")} />
@@ -226,9 +235,9 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                 ) : (
                   <Grid container spacing={3}>
                     <Grid size={{ xs: 12, sm: 6 }}><Field label="N° Paneles" value={plant.panelCount != null ? plant.panelCount.toLocaleString("es-CL") : null} /></Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Tipo instalación" value={plant.installationType} /></Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Superficie" value={plant.surfaceM2 != null ? `${plant.surfaceM2.toLocaleString("es-CL")} m²` : null} /></Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Sector económico" value={plant.economicSector} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Tipo instalación" value={plant.installationType} tip="Indica si los paneles están montados en el suelo (Suelo) o sobre una superficie construida (Techo)." /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Superficie" value={plant.surfaceM2 != null ? `${plant.surfaceM2.toLocaleString("es-CL")} m²` : null} tip="Área total ocupada por la instalación fotovoltaica." /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Sector económico" value={plant.economicSector} tip="Rubro o actividad económica del cliente donde se instaló el sistema." /></Grid>
                     <Grid size={{ xs: 12, sm: 6 }}><Field label="Sector económico 2" value={plant.economicSector2} /></Grid>
                   </Grid>
                 )}
@@ -245,17 +254,17 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
                 {isEditing ? (
                   <>
-                    <TextField fullWidth size="small" label="Capacidad (kWp)" type="number" value={form.capacityKw} onChange={ef("capacityKw")} />
-                    <TextField fullWidth size="small" label="Rendimiento (kWh/kWp)" type="number" value={form.specificYield} onChange={ef("specificYield")} placeholder="Ej: 1450" />
+                    <TextField fullWidth size="small" label="Capacidad (kWp)" type="number" value={form.capacityKw} onChange={ef("capacityKw")} inputProps={{ min: 0, step: "0.1", inputMode: "decimal" }} />
+                    <TextField fullWidth size="small" label="Rendimiento (kWh/kWp)" type="number" value={form.specificYield} onChange={ef("specificYield")} placeholder="Ej: 1450" inputProps={{ min: 0, step: "0.01", inputMode: "decimal" }} />
                     <TextField fullWidth size="small" label="Distribuidora" value={form.distributorCompany} onChange={ef("distributorCompany")} placeholder="Ej: Enel" />
                     <TextField fullWidth size="small" label="ID Tarifa" value={form.tariffId} onChange={ef("tariffId")} placeholder="Ej: BT1" />
                   </>
                 ) : (
                   <>
-                    <Field label="Capacidad" value={plant.capacityKw != null ? `${plant.capacityKw} kWp` : null} />
-                    <Field label="Rendimiento anual" value={plant.specificYield != null ? `${plant.specificYield.toLocaleString("es-CL")} kWh/kWp` : null} />
+                    <Field label="Capacidad" value={plant.capacityKw != null ? `${plant.capacityKw} kWp` : null} tip="Potencia instalada en kilovatios pico (kWp): energía máxima que el sistema puede generar en condiciones ideales." />
+                    <Field label="Rendimiento anual" value={plant.specificYield != null ? `${plant.specificYield.toLocaleString("es-CL")} kWh/kWp` : null} tip="Producción real por unidad de potencia instalada. Un valor mayor indica mejor aprovechamiento de la radiación solar." />
                     <Field label="Distribuidora" value={plant.distributorCompany} />
-                    <Field label="ID Tarifa" value={plant.tariffId} />
+                    <Field label="ID Tarifa" value={plant.tariffId} tip="Código del tipo de tarifa eléctrica contratada con la distribuidora (ej. BT1, AT4.3)." />
                   </>
                 )}
               </Box>
