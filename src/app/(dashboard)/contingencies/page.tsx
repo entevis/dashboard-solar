@@ -58,9 +58,11 @@ export default async function ContingenciesPage({ searchParams }: Props) {
             Gestión de mantenciones preventivas y correctivas
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-          <StatusTabs counts={counts} />
-          <ContingencyFilterBar plants={accessiblePlants} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", justifyContent: "space-between", width: "100%" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+            <StatusTabs counts={counts} />
+            <ContingencyFilterBar plants={accessiblePlants} />
+          </Box>
           {canWrite && <CreateContingencyDialog powerPlants={accessiblePlants} />}
         </Box>
       </Box>
