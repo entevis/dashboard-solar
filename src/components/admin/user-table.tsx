@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -25,7 +24,7 @@ const roleSx: Record<UserRole, { backgroundColor: string; color: string }> = {
   CLIENTE_PERFILADO: { backgroundColor: "#dcfce7", color: "#15803d" },
 };
 
-interface UserWithRelations {
+export interface UserWithRelations {
   id: number;
   email: string;
   name: string;
@@ -46,9 +45,6 @@ interface Props {
   customers: Option[];
   portfolios: Option[];
   currentUserId: number;
-  total: number;
-  page: number;
-  rowsPerPage: number;
 }
 
 type SortKey = "name" | "email" | "role" | "customer";
@@ -63,9 +59,9 @@ function sortUsers(users: UserWithRelations[], key: SortKey, dir: SortDir): User
     let va: string;
     let vb: string;
     switch (key) {
-      case "name":     va = a.name;          vb = b.name;          break;
-      case "email":    va = a.email;         vb = b.email;         break;
-      case "role":     va = a.role;          vb = b.role;          break;
+      case "name":     va = a.name;           vb = b.name;           break;
+      case "email":    va = a.email;          vb = b.email;          break;
+      case "role":     va = a.role;           vb = b.role;           break;
       case "customer": va = getAssociated(a); vb = getAssociated(b); break;
     }
     const cmp = va.localeCompare(vb, "es");
@@ -73,17 +69,11 @@ function sortUsers(users: UserWithRelations[], key: SortKey, dir: SortDir): User
   });
 }
 
-export function UserTable({ users, customers, portfolios, currentUserId, total, page, rowsPerPage }: Props) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export function UserTable({ users, customers, portfolios, currentUserId }: Props) {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-
-  function updateParam(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value); else params.delete(key);
-    router.push(`?${params.toString()}`);
-  }
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
@@ -92,6 +82,7 @@ export function UserTable({ users, customers, portfolios, currentUserId, total, 
       setSortKey(key);
       setSortDir("asc");
     }
+    setPage(0);
   }
 
   function col(key: SortKey) {
@@ -103,10 +94,11 @@ export function UserTable({ users, customers, portfolios, currentUserId, total, 
   }
 
   const sorted = useMemo(() => sortUsers(users, sortKey, sortDir), [users, sortKey, sortDir]);
+  const paginated = sorted.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Box>
-      {total === 0 ? (
+    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      {sorted.length === 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
           <GroupOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
           <Typography fontSize="0.875rem" color="text.secondary">
@@ -115,7 +107,7 @@ export function UserTable({ users, customers, portfolios, currentUserId, total, 
         </Box>
       ) : (
         <>
-          <TableContainer>
+          <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow
@@ -136,7 +128,7 @@ export function UserTable({ users, customers, portfolios, currentUserId, total, 
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sorted.map((user) => (
+                {paginated.map((user) => (
                   <TableRow key={user.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
                     <TableCell sx={{ fontWeight: 500 }}>{user.name}</TableCell>
                     <TableCell sx={{ color: "text.secondary" }}>{user.email}</TableCell>
@@ -158,19 +150,20 @@ export function UserTable({ users, customers, portfolios, currentUserId, total, 
           </TableContainer>
           <TablePagination
             component="div"
-            count={total}
+            count={sorted.length}
             page={page}
             rowsPerPage={rowsPerPage}
-            onPageChange={(_, p) => updateParam("page", p > 0 ? String(p) : "")}
-            onRowsPerPageChange={(e) => { updateParam("pageSize", e.target.value); updateParam("page", ""); }}
-            rowsPerPageOptions={[10, 25, 50]}
+            onPageChange={(_, p) => setPage(p)}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[15, 25, 50]}
             labelRowsPerPage="Filas:"
             labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
             sx={{
               borderTop: "none",
               fontSize: "0.75rem",
               flexShrink: 0,
-              "& .MuiTablePagination-toolbar": { minHeight: 40, px: 1.5 },
+              "& .MuiTablePagination-toolbar": { minHeight: 40, px: 1.5, justifyContent: "flex-start" },
+              "& .MuiTablePagination-spacer": { display: "none" },
               "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": { fontSize: "0.75rem" },
             }}
           />
