@@ -201,6 +201,39 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                 )}
               </Grid>
             </SectionCard>
+
+            {/* Instalación */}
+            <SectionCard icon={BusinessOutlinedIcon} title="Instalación">
+              <Grid container spacing={3}>
+                {isEditing ? (
+                  <>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="N° Paneles" type="number" value={form.panelCount} onChange={ef("panelCount")} placeholder="Ej: 400" />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="Tipo instalación" value={form.installationType} onChange={ef("installationType")} placeholder="Techo / Suelo" />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="Superficie (m²)" type="number" value={form.surfaceM2} onChange={ef("surfaceM2")} placeholder="Ej: 2500" />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="Sector económico" value={form.economicSector} onChange={ef("economicSector")} />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField fullWidth size="small" label="Sector económico 2" value={form.economicSector2} onChange={ef("economicSector2")} />
+                    </Grid>
+                  </>
+                ) : (
+                  <Grid container spacing={3}>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="N° Paneles" value={plant.panelCount != null ? plant.panelCount.toLocaleString("es-CL") : null} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Tipo instalación" value={plant.installationType} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Superficie" value={plant.surfaceM2 != null ? `${plant.surfaceM2.toLocaleString("es-CL")} m²` : null} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Sector económico" value={plant.economicSector} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Sector económico 2" value={plant.economicSector2} /></Grid>
+                  </Grid>
+                )}
+              </Grid>
+            </SectionCard>
           </Box>
         </Grid>
 
@@ -223,29 +256,6 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                     <Field label="Rendimiento anual" value={plant.specificYield != null ? `${plant.specificYield.toLocaleString("es-CL")} kWh/kWp` : null} />
                     <Field label="Distribuidora" value={plant.distributorCompany} />
                     <Field label="ID Tarifa" value={plant.tariffId} />
-                  </>
-                )}
-              </Box>
-            </SectionCard>
-
-            {/* Instalación */}
-            <SectionCard icon={BusinessOutlinedIcon} title="Instalación">
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                {isEditing ? (
-                  <>
-                    <TextField fullWidth size="small" label="N° Paneles" type="number" value={form.panelCount} onChange={ef("panelCount")} placeholder="Ej: 400" />
-                    <TextField fullWidth size="small" label="Tipo instalación" value={form.installationType} onChange={ef("installationType")} placeholder="Techo / Suelo" />
-                    <TextField fullWidth size="small" label="Superficie (m²)" type="number" value={form.surfaceM2} onChange={ef("surfaceM2")} placeholder="Ej: 2500" />
-                    <TextField fullWidth size="small" label="Sector económico" value={form.economicSector} onChange={ef("economicSector")} />
-                    <TextField fullWidth size="small" label="Sector económico 2" value={form.economicSector2} onChange={ef("economicSector2")} />
-                  </>
-                ) : (
-                  <>
-                    <Field label="N° Paneles" value={plant.panelCount != null ? plant.panelCount.toLocaleString("es-CL") : null} />
-                    <Field label="Tipo instalación" value={plant.installationType} />
-                    <Field label="Superficie" value={plant.surfaceM2 != null ? `${plant.surfaceM2.toLocaleString("es-CL")} m²` : null} />
-                    <Field label="Sector económico" value={plant.economicSector} />
-                    <Field label="Sector económico 2" value={plant.economicSector2} />
                   </>
                 )}
               </Box>
