@@ -179,6 +179,8 @@ model User {
   role                UserRole
   customerId          Int?     @map("customer_id")
   assignedPortfolioId Int?     @map("assigned_portfolio_id")
+  phone               String?
+  jobTitle            String?  @map("job_title")
   active              Int      @default(1)
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
