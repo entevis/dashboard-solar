@@ -105,7 +105,7 @@ export function UserTable({ users, customers, portfolios, currentUserId, total, 
   const sorted = useMemo(() => sortUsers(users, sortKey, sortDir), [users, sortKey, sortDir]);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <Box>
       {total === 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
           <GroupOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
@@ -115,7 +115,7 @@ export function UserTable({ users, customers, portfolios, currentUserId, total, 
         </Box>
       ) : (
         <>
-          <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+          <TableContainer>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow

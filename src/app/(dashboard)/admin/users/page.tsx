@@ -60,7 +60,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
   ]);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2, flexWrap: "wrap", flexShrink: 0 }}>
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary">Usuarios</Typography>
@@ -74,7 +74,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
         </Box>
       </Box>
 
-      <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden" }}>
         <UserTable
           users={users}
           customers={customers}
