@@ -65,7 +65,7 @@ export default async function DashboardLayout({
         <main id="main-content" className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-6 flex flex-col">{children}</main>
       </div>
 
-      <Toaster />
+      <Toaster position="top-right" />
     </div>
   );
 }
