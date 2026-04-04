@@ -16,7 +16,7 @@ export function KpiCard({ label, value, sublabel, icon }: KpiCardProps) {
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <Box>
-            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 600, letterSpacing: "0.04em" }}>
               {label}
             </Typography>
             <Typography variant="h5" fontWeight={700} color="text.primary">{value}</Typography>
