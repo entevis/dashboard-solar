@@ -23,6 +23,8 @@ export default async function ContingenciesPage({ searchParams }: Props) {
   if (params.status)       where.status       = params.status as ContingencyStatus;
   if (params.type)         where.type         = params.type;
   if (params.powerPlantId) where.powerPlantId = parseInt(params.powerPlantId);
+  // TECNICO can only see contingencies they created
+  if (user.role === UserRole.TECNICO) where.createdById = user.id;
 
   const [contingencies, openCount, inProgressCount, closedCount, accessiblePlants] = await Promise.all([
     prisma.contingency.findMany({
@@ -40,7 +42,7 @@ export default async function ContingenciesPage({ searchParams }: Props) {
   ]);
 
   const counts = { OPEN: openCount, IN_PROGRESS: inProgressCount, CLOSED: closedCount };
-  const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO;
+  const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO || user.role === UserRole.TECNICO;
 
   const serialized = contingencies.map((c) => ({
     ...c,

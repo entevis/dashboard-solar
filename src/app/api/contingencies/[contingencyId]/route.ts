@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (user.role !== UserRole.MAESTRO && user.role !== UserRole.OPERATIVO) {
+  if (user.role !== UserRole.MAESTRO && user.role !== UserRole.OPERATIVO && user.role !== UserRole.TECNICO) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -64,6 +64,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   const existing = await prisma.contingency.findUnique({ where: { id, active: 1 } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // TECNICO can only update contingencies they created
+  if (user.role === UserRole.TECNICO && existing.createdById !== user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const accessibleIds = await getAccessiblePowerPlantIds(user);
   if (accessibleIds !== "all" && !accessibleIds.includes(existing.powerPlantId)) {

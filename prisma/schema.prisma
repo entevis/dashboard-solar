@@ -17,6 +17,7 @@ enum UserRole {
   OPERATIVO
   CLIENTE
   CLIENTE_PERFILADO
+  TECNICO
 }
 
 enum ContingencyType {
@@ -72,10 +73,11 @@ model Portfolio {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  bankAccount BankAccount? @relation(fields: [bankAccountId], references: [id])
-  powerPlants PowerPlant[]
-  users       User[]       @relation("AssignedPortfolio")
-  invoices    Invoice[]
+  bankAccount          BankAccount?              @relation(fields: [bankAccountId], references: [id])
+  powerPlants          PowerPlant[]
+  users                User[]                    @relation("AssignedPortfolio")
+  invoices             Invoice[]
+  portfolioPermissions UserPortfolioPermission[]
 
   @@map("portfolios")
 }
@@ -188,6 +190,7 @@ model User {
   customer                Customer?               @relation(fields: [customerId], references: [id])
   assignedPortfolio       Portfolio?              @relation("AssignedPortfolio", fields: [assignedPortfolioId], references: [id])
   plantPermissions        UserPlantPermission[]
+  portfolioPermissions    UserPortfolioPermission[]
   contingencies           Contingency[]           @relation("CreatedBy")
   contingencyComments     ContingencyComment[]    @relation("ContingencyComments")
   contingencyAttachments  ContingencyAttachment[] @relation("ContingencyAttachments")
@@ -211,6 +214,21 @@ model UserPlantPermission {
 
   @@unique([userId, powerPlantId])
   @@map("user_plant_permissions")
+}
+
+model UserPortfolioPermission {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  portfolioId Int      @map("portfolio_id")
+  active      Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, portfolioId])
+  @@map("user_portfolio_permissions")
 }
 
 model GenerationReport {

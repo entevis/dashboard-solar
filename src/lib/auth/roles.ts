@@ -7,6 +7,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   OPERATIVO: "Operativo",
   CLIENTE: "Cliente",
   CLIENTE_PERFILADO: "Cliente Perfilado",
+  TECNICO: "Técnico",
 };
 
 // Defines which route prefixes each role can access
@@ -15,6 +16,7 @@ export const ROLE_ACCESS: Record<UserRole, string[]> = {
   OPERATIVO: ["dashboard", "power-plants", "contingencies"],
   CLIENTE: ["dashboard", "power-plants", "billing", "reports"],
   CLIENTE_PERFILADO: ["dashboard", "power-plants", "billing", "reports"],
+  TECNICO: ["contingencies"],
 };
 
 // Defines which actions each role can perform
@@ -39,6 +41,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "power-plants.read",
     "generation.read",
     "billing.read",
+    "contingencies.read",
+  ],
+  TECNICO: [
+    "contingencies.create",
+    "contingencies.update",
     "contingencies.read",
   ],
 };

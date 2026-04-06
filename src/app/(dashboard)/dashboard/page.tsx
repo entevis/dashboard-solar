@@ -1,4 +1,6 @@
 import { requireAuth } from "@/lib/auth/guards";
+import { redirect } from "next/navigation";
+
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -73,6 +75,8 @@ async function getClienteDashboardData(customerId: number) {
 
 export default async function DashboardPage() {
   const user = await requireAuth();
+
+  if (user.role === UserRole.TECNICO) redirect("/contingencies");
 
   // MAESTRO
   if (user.role === UserRole.MAESTRO) {

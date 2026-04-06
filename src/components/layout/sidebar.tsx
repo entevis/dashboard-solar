@@ -48,7 +48,7 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
 
   const navSections: NavSection[] = [
     {
-      roles: "all",
+      roles: ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
         { label: "Dashboard",  href: "/dashboard",       icon: DashboardOutlinedIcon },
         { label: "Plantas",    href: p("/power-plants"),  icon: BoltOutlinedIcon },
@@ -62,9 +62,9 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
       ],
     },
     {
-      roles: ["MAESTRO", "OPERATIVO"],
+      roles: ["MAESTRO", "OPERATIVO", "TECNICO"],
       items: [
-        { label: "Contingencias", href: p("/contingencies"), icon: WarningAmberOutlinedIcon },
+        { label: "Contingencias", href: "/contingencies", icon: WarningAmberOutlinedIcon },
       ],
     },
     {

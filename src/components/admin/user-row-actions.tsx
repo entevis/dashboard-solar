@@ -18,6 +18,8 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MuiMenuItem from "@mui/material/MenuItem";
+import Checkbox from "@mui/material/Checkbox";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
@@ -29,11 +31,11 @@ import type { UserRole } from "@prisma/client";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
-interface User { id: number; name: string; email: string; role: UserRole; customerId: number | null; assignedPortfolioId: number | null; phone: string | null; jobTitle: string | null }
+interface User { id: number; name: string; email: string; role: UserRole; customerId: number | null; assignedPortfolioId: number | null; phone: string | null; jobTitle: string | null; portfolioPermissions: { portfolioId: number }[] }
 interface Option { id: number; name: string }
 interface Props { user: User; customers: Option[]; portfolios: Option[]; currentUserId: number }
 
-const ROLES: UserRole[] = ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"];
+const ROLES: UserRole[] = ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO", "TECNICO"];
 
 export function UserRowActions({ user, customers, portfolios, currentUserId }: Props) {
   const router = useRouter();
@@ -48,6 +50,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
     assignedPortfolioId: user.assignedPortfolioId ? String(user.assignedPortfolioId) : "",
     phone: user.phone ?? "",
     jobTitle: user.jobTitle ?? "",
+    portfolioIds: user.portfolioPermissions.map((p) => String(p.portfolioId)),
   });
 
   const isSelf = user.id === currentUserId;
@@ -59,7 +62,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
       const res = await fetch(`/api/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, role: form.role, customerId: form.customerId || null, assignedPortfolioId: form.assignedPortfolioId || null, phone: form.phone || null, jobTitle: form.jobTitle || null }),
+        body: JSON.stringify({ name: form.name, role: form.role, customerId: form.customerId || null, assignedPortfolioId: form.assignedPortfolioId || null, phone: form.phone || null, jobTitle: form.jobTitle || null, portfolioIds: form.role === "TECNICO" ? form.portfolioIds.map(Number) : undefined }),
       });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Error al actualizar usuario"); }
       toast.success("Usuario actualizado");
@@ -110,7 +113,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
             <TextField label="Cargo" size="small" value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} sx={inputSx} />
             <FormControl size="small" required sx={inputSx}>
               <InputLabel>Rol</InputLabel>
-              <Select label="Rol" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, customerId: "", assignedPortfolioId: "" })}>
+              <Select label="Rol" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, customerId: "", assignedPortfolioId: "", portfolioIds: [] })}>
                 {ROLES.map((r) => <MuiMenuItem key={r} value={r}>{ROLE_LABELS[r]}</MuiMenuItem>)}
               </Select>
             </FormControl>
@@ -127,6 +130,26 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
                 <InputLabel>Portafolio asignado</InputLabel>
                 <Select label="Portafolio asignado" value={form.assignedPortfolioId} onChange={(e) => setForm({ ...form, assignedPortfolioId: e.target.value })}>
                   {portfolios.map((p) => <MuiMenuItem key={p.id} value={String(p.id)}>{p.name}</MuiMenuItem>)}
+                </Select>
+              </FormControl>
+            )}
+            {form.role === "TECNICO" && (
+              <FormControl size="small" sx={inputSx}>
+                <InputLabel>Portafolios</InputLabel>
+                <Select
+                  multiple
+                  label="Portafolios"
+                  value={form.portfolioIds}
+                  onChange={(e) => setForm({ ...form, portfolioIds: typeof e.target.value === "string" ? e.target.value.split(",") : e.target.value as string[] })}
+                  input={<OutlinedInput label="Portafolios" />}
+                  renderValue={(selected) => portfolios.filter((p) => (selected as string[]).includes(String(p.id))).map((p) => p.name).join(", ")}
+                >
+                  {portfolios.map((p) => (
+                    <MuiMenuItem key={p.id} value={String(p.id)} dense>
+                      <Checkbox checked={form.portfolioIds.includes(String(p.id))} size="small" sx={{ py: 0 }} />
+                      <ListItemText primary={p.name} primaryTypographyProps={{ fontSize: "0.8125rem" }} />
+                    </MuiMenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}

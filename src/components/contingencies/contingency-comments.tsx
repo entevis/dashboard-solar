@@ -32,6 +32,7 @@ const roleChipSx: Record<UserRole, object> = {
   OPERATIVO:         { backgroundColor: "#fef9c3", color: "#a16207" },
   CLIENTE:           { backgroundColor: "#dcfce7", color: "#15803d" },
   CLIENTE_PERFILADO: { backgroundColor: "#dcfce7", color: "#15803d" },
+  TECNICO:           { backgroundColor: "#ffe4cc", color: "#c2410c" },
 };
 
 function getInitials(name: string) {

@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (user.role !== UserRole.MAESTRO && user.role !== UserRole.OPERATIVO) {
+  if (user.role !== UserRole.MAESTRO && user.role !== UserRole.OPERATIVO && user.role !== UserRole.TECNICO) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -30,6 +30,7 @@ export default async function PortfolioContingenciesPage({ params, searchParams 
   if (sp.status) where.status = sp.status as ContingencyStatus;
   if (sp.type) where.type = sp.type;
   if (sp.powerPlantId) where.powerPlantId = parseInt(sp.powerPlantId);
+  if (user.role === UserRole.TECNICO) where.createdById = user.id;
 
   const [contingencies, openCount, inProgressCount, closedCount, accessiblePlants] =
     await Promise.all([
@@ -52,7 +53,7 @@ export default async function PortfolioContingenciesPage({ params, searchParams 
     ]);
 
   const counts = { OPEN: openCount, IN_PROGRESS: inProgressCount, CLOSED: closedCount };
-  const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO;
+  const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO || user.role === UserRole.TECNICO;
 
   const serialized = contingencies.map((c) => ({
     ...c,

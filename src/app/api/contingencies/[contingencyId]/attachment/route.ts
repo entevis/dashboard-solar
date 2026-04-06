@@ -28,15 +28,20 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (user.role !== UserRole.MAESTRO && user.role !== UserRole.OPERATIVO) {
+  if (user.role !== UserRole.MAESTRO && user.role !== UserRole.OPERATIVO && user.role !== UserRole.TECNICO) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const contingency = await prisma.contingency.findUnique({
     where: { id, active: 1 },
-    select: { id: true, powerPlantId: true },
+    select: { id: true, powerPlantId: true, createdById: true },
   });
   if (!contingency) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // TECNICO can only attach files to contingencies they created
+  if (user.role === UserRole.TECNICO && contingency.createdById !== user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
   if (!dbUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -103,14 +108,20 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (user.role !== UserRole.MAESTRO && user.role !== UserRole.OPERATIVO) {
+  if (user.role !== UserRole.MAESTRO && user.role !== UserRole.OPERATIVO && user.role !== UserRole.TECNICO) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const attachment = await prisma.contingencyAttachment.findUnique({
     where: { contingencyId: id },
+    include: { contingency: { select: { createdById: true } } },
   });
   if (!attachment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // TECNICO can only delete attachments on their own contingencies
+  if (user.role === UserRole.TECNICO && attachment.contingency.createdById !== user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = getSupabase();
   const prevPath = new URL(attachment.fileUrl).pathname.split(`/${BUCKET}/`)[1];

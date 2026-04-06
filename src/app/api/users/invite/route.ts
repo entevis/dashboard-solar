@@ -13,6 +13,7 @@ const createUserSchema = z.object({
   role: z.nativeEnum(UserRole),
   customerId: z.coerce.number().int().positive().optional(),
   assignedPortfolioId: z.coerce.number().int().positive().optional(),
+  portfolioIds: z.array(z.coerce.number().int().positive()).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email, name, password, role, customerId, assignedPortfolioId } =
+  const { email, name, password, role, customerId, assignedPortfolioId, portfolioIds } =
     parsed.data;
 
   // Validate role-specific fields
@@ -45,6 +46,13 @@ export async function POST(request: NextRequest) {
   if (role === "OPERATIVO" && !assignedPortfolioId) {
     return NextResponse.json(
       { error: "Se requiere un portafolio asignado para el rol Operativo" },
+      { status: 400 }
+    );
+  }
+
+  if (role === "TECNICO" && (!portfolioIds || portfolioIds.length === 0)) {
+    return NextResponse.json(
+      { error: "Se requiere al menos un portafolio para el rol Técnico" },
       { status: 400 }
     );
   }
@@ -85,6 +93,13 @@ export async function POST(request: NextRequest) {
       assignedPortfolioId: assignedPortfolioId || null,
     },
   });
+
+  // Create portfolio permissions for TECNICO
+  if (role === "TECNICO" && portfolioIds && portfolioIds.length > 0) {
+    await prisma.userPortfolioPermission.createMany({
+      data: portfolioIds.map((portfolioId) => ({ userId: newUser.id, portfolioId })),
+    });
+  }
 
   await logAction(currentUser.id, "CREATE_USER", "user", newUser.id, {
     email,

@@ -58,6 +58,19 @@ export async function getAccessiblePowerPlantIds(user: User): Promise<number[] |
       return permissions.map((p) => p.powerPlantId);
     }
 
+    case UserRole.TECNICO: {
+      const portfolioPerms = await prisma.userPortfolioPermission.findMany({
+        where: { userId: user.id, active: 1 },
+        select: { portfolioId: true },
+      });
+      if (portfolioPerms.length === 0) return [];
+      const plants = await prisma.powerPlant.findMany({
+        where: { portfolioId: { in: portfolioPerms.map((p) => p.portfolioId) }, active: 1 },
+        select: { id: true },
+      });
+      return plants.map((p) => p.id);
+    }
+
     default:
       return [];
   }
@@ -103,6 +116,14 @@ export async function requirePortfolioAccess(user: User, portfolioId: number) {
       select: { id: true },
     });
     if (!plant) redirect("/dashboard");
+    return portfolio;
+  }
+
+  if (user.role === UserRole.TECNICO) {
+    const perm = await prisma.userPortfolioPermission.findFirst({
+      where: { userId: user.id, portfolioId, active: 1 },
+    });
+    if (!perm) redirect("/contingencies");
     return portfolio;
   }
 

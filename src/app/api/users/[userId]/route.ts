@@ -12,6 +12,7 @@ const updateSchema = z.object({
   assignedPortfolioId: z.coerce.number().int().positive().nullable().optional(),
   phone: z.string().max(50).nullable().optional(),
   jobTitle: z.string().max(200).nullable().optional(),
+  portfolioIds: z.array(z.coerce.number().int().positive()).optional(),
 });
 
 interface RouteContext {
@@ -34,14 +35,26 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  const { portfolioIds, ...userFields } = parsed.data;
+
   const updated = await prisma.user.update({
     where: { id },
-    data: parsed.data,
+    data: userFields,
     include: {
       customer: { select: { name: true } },
       assignedPortfolio: { select: { name: true } },
     },
   });
+
+  // Sync portfolio permissions if provided (TECNICO)
+  if (portfolioIds !== undefined) {
+    await prisma.userPortfolioPermission.deleteMany({ where: { userId: id } });
+    if (portfolioIds.length > 0) {
+      await prisma.userPortfolioPermission.createMany({
+        data: portfolioIds.map((portfolioId) => ({ userId: id, portfolioId })),
+      });
+    }
+  }
 
   logAction(user.id, "UPDATE", "user", id, { changes: parsed.data });
 

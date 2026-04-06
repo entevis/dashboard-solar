@@ -12,7 +12,7 @@ interface Props {
   searchParams: Promise<{ q?: string; role?: string }>;
 }
 
-const VALID_ROLES = ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"] as const;
+const VALID_ROLES = ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO", "TECNICO"] as const;
 
 export default async function AdminUsersPage({ searchParams }: Props) {
   const currentUser = await requireAuth();
@@ -37,6 +37,10 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       include: {
         customer: { select: { id: true, name: true, rut: true } },
         assignedPortfolio: { select: { id: true, name: true } },
+        portfolioPermissions: {
+          where: { active: 1 },
+          select: { portfolioId: true },
+        },
       },
       orderBy: { name: "asc" },
     }),

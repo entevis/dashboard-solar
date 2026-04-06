@@ -22,6 +22,7 @@ const roleSx: Record<UserRole, { backgroundColor: string; color: string }> = {
   OPERATIVO: { backgroundColor: "#fef9c3", color: "#a16207" },
   CLIENTE: { backgroundColor: "#dcfce7", color: "#15803d" },
   CLIENTE_PERFILADO: { backgroundColor: "#dcfce7", color: "#15803d" },
+  TECNICO: { backgroundColor: "#ffe4cc", color: "#c2410c" },
 };
 
 export interface UserWithRelations {
@@ -35,6 +36,7 @@ export interface UserWithRelations {
   jobTitle: string | null;
   customer: { id: number; name: string; rut: string } | null;
   assignedPortfolio: { id: number; name: string } | null;
+  portfolioPermissions: { portfolioId: number }[];
   createdAt: Date;
 }
 

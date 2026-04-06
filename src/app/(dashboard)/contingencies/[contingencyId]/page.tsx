@@ -84,7 +84,10 @@ export default async function ContingencyDetailPage({ params }: Props) {
   if (accessibleIds !== "all" && !accessibleIds.includes(contingency.powerPlantId)) notFound();
 
   const status = statusConfig[contingency.status] ?? statusConfig.OPEN;
-  const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO;
+  const isTecnico = user.role === UserRole.TECNICO;
+  // TECNICO can only write on contingencies they created
+  const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO ||
+    (isTecnico && contingency.createdById === user.id);
   const isOpen = contingency.status !== "CLOSED";
 
   const serializedComments = contingency.comments.map((c) => ({

@@ -12,6 +12,9 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import Checkbox from "@mui/material/Checkbox";
+import ListItemText from "@mui/material/ListItemText";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -38,12 +41,15 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
   const [form, setForm] = useState({ name: "", email: "", password: "", customerId: "", assignedPortfolioId: "" });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [portfolioIds, setPortfolioIds] = useState<string[]>([]);
   const showCustomer = role === "CLIENTE" || role === "CLIENTE_PERFILADO";
   const showPortfolio = role === "OPERATIVO";
+  const showPortfolioMulti = role === "TECNICO";
 
   function handleClose() {
     setOpen(false);
     setRole("");
+    setPortfolioIds([]);
     setForm({ name: "", email: "", password: "", customerId: "", assignedPortfolioId: "" });
   }
 
@@ -60,6 +66,7 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
         role,
         customerId: form.customerId || undefined,
         assignedPortfolioId: form.assignedPortfolioId || undefined,
+        portfolioIds: role === "TECNICO" ? portfolioIds.map(Number) : undefined,
       }),
     });
     if (!res.ok) {
@@ -96,11 +103,12 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
               )}} />
             <FormControl size="small" required sx={inputSx}>
               <InputLabel>Rol</InputLabel>
-              <Select label="Rol" value={role} onChange={(e) => { setRole(e.target.value); setForm((f) => ({ ...f, customerId: "", assignedPortfolioId: "" })); }}>
+              <Select label="Rol" value={role} onChange={(e) => { setRole(e.target.value); setPortfolioIds([]); setForm((f) => ({ ...f, customerId: "", assignedPortfolioId: "" })); }}>
                 <MenuItem value="MAESTRO">Maestro</MenuItem>
                 <MenuItem value="OPERATIVO">Operativo</MenuItem>
                 <MenuItem value="CLIENTE">Cliente</MenuItem>
                 <MenuItem value="CLIENTE_PERFILADO">Cliente Perfilado</MenuItem>
+                <MenuItem value="TECNICO">Técnico</MenuItem>
               </Select>
             </FormControl>
             {showCustomer && (
@@ -116,6 +124,26 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
                 <InputLabel>Portafolio asignado</InputLabel>
                 <Select label="Portafolio asignado" value={form.assignedPortfolioId} onChange={(e) => setForm({ ...form, assignedPortfolioId: e.target.value })}>
                   {portfolios.map((p) => <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+            )}
+            {showPortfolioMulti && (
+              <FormControl size="small" required sx={inputSx}>
+                <InputLabel>Portafolios</InputLabel>
+                <Select
+                  multiple
+                  label="Portafolios"
+                  value={portfolioIds}
+                  onChange={(e) => setPortfolioIds(typeof e.target.value === "string" ? e.target.value.split(",") : e.target.value as string[])}
+                  input={<OutlinedInput label="Portafolios" />}
+                  renderValue={(selected) => portfolios.filter((p) => (selected as string[]).includes(String(p.id))).map((p) => p.name).join(", ")}
+                >
+                  {portfolios.map((p) => (
+                    <MenuItem key={p.id} value={String(p.id)} dense>
+                      <Checkbox checked={portfolioIds.includes(String(p.id))} size="small" sx={{ py: 0 }} />
+                      <ListItemText primary={p.name} primaryTypographyProps={{ fontSize: "0.8125rem" }} />
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}
