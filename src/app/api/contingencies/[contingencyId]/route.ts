@@ -8,6 +8,7 @@ import { z } from "zod";
 
 const updateSchema = z.object({
   status: z.nativeEnum(ContingencyStatus).optional(),
+  code: z.string().max(100).nullable().optional(),
   description: z.string().min(1).max(2000).optional(),
   cost: z.number().nullable().optional(),
   provider: z.string().nullable().optional(),

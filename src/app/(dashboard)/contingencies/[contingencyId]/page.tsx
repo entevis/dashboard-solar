@@ -115,7 +115,7 @@ export default async function ContingencyDetailPage({ params }: Props) {
           </Box>
           <Typography variant="h5" fontWeight={700}>Contingencia — {contingency.powerPlant.name}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {typeLabels[contingency.type]} · Creada por {contingency.createdBy.name}
+            {typeLabels[contingency.type]}{contingency.code ? ` · ${contingency.code}` : ""} · Creada por {contingency.createdBy.name}
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>

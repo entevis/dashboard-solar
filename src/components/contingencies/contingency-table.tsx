@@ -18,6 +18,7 @@ import { ContingencyRowActions } from "@/components/contingencies/contingency-ro
 
 interface Contingency {
   id: number;
+  code: string | null;
   type: string;
   description: string;
   status: string;
@@ -66,6 +67,7 @@ export function ContingencyTable({ contingencies, canWrite = false }: { continge
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
+              <TableCell>Código</TableCell>
               <TableCell>Planta</TableCell>
               <TableCell>Tipo</TableCell>
               <TableCell>Descripción</TableCell>
@@ -81,6 +83,9 @@ export function ContingencyTable({ contingencies, canWrite = false }: { continge
               const status = statusConfig[c.status] ?? statusConfig.OPEN;
               return (
                 <TableRow key={c.id} hover>
+                  <TableCell sx={{ fontSize: "0.8125rem", color: c.code ? "text.primary" : "text.disabled", whiteSpace: "nowrap" }}>
+                    {c.code ?? "—"}
+                  </TableCell>
                   <TableCell>
                     <Link href={`/contingencies/${c.id}`} style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none", fontSize: "0.8125rem" }}
                       onMouseOver={e => (e.currentTarget.style.textDecoration = "underline")}

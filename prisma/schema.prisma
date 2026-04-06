@@ -303,6 +303,7 @@ model Invoice {
 model Contingency {
   id              Int               @id @default(autoincrement())
   powerPlantId    Int               @map("power_plant_id")
+  code            String?
   type            ContingencyType
   description     String
   status          ContingencyStatus @default(OPEN)

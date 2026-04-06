@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -16,7 +16,10 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { toast } from "@/lib/utils/toast";
 
@@ -27,8 +30,11 @@ export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPla
   const isMobile = useMediaQuery("(max-width:599px)");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     powerPlantId: "",
+    code: "",
     type: "",
     description: "",
     cost: "",
@@ -38,7 +44,8 @@ export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPla
 
   function handleClose() {
     setOpen(false);
-    setForm({ powerPlantId: "", type: "", description: "", cost: "", provider: "", workDescription: "" });
+    setFile(null);
+    setForm({ powerPlantId: "", code: "", type: "", description: "", cost: "", provider: "", workDescription: "" });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -50,17 +57,19 @@ export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPla
 
     setLoading(true);
     try {
+      const formData = new FormData();
+      formData.append("powerPlantId", form.powerPlantId);
+      if (form.code) formData.append("code", form.code);
+      formData.append("type", form.type);
+      formData.append("description", form.description);
+      if (form.cost) formData.append("cost", form.cost);
+      if (form.provider) formData.append("provider", form.provider);
+      if (form.workDescription) formData.append("workDescription", form.workDescription);
+      if (file) formData.append("file", file);
+
       const res = await fetch("/api/contingencies", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          powerPlantId: form.powerPlantId,
-          type: form.type,
-          description: form.description,
-          cost: form.cost ? parseFloat(form.cost) : null,
-          provider: form.provider || null,
-          workDescription: form.workDescription || null,
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -104,6 +113,15 @@ export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPla
                 <TextField {...params} label="Planta *" placeholder="Buscar planta..." />
               )}
               noOptionsText="Sin resultados"
+            />
+
+            <TextField
+              size="small"
+              fullWidth
+              label="Código"
+              placeholder="Ej: OT-2024-001"
+              value={form.code}
+              onChange={(e) => setForm({ ...form, code: e.target.value })}
             />
 
             <FormControl size="small" fullWidth>
@@ -153,6 +171,38 @@ export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPla
               value={form.workDescription}
               onChange={(e) => setForm({ ...form, workDescription: e.target.value })}
             />
+
+            {/* File attachment */}
+            <Box>
+              <input
+                ref={fileInputRef}
+                type="file"
+                style={{ display: "none" }}
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              {file ? (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 1, backgroundColor: "#eff4ff", borderRadius: 1.5, border: "1px solid #c3c6d7" }}>
+                  <AttachFileOutlinedIcon sx={{ fontSize: 15, color: "text.secondary", flexShrink: 0 }} />
+                  <Typography variant="caption" sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {file.name}
+                  </Typography>
+                  <IconButton size="small" onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} sx={{ p: 0.25 }}>
+                    <CloseOutlinedIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="inherit"
+                  startIcon={<AttachFileOutlinedIcon sx={{ fontSize: 15 }} />}
+                  onClick={() => fileInputRef.current?.click()}
+                  sx={{ borderColor: "#c3c6d7", fontSize: "0.8125rem" }}
+                >
+                  Adjuntar documento
+                </Button>
+              )}
+            </Box>
           </Box>
         </DialogContent>
 
