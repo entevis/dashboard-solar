@@ -54,6 +54,7 @@ export default async function PortfolioContingenciesPage({ params, searchParams 
 
   const counts = { OPEN: openCount, IN_PROGRESS: inProgressCount, CLOSED: closedCount };
   const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO || user.role === UserRole.TECNICO;
+  const canDelete = user.role === UserRole.MAESTRO;
 
   const serialized = contingencies.map((c) => ({
     ...c,
@@ -81,7 +82,7 @@ export default async function PortfolioContingenciesPage({ params, searchParams 
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden border border-[var(--color-border)] rounded-xl bg-white shadow-sm flex flex-col">
-        <ContingencyTable contingencies={serialized} canWrite={canWrite} />
+        <ContingencyTable contingencies={serialized} canWrite={canWrite} canDelete={canDelete} />
       </div>
     </div>
   );

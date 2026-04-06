@@ -21,9 +21,10 @@ interface Props {
   contingencyId: number;
   description: string;
   canWrite: boolean;
+  canDelete: boolean;
 }
 
-export function ContingencyRowActions({ contingencyId, description, canWrite }: Props) {
+export function ContingencyRowActions({ contingencyId, description, canWrite, canDelete }: Props) {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -62,8 +63,8 @@ export function ContingencyRowActions({ contingencyId, description, canWrite }: 
           <OpenInNewOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
           Ver detalle
         </MenuItem>
-        {canWrite && <Divider />}
-        {canWrite && (
+        {canDelete && <Divider />}
+        {canDelete && (
           <MenuItem onClick={() => { setAnchorEl(null); setDeleteOpen(true); }} sx={{ fontSize: "0.8125rem", gap: 1.5, color: "error.main" }}>
             <DeleteOutlinedIcon sx={{ fontSize: 15 }} />
             Eliminar

@@ -43,7 +43,7 @@ const typeLabels: Record<string, string> = {
 
 const PAGE_SIZES = [15, 25, 50];
 
-export function ContingencyTable({ contingencies, canWrite = false }: { contingencies: Contingency[]; canWrite?: boolean }) {
+export function ContingencyTable({ contingencies, canWrite = false, canDelete = false }: { contingencies: Contingency[]; canWrite?: boolean; canDelete?: boolean }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(15);
 
@@ -110,7 +110,7 @@ export function ContingencyTable({ contingencies, canWrite = false }: { continge
                   <TableCell sx={{ fontSize: "0.8125rem", color: "text.secondary" }}>{c.provider ?? "—"}</TableCell>
                   <TableCell sx={{ fontSize: "0.8125rem", color: "text.secondary", whiteSpace: "nowrap" }}>{formatDate(c.createdAt)}</TableCell>
                   <TableCell>
-                    <ContingencyRowActions contingencyId={c.id} description={c.description} canWrite={canWrite} />
+                    <ContingencyRowActions contingencyId={c.id} description={c.description} canWrite={canWrite} canDelete={canDelete} />
                   </TableCell>
                 </TableRow>
               );

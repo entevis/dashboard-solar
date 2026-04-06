@@ -43,6 +43,7 @@ export default async function ContingenciesPage({ searchParams }: Props) {
 
   const counts = { OPEN: openCount, IN_PROGRESS: inProgressCount, CLOSED: closedCount };
   const canWrite = user.role === UserRole.MAESTRO || user.role === UserRole.OPERATIVO || user.role === UserRole.TECNICO;
+  const canDelete = user.role === UserRole.MAESTRO;
 
   const serialized = contingencies.map((c) => ({
     ...c,
@@ -68,7 +69,7 @@ export default async function ContingenciesPage({ searchParams }: Props) {
       </Box>
 
       <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <ContingencyTable contingencies={serialized} canWrite={canWrite} />
+        <ContingencyTable contingencies={serialized} canWrite={canWrite} canDelete={canDelete} />
       </Card>
     </Box>
   );
