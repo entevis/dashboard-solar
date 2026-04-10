@@ -35,11 +35,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const isPublicPath = pathname.startsWith("/login") || pathname.startsWith("/api/auth");
+  const isPublicPath = pathname.startsWith("/login") || pathname.startsWith("/api/auth") || pathname.startsWith("/forgot-password");
+  const isSetPassword = pathname.startsWith("/set-password");
   const isSelectPortfolio = pathname.startsWith("/select-portfolio");
 
   // Redirect unauthenticated users to login
-  if (!user && !isPublicPath && !isSelectPortfolio) {
+  if (!user && !isPublicPath && !isSelectPortfolio && !isSetPassword) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

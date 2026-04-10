@@ -25,6 +25,8 @@ import Typography from "@mui/material/Typography";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { toast } from "@/lib/utils/toast";
 import type { UserRole } from "@prisma/client";
@@ -43,6 +45,8 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [recoveryLink, setRecoveryLink] = useState<string | null>(null);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [form, setForm] = useState({
     name: user.name,
     role: user.role as string,
@@ -75,6 +79,30 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
     }
   }
 
+  async function handleGenerateRecovery() {
+    setRecoveryLoading(true);
+    try {
+      const res = await fetch(`/api/users/${user.id}/recovery-link`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error");
+      if (data.recoveryLink) {
+        setRecoveryLink(data.recoveryLink);
+      } else if (data.sent) {
+        toast.success("Email de recuperación enviado");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al generar link");
+    } finally {
+      setRecoveryLoading(false);
+    }
+  }
+
+  async function copyRecoveryLink() {
+    if (!recoveryLink) return;
+    await navigator.clipboard.writeText(recoveryLink);
+    toast.success("Link copiado al portapapeles");
+  }
+
   async function handleDelete() {
     const res = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
     if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
@@ -92,6 +120,12 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
         <MenuItem dense onClick={() => { setAnchor(null); setEditOpen(true); }}>
           <ListItemIcon><EditOutlinedIcon sx={{ fontSize: 16 }} /></ListItemIcon>
           <ListItemText primaryTypographyProps={{ fontSize: "0.8125rem" }}>Editar</ListItemText>
+        </MenuItem>
+        <MenuItem dense disabled={recoveryLoading} onClick={() => { setAnchor(null); handleGenerateRecovery(); }}>
+          <ListItemIcon><VpnKeyOutlinedIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ fontSize: "0.8125rem" }}>
+            {recoveryLoading ? "Generando..." : "Link de recuperación"}
+          </ListItemText>
         </MenuItem>
         {!isSelf && [
           <Divider key="div" />,
@@ -159,6 +193,23 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
             <Button type="submit" variant="contained" size="small" disabled={loading}>{loading ? "Guardando..." : "Guardar"}</Button>
           </DialogActions>
         </Box>
+      </Dialog>
+
+      {/* Recovery Link Dialog */}
+      <Dialog open={Boolean(recoveryLink)} onClose={() => setRecoveryLink(null)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Link de recuperación</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+          <Typography fontSize="0.75rem" color="warning.main" sx={{ backgroundColor: "#fff7ed", p: 1.5, borderRadius: 1 }}>
+            Link de un solo uso. Compártelo con <strong>{user.email}</strong> por un canal seguro. Al abrirlo, el usuario podrá definir una nueva contraseña.
+          </Typography>
+          <Box sx={{ backgroundColor: "#eff4ff", borderRadius: 1, p: 1.5, wordBreak: "break-all" }}>
+            <Typography fontSize="0.75rem" fontFamily="monospace">{recoveryLink}</Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setRecoveryLink(null)} sx={{ borderColor: "#c3c6d7" }}>Cerrar</Button>
+          <Button variant="contained" size="small" startIcon={<ContentCopyOutlinedIcon sx={{ fontSize: 16 }} />} onClick={copyRecoveryLink}>Copiar link</Button>
+        </DialogActions>
       </Dialog>
 
       {/* Delete Confirm Dialog */}

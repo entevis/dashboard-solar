@@ -9,12 +9,15 @@ import { z } from "zod";
 const createUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2),
-  password: z.string().min(6),
   role: z.nativeEnum(UserRole),
   customerId: z.coerce.number().int().positive().optional(),
   assignedPortfolioId: z.coerce.number().int().positive().optional(),
   portfolioIds: z.array(z.coerce.number().int().positive()).optional(),
 });
+
+function getAppUrl(request: NextRequest) {
+  return process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+}
 
 export async function POST(request: NextRequest) {
   const currentUser = await getCurrentUser();
@@ -32,10 +35,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email, name, password, role, customerId, assignedPortfolioId, portfolioIds } =
+  const { email, name, role, customerId, assignedPortfolioId, portfolioIds } =
     parsed.data;
 
-  // Validate role-specific fields
   if ((role === "CLIENTE" || role === "CLIENTE_PERFILADO") && !customerId) {
     return NextResponse.json(
       { error: "Se requiere un cliente para este rol" },
@@ -57,7 +59,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check if email already exists
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     return NextResponse.json(
@@ -66,26 +67,47 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Create user in Supabase Auth
   const supabaseAdmin = createAdminClient();
-  const { data: authData, error: authError } =
-    await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
+  const appUrl = getAppUrl(request);
+  const emailMode = process.env.AUTH_EMAIL_MODE ?? "manual";
 
-  if (authError || !authData.user) {
-    return NextResponse.json(
-      { error: "Error al crear usuario en autenticación: " + authError?.message },
-      { status: 500 }
+  // Generate invite link. In "manual" mode we NEVER send an email — we return
+  // the link to the MAESTRO so they can share it out of band. In "smtp" mode
+  // Supabase sends the email automatically.
+  let supabaseUserId: string;
+  let inviteLink: string | null = null;
+
+  if (emailMode === "smtp") {
+    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      email,
+      { redirectTo: `${appUrl}/api/auth/callback?next=/set-password` }
     );
+    if (error || !data.user) {
+      return NextResponse.json(
+        { error: "Error al enviar invitación: " + error?.message },
+        { status: 500 }
+      );
+    }
+    supabaseUserId = data.user.id;
+  } else {
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { redirectTo: `${appUrl}/api/auth/callback?next=/set-password` },
+    });
+    if (error || !data.user) {
+      return NextResponse.json(
+        { error: "Error al generar link de invitación: " + error?.message },
+        { status: 500 }
+      );
+    }
+    supabaseUserId = data.user.id;
+    inviteLink = data.properties?.action_link ?? null;
   }
 
-  // Create user in Prisma
   const newUser = await prisma.user.create({
     data: {
-      supabaseId: authData.user.id,
+      supabaseId: supabaseUserId,
       email,
       name,
       role,
@@ -94,7 +116,6 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // Create portfolio permissions for TECNICO
   if (role === "TECNICO" && portfolioIds && portfolioIds.length > 0) {
     await prisma.userPortfolioPermission.createMany({
       data: portfolioIds.map((portfolioId) => ({ userId: newUser.id, portfolioId })),
@@ -104,7 +125,8 @@ export async function POST(request: NextRequest) {
   await logAction(currentUser.id, "CREATE_USER", "user", newUser.id, {
     email,
     role,
+    emailMode,
   });
 
-  return NextResponse.json(newUser, { status: 201 });
+  return NextResponse.json({ user: newUser, inviteLink }, { status: 201 });
 }

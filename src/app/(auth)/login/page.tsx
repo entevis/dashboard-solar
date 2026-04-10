@@ -12,6 +12,7 @@ import Alert from "@mui/material/Alert";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import Image from "next/image";
+import Link from "next/link";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 
@@ -148,6 +149,15 @@ export default function LoginPage() {
             >
               {loading ? "Ingresando..." : "Ingresar"}
             </Button>
+
+            <Typography
+              component={Link}
+              href="/forgot-password"
+              variant="caption"
+              sx={{ textAlign: "center", color: "primary.main", textDecoration: "none", mt: 0.5, "&:hover": { textDecoration: "underline" } }}
+            >
+              ¿Olvidaste tu contraseña?
+            </Typography>
           </Box>
         </Card>
 

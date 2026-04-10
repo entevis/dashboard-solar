@@ -16,11 +16,10 @@ import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
+import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import { toast } from "@/lib/utils/toast";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
@@ -38,10 +37,12 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("");
-  const [form, setForm] = useState({ name: "", email: "", password: "", customerId: "", assignedPortfolioId: "" });
+  const [form, setForm] = useState({ name: "", email: "", customerId: "", assignedPortfolioId: "" });
 
-  const [showPassword, setShowPassword] = useState(false);
   const [portfolioIds, setPortfolioIds] = useState<string[]>([]);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState<string>("");
+
   const showCustomer = role === "CLIENTE" || role === "CLIENTE_PERFILADO";
   const showPortfolio = role === "OPERATIVO";
   const showPortfolioMulti = role === "TECNICO";
@@ -50,7 +51,7 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
     setOpen(false);
     setRole("");
     setPortfolioIds([]);
-    setForm({ name: "", email: "", password: "", customerId: "", assignedPortfolioId: "" });
+    setForm({ name: "", email: "", customerId: "", assignedPortfolioId: "" });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -62,7 +63,6 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
       body: JSON.stringify({
         name: form.name,
         email: form.email,
-        password: form.password,
         role,
         customerId: form.customerId || undefined,
         assignedPortfolioId: form.assignedPortfolioId || undefined,
@@ -75,10 +75,24 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
       setLoading(false);
       return;
     }
+    const data = await res.json();
     toast.success("Usuario creado correctamente");
-    handleClose();
     setLoading(false);
     router.refresh();
+
+    if (data.inviteLink) {
+      setInviteEmail(form.email);
+      setInviteLink(data.inviteLink);
+      handleClose();
+    } else {
+      handleClose();
+    }
+  }
+
+  async function copyLink() {
+    if (!inviteLink) return;
+    await navigator.clipboard.writeText(inviteLink);
+    toast.success("Link copiado al portapapeles");
   }
 
   return (
@@ -91,16 +105,11 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
         <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Crear usuario</DialogTitle>
         <Box component="form" onSubmit={handleSubmit}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            <Alert severity="info" sx={{ fontSize: "0.75rem", py: 0.5 }}>
+              Se generará un link de invitación para que el usuario defina su propia contraseña.
+            </Alert>
             <TextField label="Nombre" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo" sx={inputSx} />
             <TextField label="Correo electrónico" type="email" size="small" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@empresa.cl" sx={inputSx} />
-            <TextField label="Contraseña" type={showPassword ? "text" : "password"} size="small" required inputProps={{ minLength: 6 }} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" sx={inputSx}
-              InputProps={{ endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton size="small" edge="end" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}>
-                    {showPassword ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
-                  </IconButton>
-                </InputAdornment>
-              )}} />
             <FormControl size="small" required sx={inputSx}>
               <InputLabel>Rol</InputLabel>
               <Select label="Rol" value={role} onChange={(e) => { setRole(e.target.value); setPortfolioIds([]); setForm((f) => ({ ...f, customerId: "", assignedPortfolioId: "" })); }}>
@@ -153,6 +162,26 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
             <Button type="submit" variant="contained" size="small" disabled={loading || !role}>{loading ? "Creando..." : "Crear usuario"}</Button>
           </DialogActions>
         </Box>
+      </Dialog>
+
+      {/* Invite link modal (manual mode) */}
+      <Dialog open={Boolean(inviteLink)} onClose={() => setInviteLink(null)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Link de invitación</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+          <Alert severity="warning" sx={{ fontSize: "0.75rem" }}>
+            Este link es de un solo uso y expira pronto. Compártelo con <strong>{inviteEmail}</strong> por un canal seguro.
+            El usuario lo usará una única vez para definir su contraseña.
+          </Alert>
+          <Box sx={{ backgroundColor: "#eff4ff", borderRadius: 1, p: 1.5, wordBreak: "break-all" }}>
+            <Typography fontSize="0.75rem" fontFamily="monospace" color="text.primary">
+              {inviteLink}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" size="small" onClick={() => setInviteLink(null)} sx={{ borderColor: "#c3c6d7" }}>Cerrar</Button>
+          <Button variant="contained" size="small" startIcon={<ContentCopyOutlinedIcon />} onClick={copyLink}>Copiar link</Button>
+        </DialogActions>
       </Dialog>
     </>
   );
