@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import Button from "@mui/material/Button";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import { toast } from "@/lib/utils/toast";
@@ -9,15 +9,24 @@ import { toast } from "@/lib/utils/toast";
 export function ExportPlantsButton() {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   async function handleExport() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      const portfolioId = searchParams.get("portfolioId");
+
+      // Extract portfolioId from path (e.g. /1/power-plants → "1")
+      const pathMatch = pathname.match(/^\/(\d+)\/power-plants/);
+      if (pathMatch) {
+        params.set("portfolioId", pathMatch[1]);
+      } else {
+        const portfolioId = searchParams.get("portfolioId");
+        if (portfolioId) params.set("portfolioId", portfolioId);
+      }
+
       const customerId = searchParams.get("customerId");
       const q = searchParams.get("q");
-      if (portfolioId) params.set("portfolioId", portfolioId);
       if (customerId) params.set("customerId", customerId);
       if (q) params.set("q", q);
 
