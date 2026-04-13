@@ -22,6 +22,7 @@ import Checkbox from "@mui/material/Checkbox";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
 import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -138,7 +139,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Editar Usuario</DialogTitle>
+        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Editar usuario</DialogTitle>
         <Box component="form" onSubmit={handleEdit}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <TextField label="Nombre" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} sx={inputSx} />
@@ -199,9 +200,9 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
       <Dialog open={Boolean(recoveryLink)} onClose={() => setRecoveryLink(null)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Link de recuperación</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <Typography fontSize="0.75rem" color="warning.main" sx={{ backgroundColor: "#fff7ed", p: 1.5, borderRadius: 1 }}>
+          <Alert severity="warning" sx={{ fontSize: "0.75rem" }}>
             Link de un solo uso. Compártelo con <strong>{user.email}</strong> por un canal seguro. Al abrirlo, el usuario podrá definir una nueva contraseña.
-          </Typography>
+          </Alert>
           <Box sx={{ backgroundColor: "#eff4ff", borderRadius: 1, p: 1.5, wordBreak: "break-all" }}>
             <Typography fontSize="0.75rem" fontFamily="monospace">{recoveryLink}</Typography>
           </Box>
@@ -221,8 +222,8 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
           <Button variant="outlined" color="inherit" size="small" onClick={() => setDeleteOpen(false)} sx={{ borderColor: "#c3c6d7" }}>Cancelar</Button>
+          <Button variant="contained" color="error" size="small" onClick={handleDelete}>Eliminar</Button>
         </DialogActions>
       </Dialog>
     </>

@@ -181,7 +181,7 @@ export function CreateContingencyDialog({ powerPlants }: { powerPlants: PowerPla
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
               {file ? (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 1, backgroundColor: "#eff4ff", borderRadius: 1.5, border: "1px solid #c3c6d7" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 1, backgroundColor: "#eff4ff", borderRadius: 1.5 }}>
                   <AttachFileOutlinedIcon sx={{ fontSize: 15, color: "text.secondary", flexShrink: 0 }} />
                   <Typography variant="caption" sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {file.name}

@@ -129,7 +129,7 @@ export default function SetPasswordPage() {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton size="small" edge="end" onClick={() => setShow((v) => !v)} tabIndex={-1}>
+                    <IconButton size="small" edge="end" onClick={() => setShow((v) => !v)} tabIndex={-1} aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}>
                       {show ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
                     </IconButton>
                   </InputAdornment>

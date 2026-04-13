@@ -82,11 +82,11 @@ export function ContingencyRowActions({ contingencyId, description, canWrite, ca
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="contained" size="small" color="error" onClick={handleDelete} disabled={deleting}>
-            {deleting ? "Eliminando..." : "Eliminar"}
-          </Button>
           <Button variant="outlined" size="small" color="inherit" onClick={() => setDeleteOpen(false)} disabled={deleting} sx={{ borderColor: "#c3c6d7" }}>
             Cancelar
+          </Button>
+          <Button variant="contained" size="small" color="error" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Eliminando..." : "Eliminar"}
           </Button>
         </DialogActions>
       </Dialog>

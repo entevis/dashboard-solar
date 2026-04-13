@@ -83,7 +83,7 @@ export function ContingencyTable({ contingencies, canWrite = false, canDelete = 
               const status = statusConfig[c.status] ?? statusConfig.OPEN;
               return (
                 <TableRow key={c.id} hover>
-                  <TableCell sx={{ fontSize: "0.8125rem", color: c.code ? "text.primary" : "text.disabled", whiteSpace: "nowrap" }}>
+                  <TableCell sx={{ fontSize: "0.8125rem", color: c.code ? "text.primary" : "text.secondary", whiteSpace: "nowrap" }}>
                     {c.code ?? "—"}
                   </TableCell>
                   <TableCell>
