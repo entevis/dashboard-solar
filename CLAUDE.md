@@ -42,7 +42,6 @@ Sistema de gestión de portafolios de inversión solar. Web app con Next.js 15 +
 - **Tokens**: defined in `src/app/globals.css` — use `--color-*` CSS vars or Tailwind utilities
 - **Tables**: no horizontal dividers — use row hover bg (`surface-container-low`) for separation
 - **Inputs**: no border by default — `surface-container-low` bg + 2px primary ghost border on focus
-- Full spec in `/Users/nicolasaguirre/.claude/agents/charly.md`
 
 ## Conventions
 - All tables use soft delete (`active`: 1=visible, 0=deleted)
