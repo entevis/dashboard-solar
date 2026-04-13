@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -13,8 +12,9 @@ import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import Image from "next/image";
 import Link from "next/link";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+
+const VisibilityOutlinedIcon = lazy(() => import("@mui/icons-material/VisibilityOutlined"));
+const VisibilityOffOutlinedIcon = lazy(() => import("@mui/icons-material/VisibilityOffOutlined"));
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
@@ -38,6 +38,8 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
+    // Dynamic import — Supabase only loads when user submits
+    const { createClient } = await import("@/lib/supabase/client");
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -132,7 +134,9 @@ export default function LoginPage() {
               InputProps={{ endAdornment: (
                 <InputAdornment position="end">
                   <IconButton size="small" edge="end" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}>
-                    {showPassword ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
+                    <Suspense fallback={<span style={{ width: 18, height: 18 }} />}>
+                      {showPassword ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
+                    </Suspense>
                   </IconButton>
                 </InputAdornment>
               )}}

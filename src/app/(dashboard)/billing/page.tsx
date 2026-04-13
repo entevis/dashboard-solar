@@ -64,8 +64,11 @@ export default async function BillingPage({
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
     invoiceWhere = { active: 1, customerId: user.customerId, issueDate: periodFilter };
   } else if (user.role === UserRole.OPERATIVO) {
-    const plants = await prisma.powerPlant.findMany({ where: { ...plantFilter, active: 1 }, select: { customerId: true } });
-    const customerIds = [...new Set(plants.map((p) => p.customerId))];
+    const customerIds = await prisma.powerPlant.findMany({
+      where: { ...plantFilter, active: 1 },
+      select: { customerId: true },
+      distinct: ["customerId"],
+    }).then((rows) => rows.map((r) => r.customerId));
     invoiceWhere = { active: 1, customerId: { in: customerIds }, issueDate: periodFilter };
   }
 
