@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { PlantFilterBar } from "@/components/power-plants/plant-filter-bar";
 import { PlantTable } from "@/components/power-plants/plant-table";
 import { CreatePlantDialog } from "@/components/power-plants/create-plant-dialog";
+import { ExportPlantsButton } from "@/components/power-plants/export-plants-button";
 import { UserRole } from "@prisma/client";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -54,6 +55,7 @@ export default async function PowerPlantsPage({ searchParams }: Props) {
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <PlantFilterBar portfolios={portfolios} customers={customers} hidePortfolioFilter={isCliente} hideCustomerFilter={isCliente} />
+          {canEdit && <ExportPlantsButton />}
           {canEdit && <CreatePlantDialog portfolios={portfolios} customers={customers} />}
         </Box>
       </Box>
