@@ -13,7 +13,7 @@ import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import { InvoiceRowActions } from "@/components/billing/invoice-row-actions";
 import { BillingPagination } from "@/components/billing/billing-pagination";
-import { formatCLP, formatKwh } from "@/lib/utils/formatters";
+import { formatCLP } from "@/lib/utils/formatters";
 
 export type BillingSortKey = "number" | "customer" | "portfolio" | "issueDate" | "dueDate" | "total" | "amountDue" | "status";
 type SortDir = "asc" | "desc";
@@ -121,8 +121,8 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                 </TableSortLabel>
               </TableCell>
               <TableCell><TableSortLabel {...col("status")}>Estado</TableSortLabel></TableCell>
-              <TableCell align="right">Generación</TableCell>
-              <TableCell align="right">CO₂ evitado</TableCell>
+              <TableCell align="right">Generación (kWh)</TableCell>
+              <TableCell align="right">CO₂ evitado (ton)</TableCell>
               <TableCell sx={{ width: 40 }} />
             </TableRow>
           </TableHead>
@@ -149,12 +149,10 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                 </TableCell>
                 <TableCell><StatusChip statusName={inv.statusName} /></TableCell>
                 <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.8125rem" }}>
-                  {inv.kwhGenerated != null ? formatKwh(inv.kwhGenerated) : <span style={{ color: "#737686" }}>—</span>}
+                  {inv.kwhGenerated != null ? new Intl.NumberFormat("es-CL").format(Math.round(inv.kwhGenerated)) : <span style={{ color: "#737686" }}>—</span>}
                 </TableCell>
                 <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.8125rem" }}>
-                  {inv.co2Avoided != null ? (
-                    <>{inv.co2Avoided.toFixed(2)} <span style={{ color: "#737686", fontSize: "0.75rem" }}>ton</span></>
-                  ) : <span style={{ color: "#737686" }}>—</span>}
+                  {inv.co2Avoided != null ? inv.co2Avoided.toFixed(2) : <span style={{ color: "#737686" }}>—</span>}
                 </TableCell>
                 <TableCell>
                   <InvoiceRowActions
