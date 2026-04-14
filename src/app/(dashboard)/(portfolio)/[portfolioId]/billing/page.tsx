@@ -15,17 +15,15 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 const PAGE_SIZE = 15;
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-const VALID_SORT_KEYS: BillingSortKey[] = ["number","customer","portfolio","issueDate","dueDate","total","amountDue","status"];
+const VALID_SORT_KEYS: BillingSortKey[] = ["number","customer","issueDate","dueDate","total","status"];
 
 function buildOrderBy(sortBy: BillingSortKey, dir: "asc" | "desc") {
   switch (sortBy) {
     case "number":    return { number: dir };
     case "customer":  return { customer: { name: dir } };
-    case "portfolio": return { portfolio: { name: dir } };
     case "issueDate": return { issueDate: dir };
     case "dueDate":   return { dueDate: dir };
     case "total":     return { total: dir };
-    case "amountDue": return { amountDue: dir };
     case "status":    return { statusName: dir };
     default:          return { issueDate: "desc" as const };
   }
@@ -125,7 +123,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const reports = invoiceDuemintIds.length > 0
     ? await prisma.generationReport.findMany({
         where: { duemintId: { in: invoiceDuemintIds }, active: 1 },
-        select: { duemintId: true, kwhGenerated: true, co2Avoided: true, fileUrl: true },
+        select: { duemintId: true, kwhGenerated: true, co2Avoided: true, fileUrl: true, periodMonth: true, periodYear: true },
       })
     : [];
   const reportByDuemintId = new Map(reports.map((r) => [r.duemintId, r]));
@@ -139,6 +137,8 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       kwhGenerated: report?.kwhGenerated ?? null,
       co2Avoided: report?.co2Avoided ?? null,
       reportUrl: report?.fileUrl ?? null,
+      reportPeriodMonth: report?.periodMonth ?? null,
+      reportPeriodYear: report?.periodYear ?? null,
     };
   });
 

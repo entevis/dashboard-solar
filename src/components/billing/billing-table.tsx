@@ -16,7 +16,7 @@ import { InvoiceRowActions } from "@/components/billing/invoice-row-actions";
 import { BillingPagination } from "@/components/billing/billing-pagination";
 import { formatCLP } from "@/lib/utils/formatters";
 
-export type BillingSortKey = "number" | "customer" | "portfolio" | "issueDate" | "dueDate" | "total" | "amountDue" | "status";
+export type BillingSortKey = "number" | "customer" | "issueDate" | "dueDate" | "total" | "status";
 type SortDir = "asc" | "desc";
 
 export interface SerializedInvoice {
@@ -25,22 +25,29 @@ export interface SerializedInvoice {
   duemintId: string | null;
   clientTaxId: string | null;
   customer: { name: string };
-  portfolio: { name: string } | null;
   issueDate: string | null;
   dueDate: string | null;
   total: number | null;
-  amountDue: number | null;
   statusName: string | null;
   url: string | null;
   pdfUrl: string | null;
   kwhGenerated: number | null;
   co2Avoided: number | null;
   reportUrl: string | null;
+  reportPeriodMonth: number | null;
+  reportPeriodYear: number | null;
 }
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return "—";
   return new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(dateStr));
+}
+
+const MONTH_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+function formatReportPeriod(month: number | null, year: number | null) {
+  if (!month || !year) return "—";
+  return `${MONTH_SHORT[month - 1]} ${year}`;
 }
 
 function isAnulada(statusName: string | null) {
@@ -60,20 +67,18 @@ function StatusChip({ statusName }: { statusName: string | null }) {
   return <Chip label={statusName} size="small" sx={{ ...sx, fontSize: "0.6875rem", height: 20, fontWeight: 600 }} />;
 }
 
-const VALID_SORT_KEYS: BillingSortKey[] = ["number", "customer", "portfolio", "issueDate", "dueDate", "total", "amountDue", "status"];
+const VALID_SORT_KEYS: BillingSortKey[] = ["number", "customer", "issueDate", "dueDate", "total", "status"];
 
-// Fixed column widths
 const W = {
-  number: 100,
-  customer: 160,
-  portfolio: 120,
+  number: 95,
+  customer: 170,
   issueDate: 95,
   dueDate: 95,
-  total: 100,
-  amountDue: 100,
-  status: 120,
-  kwh: 100,
-  co2: 100,
+  total: 105,
+  status: 125,
+  reportPeriod: 85,
+  kwh: 110,
+  co2: 110,
   actions: 40,
 };
 
@@ -140,7 +145,6 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
             >
               <TableCell sx={{ width: W.number }}><TableSortLabel {...col("number")}>N° Factura</TableSortLabel></TableCell>
               <TableCell sx={{ width: W.customer }}><TableSortLabel {...col("customer")}>Cliente</TableSortLabel></TableCell>
-              <TableCell sx={{ width: W.portfolio }}><TableSortLabel {...col("portfolio")}>Portafolio</TableSortLabel></TableCell>
               <TableCell sx={{ width: W.issueDate }}><TableSortLabel {...col("issueDate")}>Emisión</TableSortLabel></TableCell>
               <TableCell sx={{ width: W.dueDate }}><TableSortLabel {...col("dueDate")}>Vencimiento</TableSortLabel></TableCell>
               <TableCell sx={{ width: W.total }} align="right">
@@ -148,12 +152,8 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                   Total
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{ width: W.amountDue }} align="right">
-                <TableSortLabel {...col("amountDue")} sx={{ justifyContent: "flex-end", width: "100%", flexDirection: "row-reverse" }}>
-                  Por cobrar
-                </TableSortLabel>
-              </TableCell>
               <TableCell sx={{ width: W.status }}><TableSortLabel {...col("status")}>Estado</TableSortLabel></TableCell>
+              <TableCell sx={{ width: W.reportPeriod }}>Periodo reporte</TableCell>
               <TableCell sx={{ width: W.kwh }} align="right">Generación (kWh)</TableCell>
               <TableCell sx={{ width: W.co2 }} align="right">CO₂ evitado (ton)</TableCell>
               <TableCell sx={{ width: W.actions }} />
@@ -163,10 +163,9 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
             {invoices.map((inv) => {
               const numberText = inv.number ?? `#${inv.duemintId}`;
               const customerName = inv.customer.name;
-              const portfolioName = inv.portfolio?.name ?? "—";
               const totalText = inv.total != null ? formatCLP(inv.total) : "—";
-              const dueText = inv.amountDue != null ? formatCLP(inv.amountDue) : "—";
               const anulada = isAnulada(inv.statusName);
+              const periodText = anulada ? "--" : formatReportPeriod(inv.reportPeriodMonth, inv.reportPeriodYear);
               const kwhText = anulada ? "--" : (inv.kwhGenerated != null ? new Intl.NumberFormat("es-CL").format(Math.round(inv.kwhGenerated)) : "—");
               const co2Text = anulada ? "--" : (inv.co2Avoided != null ? inv.co2Avoided.toFixed(2) : "—");
 
@@ -180,14 +179,13 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                       <span style={{ ...truncSx, display: "block", fontWeight: 500 }}>{customerName}</span>
                     </Tooltip>
                   </TableCell>
-                  <TableCell sx={{ ...cellSx, color: "text.secondary" }}>
-                    <Tooltip title={portfolioName} placement="top" enterDelay={400}><span style={truncSx}>{portfolioName}</span></Tooltip>
-                  </TableCell>
                   <TableCell sx={{ ...cellSx, color: "text.secondary" }}>{formatDate(inv.issueDate)}</TableCell>
                   <TableCell sx={{ ...cellSx, color: "text.secondary" }}>{formatDate(inv.dueDate)}</TableCell>
                   <TableCell align="right" sx={{ ...cellSx, fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{totalText}</TableCell>
-                  <TableCell align="right" sx={{ ...cellSx, fontVariantNumeric: "tabular-nums" }}>{dueText}</TableCell>
                   <TableCell sx={cellSx}><StatusChip statusName={inv.statusName} /></TableCell>
+                  <TableCell sx={{ ...cellSx, color: "text.secondary" }}>
+                    {periodText === "—" ? <span style={{ color: "#737686" }}>—</span> : periodText}
+                  </TableCell>
                   <TableCell align="right" sx={{ ...cellSx, fontVariantNumeric: "tabular-nums" }}>
                     {kwhText === "—" ? <span style={{ color: "#737686" }}>—</span> : kwhText}
                   </TableCell>
