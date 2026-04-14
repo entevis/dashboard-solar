@@ -70,8 +70,8 @@ export async function extractDataFromReportPage(url: string): Promise<ReportData
       },
     });
 
-    if (!res.ok) return { kwhGenerated: null, co2Avoided: null, fetchStatus: res.status };
-
+    // dplus is a Vue SPA — it may return 404 status but still serve the HTML shell
+    // with rendered content. Always try to parse the body regardless of status code.
     const html = await res.text();
 
     const kwhGenerated = extractKwh(html);
