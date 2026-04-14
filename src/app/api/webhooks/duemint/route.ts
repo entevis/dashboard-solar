@@ -59,10 +59,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
   }
 
-  const secret = request.headers.get("x-webhook-secret");
+  const secret = request.headers.get("api_key");
   if (!secret || secret !== WEBHOOK_SECRET) {
     console.warn(`[webhook/duemint] Invalid secret from ${ip}`);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Validate content-type
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return NextResponse.json({ error: "Content-Type must be application/json" }, { status: 415 });
   }
 
   // Parse body
