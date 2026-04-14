@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
   let inv;
   try {
-    inv = await fetchInvoiceById(portfolio.duemintCompanyId!, duemintId);
+    inv = await fetchInvoiceById(portfolio.duemintCompanyId!, duemintId, portfolio.id);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error al conectar con Duemint";
     return NextResponse.json({ error: msg }, { status: 502 });

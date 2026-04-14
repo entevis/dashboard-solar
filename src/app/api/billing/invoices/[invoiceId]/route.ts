@@ -46,7 +46,7 @@ export async function PATCH(
 
   let inv;
   try {
-    inv = await fetchInvoiceById(portfolio.duemintCompanyId, invoice.duemintId);
+    inv = await fetchInvoiceById(portfolio.duemintCompanyId, invoice.duemintId, invoice.portfolioId ?? undefined);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error al conectar con Duemint";
     return NextResponse.json({ error: msg }, { status: 502 });

@@ -35,7 +35,13 @@ async function withRetry<T>(fn: () => Promise<T>, label: string, retries = 3): P
 // ── Duemint API ──────────────────────────────────────────────────────────────
 
 const DUEMINT_BASE = "https://api.duemint.com/api/v1";
-const DUEMINT_TOKEN = process.env.DUEMINT_API_TOKEN!;
+function getToken(portfolioId: number): string {
+  const specific = process.env[`DUEMINT_API_TOKEN_${portfolioId}`];
+  if (specific) return specific;
+  const fallback = process.env.DUEMINT_API_TOKEN;
+  if (!fallback) throw new Error("Missing DUEMINT_API_TOKEN");
+  return fallback;
+}
 
 interface DuemintInvoice {
   id: string;
@@ -74,12 +80,12 @@ function normalizeRut(rut: string) {
   return rut.replace(/[.\-]/g, "").toLowerCase().trim();
 }
 
-async function fetchAllInvoices(companyId: string, since: string): Promise<DuemintInvoice[]> {
+async function fetchAllInvoices(companyId: string, since: string, portfolioId: number): Promise<DuemintInvoice[]> {
   const all: DuemintInvoice[] = [];
   let page = 1;
   const headers = {
     accept: "application/json",
-    Authorization: `Bearer ${DUEMINT_TOKEN}`,
+    Authorization: `Bearer ${getToken(portfolioId)}`,
     "X-Duemint-Company-Id": companyId,
   };
 
@@ -189,7 +195,7 @@ async function main() {
     // Step 1: Fetch all invoices
     let invoices: DuemintInvoice[];
     try {
-      invoices = await fetchAllInvoices(portfolio.duemintCompanyId!, since);
+      invoices = await fetchAllInvoices(portfolio.duemintCompanyId!, since, portfolio.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "unknown";
       errors.push(`${portfolio.name}: ${msg}`);

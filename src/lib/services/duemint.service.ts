@@ -51,9 +51,22 @@ interface DuemintResponse {
   items: DuemintInvoice[];
 }
 
-function getHeaders(companyId: string) {
-  const token = process.env.DUEMINT_API_TOKEN;
-  if (!token) throw new Error("Missing DUEMINT_API_TOKEN environment variable");
+/**
+ * Resolve the Duemint API token for a given portfolio.
+ * Looks for DUEMINT_API_TOKEN_{portfolioId} first, falls back to DUEMINT_API_TOKEN.
+ */
+function getTokenForPortfolio(portfolioId?: number): string {
+  if (portfolioId) {
+    const specific = process.env[`DUEMINT_API_TOKEN_${portfolioId}`];
+    if (specific) return specific;
+  }
+  const fallback = process.env.DUEMINT_API_TOKEN;
+  if (!fallback) throw new Error("Missing DUEMINT_API_TOKEN environment variable");
+  return fallback;
+}
+
+function getHeaders(companyId: string, portfolioId?: number) {
+  const token = getTokenForPortfolio(portfolioId);
 
   return {
     "accept": "application/json",
@@ -68,9 +81,9 @@ export function toFloat(val: string | number | null | undefined): number | null 
   return isNaN(n) ? null : n;
 }
 
-async function fetchPage(companyId: string, page: number): Promise<DuemintResponse> {
+async function fetchPage(companyId: string, page: number, portfolioId?: number): Promise<DuemintResponse> {
   const url = `${BASE_URL}/collection-documents?page=${page}&per_page=100`;
-  const res = await fetch(url, { headers: getHeaders(companyId) });
+  const res = await fetch(url, { headers: getHeaders(companyId, portfolioId) });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -80,9 +93,9 @@ async function fetchPage(companyId: string, page: number): Promise<DuemintRespon
   return res.json();
 }
 
-export async function fetchInvoiceById(companyId: string, invoiceId: string): Promise<DuemintInvoice> {
+export async function fetchInvoiceById(companyId: string, invoiceId: string, portfolioId?: number): Promise<DuemintInvoice> {
   const url = `${BASE_URL}/collection-documents/${invoiceId}`;
-  const res = await fetch(url, { headers: getHeaders(companyId) });
+  const res = await fetch(url, { headers: getHeaders(companyId, portfolioId) });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -92,13 +105,13 @@ export async function fetchInvoiceById(companyId: string, invoiceId: string): Pr
   return res.json();
 }
 
-export async function fetchInvoicesSince(companyId: string, since: string): Promise<DuemintInvoice[]> {
+export async function fetchInvoicesSince(companyId: string, since: string, portfolioId?: number): Promise<DuemintInvoice[]> {
   const all: DuemintInvoice[] = [];
   let page = 1;
 
   while (true) {
     const url = `${BASE_URL}/collection-documents?since=${since}&dateBy=2&resultsPerPage=100&page=${page}`;
-    const res = await fetch(url, { headers: getHeaders(companyId) });
+    const res = await fetch(url, { headers: getHeaders(companyId, portfolioId) });
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -116,16 +129,16 @@ export async function fetchInvoicesSince(companyId: string, since: string): Prom
   return all;
 }
 
-export async function fetchAllInvoices(companyId: string): Promise<DuemintInvoice[]> {
+export async function fetchAllInvoices(companyId: string, portfolioId?: number): Promise<DuemintInvoice[]> {
   const all: DuemintInvoice[] = [];
 
-  const first = await fetchPage(companyId, 1);
+  const first = await fetchPage(companyId, 1, portfolioId);
   all.push(...(first.items ?? []));
 
   const totalPages = first.records?.pages ?? 1;
 
   for (let page = 2; page <= totalPages; page++) {
-    const data = await fetchPage(companyId, page);
+    const data = await fetchPage(companyId, page, portfolioId);
     all.push(...(data.items ?? []));
   }
 

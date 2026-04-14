@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   for (const portfolio of portfolios) {
     let invoices;
     try {
-      invoices = await fetchInvoicesSince(portfolio.duemintCompanyId!, since);
+      invoices = await fetchInvoicesSince(portfolio.duemintCompanyId!, since, portfolio.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error desconocido";
       errors.push(`Portafolio "${portfolio.name}": ${msg}`);

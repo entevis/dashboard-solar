@@ -48,7 +48,13 @@ function getArg(name: string, defaultVal: string): string {
 // ── Duemint API ──────────────────────────────────────────────────────────────
 
 const DUEMINT_BASE = "https://api.duemint.com/api/v1";
-const DUEMINT_TOKEN = process.env.DUEMINT_API_TOKEN!;
+function getToken(portfolioId: number): string {
+  const specific = process.env[`DUEMINT_API_TOKEN_${portfolioId}`];
+  if (specific) return specific;
+  const fallback = process.env.DUEMINT_API_TOKEN;
+  if (!fallback) throw new Error("Missing DUEMINT_API_TOKEN");
+  return fallback;
+}
 
 interface DuemintInvoice {
   id: string;
@@ -92,24 +98,24 @@ function normalizeRut(rut: string) {
   return rut.replace(/[.\-]/g, "").toLowerCase().trim();
 }
 
-function getHeaders(companyId: string) {
+function getHeaders(companyId: string, portfolioId: number) {
   return {
     accept: "application/json",
-    Authorization: `Bearer ${DUEMINT_TOKEN}`,
+    Authorization: `Bearer ${getToken(portfolioId)}`,
     "X-Duemint-Company-Id": companyId,
   };
 }
 
-async function fetchPage(companyId: string, since: string, page: number): Promise<DuemintResponse> {
+async function fetchPage(companyId: string, since: string, page: number, portfolioId: number): Promise<DuemintResponse> {
   const url = `${DUEMINT_BASE}/collection-documents?since=${since}&dateBy=2&resultsPerPage=100&page=${page}`;
-  const res = await fetch(url, { headers: getHeaders(companyId) });
+  const res = await fetch(url, { headers: getHeaders(companyId, portfolioId) });
   if (!res.ok) throw new Error(`Duemint ${res.status} page ${page}`);
   return res.json();
 }
 
-async function fetchAllInvoicesParallel(companyId: string, since: string, batchSize: number): Promise<DuemintInvoice[]> {
+async function fetchAllInvoicesParallel(companyId: string, since: string, batchSize: number, portfolioId: number): Promise<DuemintInvoice[]> {
   // Step 1: fetch first page to know total pages
-  const first = await fetchPage(companyId, since, 1);
+  const first = await fetchPage(companyId, since, 1, portfolioId);
   const totalPages = first.records?.pages ?? 1;
   const all: DuemintInvoice[] = [...(first.items ?? [])];
   console.log(`  📄 ${totalPages} páginas (${first.records?.totalRecords ?? "?"} registros)`);
@@ -121,7 +127,7 @@ async function fetchAllInvoicesParallel(companyId: string, since: string, batchS
 
   for (let i = 0; i < remaining.length; i += batchSize) {
     const batch = remaining.slice(i, i + batchSize);
-    const results = await Promise.all(batch.map((p) => fetchPage(companyId, since, p)));
+    const results = await Promise.all(batch.map((p) => fetchPage(companyId, since, p, portfolioId)));
     for (const r of results) {
       all.push(...(r.items ?? []));
     }
@@ -225,7 +231,7 @@ async function main() {
 
     let invoices: DuemintInvoice[];
     try {
-      invoices = await fetchAllInvoicesParallel(portfolio.duemintCompanyId!, since, batchPages);
+      invoices = await fetchAllInvoicesParallel(portfolio.duemintCompanyId!, since, batchPages, portfolio.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "unknown";
       errors.push(`${portfolio.name}: ${msg}`);
