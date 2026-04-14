@@ -105,7 +105,7 @@ export function ReportTable({ reports, portfolioId }: Props) {
             <TableRow key={r.id} hover>
               <TableCell sx={{ fontSize: "0.8125rem" }}>
                 <Link
-                  href={portfolioId ? `/${portfolioId}/power-plants/${r.powerPlant.id}/generation` : `/power-plants/${r.powerPlant.id}/generation`}
+                  href={`/${portfolioId}/power-plants/${r.powerPlant.id}/generation`}
                   style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none" }}
                   onMouseOver={(e) => (e.currentTarget.style.textDecoration = "underline")}
                   onMouseOut={(e) => (e.currentTarget.style.textDecoration = "none")}

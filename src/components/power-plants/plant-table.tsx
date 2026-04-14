@@ -150,7 +150,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
           <Box
             key={plant.id}
             component={Link}
-            href={`/power-plants/${plant.id}`}
+            href={`/${plant.portfolioId}/power-plants/${plant.id}`}
             sx={{
               display: "flex",
               alignItems: "center",
@@ -281,7 +281,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
                 <TableCell sx={{ width: W.name, maxWidth: W.name, p: "6px 12px" }}>
                   <Tooltip title={plant.name} placement="top" enterDelay={400}>
                     <Link
-                      href={`/power-plants/${plant.id}`}
+                      href={`/${plant.portfolioId}/power-plants/${plant.id}`}
                       style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none", ...truncSx, display: "block" }}
                       onMouseOver={e => (e.currentTarget.style.textDecoration = "underline")}
                       onMouseOut={e => (e.currentTarget.style.textDecoration = "none")}

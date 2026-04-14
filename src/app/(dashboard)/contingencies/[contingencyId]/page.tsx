@@ -67,7 +67,7 @@ export default async function ContingencyDetailPage({ params }: Props) {
   const contingency = await prisma.contingency.findUnique({
     where: { id, active: 1 },
     include: {
-      powerPlant: { select: { id: true, name: true, location: true, portfolio: { select: { name: true } } } },
+      powerPlant: { select: { id: true, name: true, location: true, portfolioId: true, portfolio: { select: { name: true } } } },
       createdBy: { select: { name: true, email: true } },
       comments: {
         where: { active: 1 },
@@ -136,7 +136,7 @@ export default async function ContingencyDetailPage({ params }: Props) {
 
         <SectionCard title="Información">
           <InfoRow icon={<BoltOutlinedIcon sx={{ fontSize: 16 }} />} label="Planta">
-            <Typography component={Link} href={`/power-plants/${contingency.powerPlant.id}`} fontSize="0.8125rem" fontWeight={500} sx={{ color: "primary.main", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+            <Typography component={Link} href={`/${contingency.powerPlant.portfolioId}/power-plants/${contingency.powerPlant.id}`} fontSize="0.8125rem" fontWeight={500} sx={{ color: "primary.main", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
               {contingency.powerPlant.name}
             </Typography>
           </InfoRow>
