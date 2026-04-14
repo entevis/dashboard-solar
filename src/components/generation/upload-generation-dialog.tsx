@@ -237,7 +237,7 @@ export function UploadGenerationDialog({ powerPlantId, powerPlantName }: Props) 
                   value={form.kwhGenerated}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, kwhGenerated: e.target.value })}
                   placeholder="0"
-                  sx={{ flex: 1, px: 1.5, py: 1, fontSize: "0.8125rem", border: "none", outline: "none", backgroundColor: "transparent", fontFamily: "Inter, sans-serif" }}
+                  sx={{ flex: 1, px: 1.5, py: 1, fontSize: "0.8125rem", border: "none", outline: "none", backgroundColor: "transparent", fontFamily: "Plus Jakarta Sans, sans-serif" }}
                 />
                 <Box sx={{ px: 1.5, py: 1, fontSize: "0.75rem", color: "text.secondary", borderLeft: "1px solid", borderColor: "divider", backgroundColor: "#e6eeff", whiteSpace: "nowrap" }}>
                   kWh

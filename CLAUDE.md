@@ -33,7 +33,7 @@ Sistema de gestión de portafolios de inversión solar. Web app con Next.js 15 +
 - `prisma/schema.prisma` - Database schema
 
 ## Design System — "The Architectural Calm"
-- **Fonts**: Manrope (headlines/display) + Inter (body/labels) — never DM Sans
+- **Fonts**: Plus Jakarta Sans (all text — headlines, body, labels)
 - **Primary**: #004ac6 (primary), #2563eb (primary-container)
 - **Surfaces**: structure via background shifts, NOT borders. `surface-container-lowest` (#fff) on `surface-container-low` (#eff4ff) = elevation
 - **No-Line Rule**: do NOT use 1px solid borders to section content — use bg color shifts
