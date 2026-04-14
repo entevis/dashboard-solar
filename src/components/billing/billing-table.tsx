@@ -43,6 +43,12 @@ function formatDate(dateStr: string | null) {
   return new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(dateStr));
 }
 
+function isAnulada(statusName: string | null) {
+  if (!statusName) return false;
+  const n = statusName.toLowerCase();
+  return n.includes("nul") || n.includes("cancel");
+}
+
 function StatusChip({ statusName }: { statusName: string | null }) {
   if (!statusName) return <Typography variant="caption" color="text.secondary">—</Typography>;
   const n = statusName.toLowerCase();
@@ -50,7 +56,7 @@ function StatusChip({ statusName }: { statusName: string | null }) {
   if (n.includes("pag") || n.includes("paid"))                    sx = { backgroundColor: "#dcfce7", color: "#15803d" };
   else if (n.includes("venc") || n.includes("overdue"))           sx = { backgroundColor: "#fee2e2", color: "#dc2626" };
   else if (n.includes("pend") || n.includes("emiti") || n.includes("vencer")) sx = { backgroundColor: "#fef9c3", color: "#a16207" };
-  else if (n.includes("nul") || n.includes("cancel"))             sx = { backgroundColor: "#f1f5f9", color: "#64748b" };
+  else if (isAnulada(statusName))                                  sx = { backgroundColor: "#f1f5f9", color: "#64748b" };
   return <Chip label={statusName} size="small" sx={{ ...sx, fontSize: "0.6875rem", height: 20, fontWeight: 600 }} />;
 }
 
@@ -160,8 +166,9 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
               const portfolioName = inv.portfolio?.name ?? "—";
               const totalText = inv.total != null ? formatCLP(inv.total) : "—";
               const dueText = inv.amountDue != null ? formatCLP(inv.amountDue) : "—";
-              const kwhText = inv.kwhGenerated != null ? new Intl.NumberFormat("es-CL").format(Math.round(inv.kwhGenerated)) : "—";
-              const co2Text = inv.co2Avoided != null ? inv.co2Avoided.toFixed(2) : "—";
+              const anulada = isAnulada(inv.statusName);
+              const kwhText = anulada ? "--" : (inv.kwhGenerated != null ? new Intl.NumberFormat("es-CL").format(Math.round(inv.kwhGenerated)) : "—");
+              const co2Text = anulada ? "--" : (inv.co2Avoided != null ? inv.co2Avoided.toFixed(2) : "—");
 
               return (
                 <TableRow key={inv.id} hover>

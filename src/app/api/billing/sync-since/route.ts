@@ -111,6 +111,13 @@ export async function POST(request: NextRequest) {
       }
 
       // --- Report extraction ---
+      // Skip cancelled/credit note invoices
+      const sn = (inv.statusName ?? "").toLowerCase();
+      if (sn.includes("nul") || sn.includes("cancel")) {
+        reportsSkipped++;
+        continue;
+      }
+
       const reportUrl = extractReportUrl(inv.gloss);
       if (!reportUrl || !inv.createdAt) {
         reportsSkipped++;
