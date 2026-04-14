@@ -3,9 +3,12 @@
  *
  * Extracts generation report data from Duemint invoice gloss fields:
  * 1. Parses the report URL from the gloss text
- * 2. Downloads the PDF from that URL
- * 3. Extracts "Producción Total" (kWh) from page 3 of the PDF
+ * 2. Fetches the HTML report page from dplus
+ * 3. Extracts "Producción Total" (kWh) from the HTML content
  * 4. Determines the report period (month before invoice createdAt)
+ *
+ * The dplus URLs serve HTML pages (not PDFs). Users can export to PDF
+ * from the page itself via the "Exportar a PDF" button.
  */
 
 import { SIC_EMISSION_FACTOR_TCO2_PER_MWH } from "@/lib/constants";
@@ -17,7 +20,6 @@ import { SIC_EMISSION_FACTOR_TCO2_PER_MWH } from "@/lib/constants";
 export function extractReportUrl(gloss: string | null): string | null {
   if (!gloss) return null;
 
-  // Match URLs like https://dplus.deltactivos.cl/public/reporte/XXXXX
   const match = gloss.match(/https?:\/\/dplus\.deltactivos\.cl\/public\/reporte\/[a-zA-Z0-9]+/);
   return match?.[0] ?? null;
 }
@@ -29,57 +31,50 @@ export function extractReportUrl(gloss: string | null): string | null {
  */
 export function getReportPeriod(createdAt: string | Date): { month: number; year: number } {
   const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
-  // Go to previous month
   const prevMonth = new Date(date.getFullYear(), date.getMonth() - 1, 1);
   return {
-    month: prevMonth.getMonth() + 1, // 1-indexed
+    month: prevMonth.getMonth() + 1,
     year: prevMonth.getFullYear(),
   };
 }
 
 /**
- * Download a PDF from a URL and return its buffer.
- * The dplus URLs serve PDFs directly.
+ * Fetch the dplus report HTML page and extract kWh "Producción Total".
+ * The page is an HTML report (not a PDF). We parse the text content
+ * to find the generation value.
+ *
+ * Returns null if the page can't be fetched or the value can't be found.
  */
-export async function downloadReportPdf(url: string): Promise<Buffer> {
-  const res = await fetch(url, { redirect: "follow" });
-  if (!res.ok) {
-    throw new Error(`Failed to download report PDF from ${url}: ${res.status}`);
-  }
-
-  const arrayBuffer = await res.arrayBuffer();
-  return Buffer.from(arrayBuffer);
-}
-
-/**
- * Extract kWh "Producción Total" from a report PDF buffer.
- * Looks for patterns like "Producción Total" followed by a number with kWh.
- * Returns null if the value cannot be found.
- */
-export async function extractKwhFromPdf(pdfBuffer: Buffer): Promise<number | null> {
+export async function extractKwhFromReportPage(url: string): Promise<number | null> {
   try {
-    // Dynamic import to avoid issues with pdf-parse in edge environments
-    const pdfParse = (await import("pdf-parse")).default;
-    const data = await pdfParse(pdfBuffer);
+    const res = await fetch(url, {
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; DashboardSolar/1.0)",
+        "Accept": "text/html",
+      },
+    });
 
-    const text = data.text;
+    if (!res.ok) return null;
 
-    // Try several patterns to find "Producción Total" and its associated kWh value
-    // Pattern 1: "Producción Total" followed by a number (possibly on next line)
+    const html = await res.text();
+
+    // Try patterns to find "Producción Total" and its associated kWh value in the HTML
     const patterns = [
-      /[Pp]roducci[oó]n\s+[Tt]otal[:\s]*([0-9][0-9.,]*)\s*(?:kWh)?/,
-      /[Pp]roducci[oó]n\s+[Tt]otal\s*\n\s*([0-9][0-9.,]*)/,
-      /Total\s+(?:de\s+)?[Pp]roducci[oó]n[:\s]*([0-9][0-9.,]*)/,
-      // Broader: any "Producción" near "Total" with a number ([\s\S] instead of /s flag)
-      /[Pp]roducci[oó]n[\s\S]*?[Tt]otal[\s\S]*?([0-9][0-9.,]+)\s*kWh/,
+      // "Producción Total" followed by a number (possibly with HTML tags in between)
+      /[Pp]roducci[oó]n\s+[Tt]otal[\s\S]{0,200}?(\d[\d.,]*)\s*(?:kWh|kwh)/i,
+      // Table cell or span with "Producción Total" near a number
+      /[Pp]roducci[oó]n\s+[Tt]otal[\s\S]{0,100}?(\d[\d.,]+)/i,
+      // "Total Producción" variant
+      /[Tt]otal\s+(?:de\s+)?[Pp]roducci[oó]n[\s\S]{0,100}?(\d[\d.,]+)/i,
+      // Broader: "Producción" ... "Total" ... number kWh
+      /[Pp]roducci[oó]n[\s\S]{0,500}?[Tt]otal[\s\S]{0,200}?(\d[\d.,]+)\s*(?:kWh|kwh)/i,
     ];
 
     for (const pattern of patterns) {
-      const match = text.match(pattern);
+      const match = html.match(pattern);
       if (match?.[1]) {
-        // Parse the number: handle both "1.234,56" (Chilean) and "1,234.56" formats
-        const raw = match[1].trim();
-        const parsed = parseLocalizedNumber(raw);
+        const parsed = parseLocalizedNumber(match[1].trim());
         if (parsed !== null && parsed > 0) {
           return parsed;
         }
@@ -97,10 +92,8 @@ export async function extractKwhFromPdf(pdfBuffer: Buffer): Promise<number | nul
  * Handles: "10281", "10.281", "10,281", "10.281,5", "10,281.5"
  */
 function parseLocalizedNumber(raw: string): number | null {
-  // Remove spaces
   let s = raw.replace(/\s/g, "");
 
-  // Detect format: if last separator is comma → Chilean format (1.234,56)
   const lastComma = s.lastIndexOf(",");
   const lastDot = s.lastIndexOf(".");
 
@@ -111,7 +104,6 @@ function parseLocalizedNumber(raw: string): number | null {
     // English: commas are thousands, dot is decimal
     s = s.replace(/,/g, "");
   } else {
-    // No separator or same position — just try parsing
     s = s.replace(/,/g, "");
   }
 
@@ -124,17 +116,4 @@ function parseLocalizedNumber(raw: string): number | null {
  */
 export function calculateCo2Avoided(kwhGenerated: number): number {
   return (kwhGenerated / 1000) * SIC_EMISSION_FACTOR_TCO2_PER_MWH;
-}
-
-/**
- * Build a filename for the report.
- */
-export function buildReportFileName(
-  customerName: string,
-  month: number,
-  year: number
-): string {
-  const monthStr = String(month).padStart(2, "0");
-  const safeName = customerName.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ ]/g, "").trim().replace(/\s+/g, "_");
-  return `reporte_${safeName}_${year}-${monthStr}.pdf`;
 }

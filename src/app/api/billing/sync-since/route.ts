@@ -6,18 +6,13 @@ import { fetchInvoicesSince, toFloat } from "@/lib/services/duemint.service";
 import {
   extractReportUrl,
   getReportPeriod,
-  downloadReportPdf,
-  extractKwhFromPdf,
+  extractKwhFromReportPage,
   calculateCo2Avoided,
-  buildReportFileName,
 } from "@/lib/services/report-extraction.service";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 function normalizeRut(rut: string) {
   return rut.replace(/[.\-]/g, "").toLowerCase().trim();
 }
-
-const REPORT_BUCKET = "generation-reports";
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
@@ -56,8 +51,6 @@ export async function POST(request: NextRequest) {
   let reportsCreated = 0;
   let reportsSkipped = 0;
   const errors: string[] = [];
-
-  const supabase = createAdminClient();
 
   for (const portfolio of portfolios) {
     let invoices;
@@ -136,41 +129,17 @@ export async function POST(request: NextRequest) {
       const { month, year } = getReportPeriod(inv.createdAt);
 
       try {
-        // Download the PDF
-        const pdfBuffer = await downloadReportPdf(reportUrl);
-
-        // Try to extract kWh from the PDF
-        const kwhGenerated = await extractKwhFromPdf(pdfBuffer);
+        // Fetch the HTML report page and extract kWh
+        const kwhGenerated = await extractKwhFromReportPage(reportUrl);
         const co2Avoided = kwhGenerated ? calculateCo2Avoided(kwhGenerated) : null;
-
-        // Upload PDF to Supabase storage
-        const fileName = buildReportFileName(customer.name, month, year);
-        const storagePath = `${customer.id}/${year}/${String(month).padStart(2, "0")}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from(REPORT_BUCKET)
-          .upload(storagePath, pdfBuffer, {
-            contentType: "application/pdf",
-            upsert: true,
-          });
-
-        if (uploadError) {
-          errors.push(`Report upload error (${duemintId}): ${uploadError.message}`);
-          reportsSkipped++;
-          continue;
-        }
-
-        const { data: urlData } = supabase.storage
-          .from(REPORT_BUCKET)
-          .getPublicUrl(storagePath);
 
         await prisma.generationReport.create({
           data: {
             customerId: customer.id,
             periodMonth: month,
             periodYear: year,
-            fileUrl: urlData.publicUrl,
-            fileName,
+            fileUrl: reportUrl,
+            fileName: `Reporte ${customer.name} - ${String(month).padStart(2, "0")}/${year}`,
             kwhGenerated: kwhGenerated ?? null,
             co2Avoided: co2Avoided ?? null,
             source: "duemint",
@@ -181,7 +150,7 @@ export async function POST(request: NextRequest) {
         reportsCreated++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error desconocido";
-        errors.push(`Report extraction error (${duemintId}): ${msg}`);
+        errors.push(`Report error (${duemintId}): ${msg}`);
         reportsSkipped++;
       }
     }
