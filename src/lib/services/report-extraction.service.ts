@@ -26,22 +26,11 @@ function extractReportCode(url: string): string | null {
   return match?.[1] ?? null;
 }
 
-/**
- * Determine the report period from an invoice's createdAt date.
- * The report corresponds to the month BEFORE the invoice creation.
- */
-export function getReportPeriod(createdAt: string | Date): { month: number; year: number } {
-  const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
-  const prevMonth = new Date(date.getFullYear(), date.getMonth() - 1, 1);
-  return {
-    month: prevMonth.getMonth() + 1,
-    year: prevMonth.getFullYear(),
-  };
-}
-
 export interface ReportData {
   kwhGenerated: number | null;
   co2Avoided: number | null;
+  periodMonth: number | null;
+  periodYear: number | null;
   fetchStatus?: number;
   error?: string;
 }
@@ -56,7 +45,7 @@ export interface ReportData {
 export async function extractDataFromReportPage(dplusUrl: string): Promise<ReportData> {
   try {
     const code = extractReportCode(dplusUrl);
-    if (!code) return { kwhGenerated: null, co2Avoided: null, error: "no code found in URL" };
+    if (!code) return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, error: "no code found in URL" };
 
     const apiUrl = `${REPORT_API_BASE}/${code}`;
     const res = await fetch(apiUrl, {
@@ -66,21 +55,33 @@ export async function extractDataFromReportPage(dplusUrl: string): Promise<Repor
     });
 
     if (!res.ok) {
-      return { kwhGenerated: null, co2Avoided: null, fetchStatus: res.status, error: `API returned ${res.status}` };
+      return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, fetchStatus: res.status, error: `API returned ${res.status}` };
     }
 
     const data = await res.json();
 
     const tecnico = data?.reporte?.datos_reporte?.tecnico;
     if (!tecnico) {
-      return { kwhGenerated: null, co2Avoided: null, fetchStatus: res.status, error: "no tecnico data in response" };
+      return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, fetchStatus: res.status, error: "no tecnico data in response" };
     }
 
     const kwhGenerated = typeof tecnico.produccion_total === "number" ? tecnico.produccion_total : null;
     const co2Avoided = typeof tecnico.co2 === "number" ? tecnico.co2 : null;
 
-    return { kwhGenerated, co2Avoided, fetchStatus: res.status };
+    // Extract period from fecha_reporte (e.g. "2026-02-01T03:00:00.000Z")
+    let periodMonth: number | null = null;
+    let periodYear: number | null = null;
+    const fechaReporte = data?.reporte?.datos_reporte?.fecha_reporte;
+    if (fechaReporte) {
+      const d = new Date(fechaReporte);
+      if (!isNaN(d.getTime())) {
+        periodMonth = d.getMonth() + 1;
+        periodYear = d.getFullYear();
+      }
+    }
+
+    return { kwhGenerated, co2Avoided, periodMonth, periodYear, fetchStatus: res.status };
   } catch (err) {
-    return { kwhGenerated: null, co2Avoided: null, error: err instanceof Error ? err.message : "unknown" };
+    return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, error: err instanceof Error ? err.message : "unknown" };
   }
 }

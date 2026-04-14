@@ -5,7 +5,6 @@ import { UserRole } from "@prisma/client";
 import { fetchInvoicesSince, toFloat } from "@/lib/services/duemint.service";
 import {
   extractReportUrl,
-  getReportPeriod,
   extractDataFromReportPage,
 } from "@/lib/services/report-extraction.service";
 
@@ -119,7 +118,7 @@ export async function POST(request: NextRequest) {
       }
 
       const reportUrl = extractReportUrl(inv.gloss);
-      if (!reportUrl || !inv.createdAt) {
+      if (!reportUrl) {
         reportsSkipped++;
         continue;
       }
@@ -134,22 +133,26 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const { month, year } = getReportPeriod(inv.createdAt);
-
       try {
-        const { kwhGenerated, co2Avoided } = await extractDataFromReportPage(reportUrl);
+        const { kwhGenerated, co2Avoided, periodMonth, periodYear } = await extractDataFromReportPage(reportUrl);
+
+        if (!periodMonth || !periodYear) {
+          errors.push(`Report error (${duemintId}): no fecha_reporte in API response`);
+          reportsSkipped++;
+          continue;
+        }
 
         if (existingReport) {
-          if (kwhGenerated != null || co2Avoided != null) {
-            const updateData: Record<string, unknown> = {};
-            if (kwhGenerated != null && existingReport.kwhGenerated == null) updateData.kwhGenerated = kwhGenerated;
-            if (co2Avoided != null && existingReport.co2Avoided == null) updateData.co2Avoided = co2Avoided;
-            if (Object.keys(updateData).length > 0) {
-              await prisma.generationReport.update({ where: { duemintId }, data: updateData });
-              reportsUpdated++;
-            } else {
-              reportsSkipped++;
-            }
+          const updateData: Record<string, unknown> = {};
+          if (kwhGenerated != null && existingReport.kwhGenerated == null) updateData.kwhGenerated = kwhGenerated;
+          if (co2Avoided != null && existingReport.co2Avoided == null) updateData.co2Avoided = co2Avoided;
+          if (existingReport.periodMonth !== periodMonth || existingReport.periodYear !== periodYear) {
+            updateData.periodMonth = periodMonth;
+            updateData.periodYear = periodYear;
+          }
+          if (Object.keys(updateData).length > 0) {
+            await prisma.generationReport.update({ where: { duemintId }, data: updateData });
+            reportsUpdated++;
           } else {
             reportsSkipped++;
           }
@@ -157,10 +160,10 @@ export async function POST(request: NextRequest) {
           await prisma.generationReport.create({
             data: {
               customerId: customer.id,
-              periodMonth: month,
-              periodYear: year,
+              periodMonth,
+              periodYear,
               fileUrl: reportUrl,
-              fileName: `Reporte ${customer.name} - ${String(month).padStart(2, "0")}/${year}`,
+              fileName: `Reporte ${customer.name} - ${String(periodMonth).padStart(2, "0")}/${periodYear}`,
               kwhGenerated: kwhGenerated ?? null,
               co2Avoided: co2Avoided ?? null,
               source: "duemint",
