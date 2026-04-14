@@ -6,7 +6,7 @@ import { fetchInvoicesSince, toFloat } from "@/lib/services/duemint.service";
 import {
   extractReportUrl,
   getReportPeriod,
-  extractKwhFromReportPage,
+  extractDataFromReportPage,
   calculateCo2Avoided,
 } from "@/lib/services/report-extraction.service";
 
@@ -131,17 +131,22 @@ export async function POST(request: NextRequest) {
       const { month, year } = getReportPeriod(inv.createdAt);
 
       try {
-        const kwhGenerated = await extractKwhFromReportPage(reportUrl);
-        const co2Avoided = kwhGenerated ? calculateCo2Avoided(kwhGenerated) : null;
+        const { kwhGenerated, co2Avoided } = await extractDataFromReportPage(reportUrl);
+        // Fallback: calculate CO2 if we got kWh but not CO2
+        const finalCo2 = co2Avoided ?? (kwhGenerated ? calculateCo2Avoided(kwhGenerated) : null);
 
         if (existingReport) {
-          // Update existing report that was missing kWh
-          if (kwhGenerated != null) {
-            await prisma.generationReport.update({
-              where: { duemintId },
-              data: { kwhGenerated, co2Avoided },
-            });
-            reportsUpdated++;
+          // Update existing report that was missing kWh or CO2
+          if (kwhGenerated != null || finalCo2 != null) {
+            const updateData: Record<string, unknown> = {};
+            if (kwhGenerated != null && existingReport.kwhGenerated == null) updateData.kwhGenerated = kwhGenerated;
+            if (finalCo2 != null && existingReport.co2Avoided == null) updateData.co2Avoided = finalCo2;
+            if (Object.keys(updateData).length > 0) {
+              await prisma.generationReport.update({ where: { duemintId }, data: updateData });
+              reportsUpdated++;
+            } else {
+              reportsSkipped++;
+            }
           } else {
             reportsSkipped++;
           }
@@ -154,7 +159,7 @@ export async function POST(request: NextRequest) {
               fileUrl: reportUrl,
               fileName: `Reporte ${customer.name} - ${String(month).padStart(2, "0")}/${year}`,
               kwhGenerated: kwhGenerated ?? null,
-              co2Avoided: co2Avoided ?? null,
+              co2Avoided: finalCo2 ?? null,
               source: "duemint",
               duemintId,
             },
