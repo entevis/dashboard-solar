@@ -31,16 +31,17 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
 
     // Stay on the same view but swap the portfolio ID in the URL
     if (urlMatch) {
-      // Currently in a portfolio-scoped route: replace the old ID with the new one
       const rest = pathname.replace(/^\/\d+/, `/${id}`);
       router.push(rest);
     } else {
-      // On a global route (dashboard, admin, etc.): just refresh to pick up the cookie
       router.refresh();
     }
 
+    // Show toast after navigation settles
     if (portfolio) {
-      toast.success(`Has cambiado al portafolio ${portfolio.name}`);
+      setTimeout(() => {
+        toast.success(`Has cambiado al portafolio ${portfolio.name}`);
+      }, 800);
     }
   }
 
