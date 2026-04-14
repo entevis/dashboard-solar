@@ -152,7 +152,7 @@ export default async function BillingPage({
       {/* Header */}
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, flexShrink: 0 }}>
         <Box>
-          <Typography variant="h5" fontWeight={700} color="text.primary">Facturación</Typography>
+          <Typography variant="h5" fontWeight={700} color="text.primary">Facturas y reportes</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             {total} {total === 1 ? "factura" : "facturas"} · {MONTHS[month - 1]} {year}
           </Typography>

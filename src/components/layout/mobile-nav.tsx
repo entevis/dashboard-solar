@@ -60,7 +60,7 @@ export function MobileNav({ userRole, selectedPortfolioId }: MobileNavProps) {
     {
       roles: ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
-        { label: "Facturación", href: p("/billing"),  icon: ReceiptLongOutlinedIcon },
+        { label: "Facturas y reportes", href: p("/billing"),  icon: ReceiptLongOutlinedIcon },
       ],
     },
     {
