@@ -21,7 +21,7 @@ const STATUS_OPTIONS = [
   { value: "pagada",    label: "Pagadas" },
   { value: "porVencer", label: "Por vencer" },
   { value: "vencida",   label: "Vencidas" },
-  { value: "documento", label: "Documentos" },
+  { value: "notaCredito", label: "Notas de crédito" },
 ];
 
 function getYears() {

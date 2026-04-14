@@ -49,7 +49,7 @@ export default async function BillingPage({
   const periodStart = new Date(year, month - 1, 1);
   const periodEnd = new Date(year, month, 1);
 
-  const VALID_STATUSES = ["pagada", "porVencer", "vencida", "documento"];
+  const VALID_STATUSES = ["pagada", "porVencer", "vencida", "notaCredito"];
   const status = VALID_STATUSES.includes(params.status ?? "") ? params.status! : "all";
 
   const sortBy = VALID_SORT_KEYS.includes(params.sortBy as BillingSortKey) ? params.sortBy as BillingSortKey : "issueDate";
@@ -75,7 +75,7 @@ export default async function BillingPage({
     pagada:    { statusCode: 1 },
     porVencer: { statusCode: 2 },
     vencida:   { statusCode: 3 },
-    documento: { statusCode: 4 },
+    notaCredito: { statusCode: 4 },
   };
   const tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
   const isMaestro = user.role === UserRole.MAESTRO;
@@ -95,18 +95,18 @@ export default async function BillingPage({
       : Promise.resolve([]),
   ]);
 
-  function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | "documento" {
+  function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | "notaCredito" {
     switch (statusCode) {
       case 1: return "pagada";
       case 2: return "porVencer";
       case 3: return "vencida";
-      case 4: return "documento";
+      case 4: return "notaCredito";
       default: return "porVencer";
     }
   }
 
-  const kpis = { pagada: 0, porVencer: 0, vencida: 0, documento: 0 };
-  const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, documento: 0 };
+  const kpis = { pagada: 0, porVencer: 0, vencida: 0, notaCredito: 0 };
+  const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, notaCredito: 0 };
   for (const inv of allInvoices) {
     const cat = categorize(inv.statusCode);
     kpis[cat] += inv.total ?? 0;
@@ -117,7 +117,7 @@ export default async function BillingPage({
     { label: "Pagadas",     value: kpis.pagada,    count: kpiCounts.pagada,    color: "#15803d" },
     { label: "Por vencer",  value: kpis.porVencer, count: kpiCounts.porVencer, color: "#a16207" },
     { label: "Vencidas",    value: kpis.vencida,   count: kpiCounts.vencida,   color: "#dc2626" },
-    { label: "Documentos",  value: kpis.documento, count: kpiCounts.documento, color: "#434655" },
+    { label: "Notas de crédito",  value: kpis.notaCredito, count: kpiCounts.notaCredito, color: "#434655" },
   ];
 
   // Look up generation reports linked to these invoices by duemintId
