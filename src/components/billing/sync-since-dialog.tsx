@@ -17,12 +17,15 @@ import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 
 type Step = "form" | "loading" | "result";
 
+interface Props {
+  portfolioId?: number;
+}
+
 interface SyncResult {
   since: string;
   portfolios: number;
-  created: number;
-  updated: number;
-  skipped: number;
+  invoices: { created: number; updated: number; skipped: number };
+  reports: { created: number; updated: number; skipped: number };
   errors?: string[];
 }
 
@@ -32,7 +35,7 @@ function defaultSince() {
   return d.toISOString().slice(0, 10);
 }
 
-export function SyncSinceDialog() {
+export function SyncSinceDialog({ portfolioId }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("form");
@@ -58,7 +61,7 @@ export function SyncSinceDialog() {
       const res = await fetch("/api/billing/sync-since", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ since }),
+        body: JSON.stringify({ since, portfolioId }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Error al sincronizar"); setStep("form"); return; }
@@ -99,7 +102,7 @@ export function SyncSinceDialog() {
                   InputLabelProps={{ shrink: true }}
                 />
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
-                  Se consultará esta fecha en todos los portafolios con Duemint configurado.
+                  Se sincronizarán las facturas y reportes de este portafolio.
                 </Typography>
               </Box>
               {error && <Alert severity="error" sx={{ fontSize: "0.8125rem" }}>{error}</Alert>}
@@ -113,7 +116,7 @@ export function SyncSinceDialog() {
               <Box sx={{ textAlign: "center" }}>
                 <Typography fontSize="0.8125rem" fontWeight={600}>Sincronizando...</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                  Consultando todos los portafolios. Esto puede tomar unos segundos.
+                  Esto puede tomar unos segundos.
                 </Typography>
               </Box>
             </Box>
@@ -129,18 +132,34 @@ export function SyncSinceDialog() {
                 <Box>
                   <Typography fontSize="0.8125rem" fontWeight={600}>Sincronización completada</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Desde {result.since} · {result.portfolios} {result.portfolios === 1 ? "portafolio" : "portafolios"}
+                    Desde {result.since}
                   </Typography>
                 </Box>
               </Box>
 
               <Box sx={{ borderRadius: 1.5, border: "1px solid", borderColor: "divider", overflow: "hidden" }}>
+                <Box sx={{ px: 2, py: 1, backgroundColor: "#eff4ff" }}>
+                  <Typography fontSize="0.75rem" fontWeight={600} color="text.secondary">Facturas</Typography>
+                </Box>
                 {[
-                  { label: "Creadas",      value: result.created,  color: "#16a34a" },
-                  { label: "Actualizadas", value: result.updated,  color: "text.primary" },
-                  { label: "Omitidas",     value: result.skipped,  color: "text.secondary" },
-                ].map((row, i) => (
-                  <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", px: 2, py: 1.25, backgroundColor: i % 2 === 1 ? "#eff4ff" : "transparent" }}>
+                  { label: "Creadas",      value: result.invoices?.created ?? 0,  color: "#16a34a" },
+                  { label: "Actualizadas", value: result.invoices?.updated ?? 0,  color: "text.primary" },
+                  { label: "Omitidas",     value: result.invoices?.skipped ?? 0,  color: "text.secondary" },
+                ].map((row) => (
+                  <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", px: 2, py: 1 }}>
+                    <Typography fontSize="0.8125rem" color="text.secondary">{row.label}</Typography>
+                    <Typography fontSize="0.8125rem" fontWeight={600} color={row.color}>{row.value}</Typography>
+                  </Box>
+                ))}
+                <Box sx={{ px: 2, py: 1, backgroundColor: "#eff4ff" }}>
+                  <Typography fontSize="0.75rem" fontWeight={600} color="text.secondary">Reportes</Typography>
+                </Box>
+                {[
+                  { label: "Creados",      value: result.reports?.created ?? 0,  color: "#16a34a" },
+                  { label: "Actualizados", value: result.reports?.updated ?? 0,  color: "text.primary" },
+                  { label: "Omitidos",     value: result.reports?.skipped ?? 0,  color: "text.secondary" },
+                ].map((row) => (
+                  <Box key={row.label} sx={{ display: "flex", justifyContent: "space-between", px: 2, py: 1 }}>
                     <Typography fontSize="0.8125rem" color="text.secondary">{row.label}</Typography>
                     <Typography fontSize="0.8125rem" fontWeight={600} color={row.color}>{row.value}</Typography>
                   </Box>

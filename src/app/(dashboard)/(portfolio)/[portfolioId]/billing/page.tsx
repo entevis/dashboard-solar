@@ -155,7 +155,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
           <BillingFilters month={month} year={year} status={status} />
           {isMaestro && maestroPortfolios.length > 0 && (
             <>
-              <SyncSinceDialog />
+              <SyncSinceDialog portfolioId={pid} />
               <ImportInvoiceDialog portfolios={maestroPortfolios} />
             </>
           )}

@@ -20,13 +20,17 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const since: string = body.since ?? "";
+  const portfolioId: number | undefined = body.portfolioId ? Number(body.portfolioId) : undefined;
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(since)) {
     return NextResponse.json({ error: "Fecha inválida. Formato esperado: YYYY-MM-DD" }, { status: 400 });
   }
 
+  const where: Record<string, unknown> = { active: 1, duemintCompanyId: { not: null } };
+  if (portfolioId) where.id = portfolioId;
+
   const portfolios = await prisma.portfolio.findMany({
-    where: { active: 1, duemintCompanyId: { not: null } },
+    where,
     select: { id: true, name: true, duemintCompanyId: true },
   });
 
