@@ -13,6 +13,7 @@ import DirectionsCarOutlinedIcon from "@mui/icons-material/DirectionsCarOutlined
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { toast } from "@/lib/utils/toast";
 
 interface Props {
@@ -32,17 +33,18 @@ interface Props {
 
 export function PortfolioVerticalCard({ portfolioId, isSelected, name, description, logoUrl, customerCount, activePlants, totalCapacityKw, co2LastMonth, co2Year, lastMonthLabel, href }: Props) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const equivalentTrees = calculateEquivalentTrees(co2Year);
   const equivalentCars = calculateEquivalentCars(co2Year);
 
   function handleSelect() {
-    if (isSelected) return;
+    if (isSelected || isPending) return;
     document.cookie = `portfolio_id=${portfolioId}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
-    router.refresh();
-    setTimeout(() => {
-      toast.success(`Has cambiado al portafolio ${name}`);
-    }, 800);
+    startTransition(() => {
+      router.refresh();
+    });
+    toast.success(`Has cambiado al portafolio ${name}`);
   }
 
   return (

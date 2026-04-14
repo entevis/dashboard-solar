@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -20,6 +21,7 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const [, startTransition] = useTransition();
 
   const urlMatch = pathname.match(/^\/(\d+)(\/|$)/);
   const currentId = urlMatch ? parseInt(urlMatch[1]) : selectedPortfolioId;
@@ -29,19 +31,17 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
     const portfolio = portfolios.find((p) => p.id === id);
     document.cookie = `${COOKIE_NAME}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 
-    // Stay on the same view but swap the portfolio ID in the URL
-    if (urlMatch) {
-      const rest = pathname.replace(/^\/\d+/, `/${id}`);
-      router.push(rest);
-    } else {
-      router.refresh();
-    }
+    startTransition(() => {
+      if (urlMatch) {
+        const rest = pathname.replace(/^\/\d+/, `/${id}`);
+        router.push(rest);
+      } else {
+        router.refresh();
+      }
+    });
 
-    // Show toast after navigation settles
     if (portfolio) {
-      setTimeout(() => {
-        toast.success(`Has cambiado al portafolio ${portfolio.name}`);
-      }, 800);
+      toast.success(`Has cambiado al portafolio ${portfolio.name}`);
     }
   }
 
