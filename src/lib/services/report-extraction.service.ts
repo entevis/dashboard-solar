@@ -60,15 +60,16 @@ export async function extractKwhFromReportPage(url: string): Promise<number | nu
     const html = await res.text();
 
     // Try patterns to find "Producción Total" and its associated kWh value in the HTML
+    // The HTML structure is: <td> Producción Total </td><td></td><td> 36.899 </td>
     const patterns = [
+      // Exact table structure: "Producción Total" in a <td>, then other <td>s with the number
+      /[Pp]roducci[oó]n\s+[Tt]otal\s*<\/td>[\s\S]{0,200}?<td[^>]*>\s*(\d[\d.,]+)\s*<\/td>/i,
       // "Producción Total" followed by a number (possibly with HTML tags in between)
       /[Pp]roducci[oó]n\s+[Tt]otal[\s\S]{0,200}?(\d[\d.,]*)\s*(?:kWh|kwh)/i,
       // Table cell or span with "Producción Total" near a number
-      /[Pp]roducci[oó]n\s+[Tt]otal[\s\S]{0,100}?(\d[\d.,]+)/i,
+      /[Pp]roducci[oó]n\s+[Tt]otal[\s\S]{0,200}?(\d[\d.,]+)/i,
       // "Total Producción" variant
-      /[Tt]otal\s+(?:de\s+)?[Pp]roducci[oó]n[\s\S]{0,100}?(\d[\d.,]+)/i,
-      // Broader: "Producción" ... "Total" ... number kWh
-      /[Pp]roducci[oó]n[\s\S]{0,500}?[Tt]otal[\s\S]{0,200}?(\d[\d.,]+)\s*(?:kWh|kwh)/i,
+      /[Tt]otal\s+(?:de\s+)?[Pp]roducci[oó]n[\s\S]{0,200}?(\d[\d.,]+)/i,
     ];
 
     for (const pattern of patterns) {
