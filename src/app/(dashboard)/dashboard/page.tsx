@@ -142,8 +142,8 @@ export default async function DashboardPage() {
   // OPERATIVO
   const opPid = user.assignedPortfolioId;
   const quickLinks = [
-    { href: opPid ? `/${opPid}/power-plants` : "/power-plants", icon: <BoltOutlinedIcon sx={{ fontSize: 18, color: "#004ac6" }} />, iconBg: "#dbe1ff", label: "Plantas", sublabel: "Ver plantas asignadas", hoverBorder: "#004ac6" },
-    { href: opPid ? `/${opPid}/contingencies` : "/contingencies", icon: <WarningAmberOutlinedIcon sx={{ fontSize: 18, color: "#a16207" }} />, iconBg: "#fef9c3", label: "Contingencias", sublabel: "Revisar alertas activas", hoverBorder: "#a16207" },
+    { href: `/${opPid}/power-plants`, icon: <BoltOutlinedIcon sx={{ fontSize: 18, color: "#004ac6" }} />, iconBg: "#dbe1ff", label: "Plantas", sublabel: "Ver plantas asignadas", hoverBorder: "#004ac6" },
+    { href: `/${opPid}/contingencies`, icon: <WarningAmberOutlinedIcon sx={{ fontSize: 18, color: "#a16207" }} />, iconBg: "#fef9c3", label: "Contingencias", sublabel: "Revisar alertas activas", hoverBorder: "#a16207" },
   ];
 
   return (
