@@ -6,6 +6,7 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Box from "@mui/material/Box";
 import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
+import { toast } from "@/lib/utils/toast";
 
 interface Portfolio { id: number; name: string }
 interface Props {
@@ -25,9 +26,22 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
 
   function handleChange(value: string) {
     const id = parseInt(value);
+    const portfolio = portfolios.find((p) => p.id === id);
     document.cookie = `${COOKIE_NAME}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-    router.push(`/dashboard`);
-    router.refresh();
+
+    // Stay on the same view but swap the portfolio ID in the URL
+    if (urlMatch) {
+      // Currently in a portfolio-scoped route: replace the old ID with the new one
+      const rest = pathname.replace(/^\/\d+/, `/${id}`);
+      router.push(rest);
+    } else {
+      // On a global route (dashboard, admin, etc.): just refresh to pick up the cookie
+      router.refresh();
+    }
+
+    if (portfolio) {
+      toast.success(`Has cambiado al portafolio ${portfolio.name}`);
+    }
   }
 
   return (
