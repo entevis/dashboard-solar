@@ -166,6 +166,7 @@ model PowerPlant {
   customer          Customer               @relation(fields: [customerId], references: [id])
   address           Address?
   generationReports GenerationReport[]
+  invoices          Invoice[]
   contingencies     Contingency[]
   userPermissions   UserPlantPermission[]
 
@@ -242,6 +243,7 @@ model GenerationReport {
   fileName     String   @map("file_name")
   kwhGenerated Float?   @map("kwh_generated")
   co2Avoided   Float?   @map("co2_avoided")
+  plantName    String?  @map("plant_name")
   source       String   @default("manual")
   duemintId    String?  @unique @map("duemint_id")
   active       Int      @default(1)
@@ -292,17 +294,20 @@ model Invoice {
   creditNoteNumber String? @map("credit_note_number")
   gloss            String? @db.Text
 
-  portfolioId Int? @map("portfolio_id")
+  portfolioId  Int? @map("portfolio_id")
+  powerPlantId Int? @map("power_plant_id")
 
   active    Int      @default(1)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  customer  Customer   @relation(fields: [customerId], references: [id])
-  portfolio Portfolio? @relation(fields: [portfolioId], references: [id])
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  portfolio  Portfolio?  @relation(fields: [portfolioId], references: [id])
+  powerPlant PowerPlant? @relation(fields: [powerPlantId], references: [id])
 
   @@index([customerId])
   @@index([portfolioId])
+  @@index([powerPlantId])
   @@index([clientTaxId])
   @@map("invoices")
 }
