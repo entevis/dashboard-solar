@@ -9,6 +9,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
+import Tooltip from "@mui/material/Tooltip";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import { InvoiceRowActions } from "@/components/billing/invoice-row-actions";
@@ -55,6 +56,32 @@ function StatusChip({ statusName }: { statusName: string | null }) {
 
 const VALID_SORT_KEYS: BillingSortKey[] = ["number", "customer", "portfolio", "issueDate", "dueDate", "total", "amountDue", "status"];
 
+// Fixed column widths
+const W = {
+  number: 100,
+  customer: 160,
+  portfolio: 120,
+  issueDate: 95,
+  dueDate: 95,
+  total: 100,
+  amountDue: 100,
+  status: 120,
+  kwh: 100,
+  co2: 100,
+  actions: 40,
+};
+
+const truncSx = {
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+} as const;
+
+const cellSx = {
+  fontSize: "0.8125rem",
+  ...truncSx,
+} as const;
+
 interface Props {
   invoices: SerializedInvoice[];
   total: number;
@@ -95,7 +122,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
   return (
     <>
       <TableContainer sx={{ flex: 1, minHeight: 0, overflow: "auto", opacity: isPending ? 0.6 : 1, transition: "opacity 0.15s" }}>
-        <Table stickyHeader size="small">
+        <Table stickyHeader size="small" sx={{ tableLayout: "fixed" }}>
           <TableHead>
             <TableRow
               sx={{
@@ -105,66 +132,73 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                 "& .MuiTableSortLabel-icon": { fontSize: "0.9rem !important" },
               }}
             >
-              <TableCell><TableSortLabel {...col("number")}>N° Factura</TableSortLabel></TableCell>
-              <TableCell><TableSortLabel {...col("customer")}>Cliente</TableSortLabel></TableCell>
-              <TableCell><TableSortLabel {...col("portfolio")}>Portafolio</TableSortLabel></TableCell>
-              <TableCell><TableSortLabel {...col("issueDate")}>Emisión</TableSortLabel></TableCell>
-              <TableCell><TableSortLabel {...col("dueDate")}>Vencimiento</TableSortLabel></TableCell>
-              <TableCell align="right">
+              <TableCell sx={{ width: W.number }}><TableSortLabel {...col("number")}>N° Factura</TableSortLabel></TableCell>
+              <TableCell sx={{ width: W.customer }}><TableSortLabel {...col("customer")}>Cliente</TableSortLabel></TableCell>
+              <TableCell sx={{ width: W.portfolio }}><TableSortLabel {...col("portfolio")}>Portafolio</TableSortLabel></TableCell>
+              <TableCell sx={{ width: W.issueDate }}><TableSortLabel {...col("issueDate")}>Emisión</TableSortLabel></TableCell>
+              <TableCell sx={{ width: W.dueDate }}><TableSortLabel {...col("dueDate")}>Vencimiento</TableSortLabel></TableCell>
+              <TableCell sx={{ width: W.total }} align="right">
                 <TableSortLabel {...col("total")} sx={{ justifyContent: "flex-end", width: "100%", flexDirection: "row-reverse" }}>
                   Total
                 </TableSortLabel>
               </TableCell>
-              <TableCell align="right">
+              <TableCell sx={{ width: W.amountDue }} align="right">
                 <TableSortLabel {...col("amountDue")} sx={{ justifyContent: "flex-end", width: "100%", flexDirection: "row-reverse" }}>
                   Por cobrar
                 </TableSortLabel>
               </TableCell>
-              <TableCell><TableSortLabel {...col("status")}>Estado</TableSortLabel></TableCell>
-              <TableCell align="right">Generación (kWh)</TableCell>
-              <TableCell align="right">CO₂ evitado (ton)</TableCell>
-              <TableCell sx={{ width: 40 }} />
+              <TableCell sx={{ width: W.status }}><TableSortLabel {...col("status")}>Estado</TableSortLabel></TableCell>
+              <TableCell sx={{ width: W.kwh }} align="right">Generación (kWh)</TableCell>
+              <TableCell sx={{ width: W.co2 }} align="right">CO₂ evitado (ton)</TableCell>
+              <TableCell sx={{ width: W.actions }} />
             </TableRow>
           </TableHead>
           <TableBody>
-            {invoices.map((inv) => (
-              <TableRow key={inv.id} hover>
-                <TableCell sx={{ fontFamily: "monospace", fontWeight: 500, fontSize: "0.8125rem" }}>
-                  {inv.number ?? `#${inv.duemintId}`}
-                </TableCell>
-                <TableCell>
-                  <Typography fontSize="0.8125rem" fontWeight={500}>{inv.customer.name}</Typography>
-                  {inv.clientTaxId && (
-                    <Typography variant="caption" color="text.secondary">{inv.clientTaxId}</Typography>
-                  )}
-                </TableCell>
-                <TableCell sx={{ color: "text.secondary", fontSize: "0.8125rem" }}>{inv.portfolio?.name ?? "—"}</TableCell>
-                <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap", fontSize: "0.8125rem" }}>{formatDate(inv.issueDate)}</TableCell>
-                <TableCell sx={{ color: "text.secondary", whiteSpace: "nowrap", fontSize: "0.8125rem" }}>{formatDate(inv.dueDate)}</TableCell>
-                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500, fontSize: "0.8125rem" }}>
-                  {inv.total != null ? formatCLP(inv.total) : "—"}
-                </TableCell>
-                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.8125rem" }}>
-                  {inv.amountDue != null ? formatCLP(inv.amountDue) : "—"}
-                </TableCell>
-                <TableCell><StatusChip statusName={inv.statusName} /></TableCell>
-                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.8125rem" }}>
-                  {inv.kwhGenerated != null ? new Intl.NumberFormat("es-CL").format(Math.round(inv.kwhGenerated)) : <span style={{ color: "#737686" }}>—</span>}
-                </TableCell>
-                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.8125rem" }}>
-                  {inv.co2Avoided != null ? inv.co2Avoided.toFixed(2) : <span style={{ color: "#737686" }}>—</span>}
-                </TableCell>
-                <TableCell>
-                  <InvoiceRowActions
-                    invoiceId={inv.id}
-                    isPaid={inv.statusName?.toLowerCase().includes("pag") || inv.statusName?.toLowerCase().includes("paid") || false}
-                    url={inv.url ?? null}
-                    pdfUrl={inv.pdfUrl ?? null}
-                    reportUrl={inv.reportUrl ?? null}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+            {invoices.map((inv) => {
+              const numberText = inv.number ?? `#${inv.duemintId}`;
+              const customerName = inv.customer.name;
+              const portfolioName = inv.portfolio?.name ?? "—";
+              const totalText = inv.total != null ? formatCLP(inv.total) : "—";
+              const dueText = inv.amountDue != null ? formatCLP(inv.amountDue) : "—";
+              const kwhText = inv.kwhGenerated != null ? new Intl.NumberFormat("es-CL").format(Math.round(inv.kwhGenerated)) : "—";
+              const co2Text = inv.co2Avoided != null ? inv.co2Avoided.toFixed(2) : "—";
+
+              return (
+                <TableRow key={inv.id} hover>
+                  <TableCell sx={{ ...cellSx, fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
+                    <Tooltip title={numberText} placement="top" enterDelay={400}><span style={truncSx}>{numberText}</span></Tooltip>
+                  </TableCell>
+                  <TableCell sx={cellSx}>
+                    <Tooltip title={`${customerName}${inv.clientTaxId ? ` · ${inv.clientTaxId}` : ""}`} placement="top" enterDelay={400}>
+                      <span style={{ ...truncSx, display: "block", fontWeight: 500 }}>{customerName}</span>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ ...cellSx, color: "text.secondary" }}>
+                    <Tooltip title={portfolioName} placement="top" enterDelay={400}><span style={truncSx}>{portfolioName}</span></Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ ...cellSx, color: "text.secondary" }}>{formatDate(inv.issueDate)}</TableCell>
+                  <TableCell sx={{ ...cellSx, color: "text.secondary" }}>{formatDate(inv.dueDate)}</TableCell>
+                  <TableCell align="right" sx={{ ...cellSx, fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{totalText}</TableCell>
+                  <TableCell align="right" sx={{ ...cellSx, fontVariantNumeric: "tabular-nums" }}>{dueText}</TableCell>
+                  <TableCell sx={cellSx}><StatusChip statusName={inv.statusName} /></TableCell>
+                  <TableCell align="right" sx={{ ...cellSx, fontVariantNumeric: "tabular-nums" }}>
+                    {kwhText === "—" ? <span style={{ color: "#737686" }}>—</span> : kwhText}
+                  </TableCell>
+                  <TableCell align="right" sx={{ ...cellSx, fontVariantNumeric: "tabular-nums" }}>
+                    {co2Text === "—" ? <span style={{ color: "#737686" }}>—</span> : co2Text}
+                  </TableCell>
+                  <TableCell>
+                    <InvoiceRowActions
+                      invoiceId={inv.id}
+                      isPaid={inv.statusName?.toLowerCase().includes("pag") || inv.statusName?.toLowerCase().includes("paid") || false}
+                      url={inv.url ?? null}
+                      pdfUrl={inv.pdfUrl ?? null}
+                      reportUrl={inv.reportUrl ?? null}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
