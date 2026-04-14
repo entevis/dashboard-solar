@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
   let totalUpdated = 0;
   let totalSkipped = 0;
   let reportsCreated = 0;
+  let reportsUpdated = 0;
   let reportsSkipped = 0;
   const errors: string[] = [];
 
@@ -117,11 +118,12 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Check if report already exists for this invoice
       const existingReport = await prisma.generationReport.findUnique({
         where: { duemintId },
       });
-      if (existingReport) {
+
+      // If report exists and already has kWh, skip
+      if (existingReport && existingReport.kwhGenerated != null) {
         reportsSkipped++;
         continue;
       }
@@ -129,25 +131,36 @@ export async function POST(request: NextRequest) {
       const { month, year } = getReportPeriod(inv.createdAt);
 
       try {
-        // Fetch the HTML report page and extract kWh
         const kwhGenerated = await extractKwhFromReportPage(reportUrl);
         const co2Avoided = kwhGenerated ? calculateCo2Avoided(kwhGenerated) : null;
 
-        await prisma.generationReport.create({
-          data: {
-            customerId: customer.id,
-            periodMonth: month,
-            periodYear: year,
-            fileUrl: reportUrl,
-            fileName: `Reporte ${customer.name} - ${String(month).padStart(2, "0")}/${year}`,
-            kwhGenerated: kwhGenerated ?? null,
-            co2Avoided: co2Avoided ?? null,
-            source: "duemint",
-            duemintId,
-          },
-        });
-
-        reportsCreated++;
+        if (existingReport) {
+          // Update existing report that was missing kWh
+          if (kwhGenerated != null) {
+            await prisma.generationReport.update({
+              where: { duemintId },
+              data: { kwhGenerated, co2Avoided },
+            });
+            reportsUpdated++;
+          } else {
+            reportsSkipped++;
+          }
+        } else {
+          await prisma.generationReport.create({
+            data: {
+              customerId: customer.id,
+              periodMonth: month,
+              periodYear: year,
+              fileUrl: reportUrl,
+              fileName: `Reporte ${customer.name} - ${String(month).padStart(2, "0")}/${year}`,
+              kwhGenerated: kwhGenerated ?? null,
+              co2Avoided: co2Avoided ?? null,
+              source: "duemint",
+              duemintId,
+            },
+          });
+          reportsCreated++;
+        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error desconocido";
         errors.push(`Report error (${duemintId}): ${msg}`);
@@ -161,7 +174,7 @@ export async function POST(request: NextRequest) {
     since,
     portfolios: portfolios.length,
     invoices: { created: totalCreated, updated: totalUpdated, skipped: totalSkipped },
-    reports: { created: reportsCreated, skipped: reportsSkipped },
+    reports: { created: reportsCreated, updated: reportsUpdated, skipped: reportsSkipped },
     ...(errors.length > 0 && { errors }),
   });
 }
