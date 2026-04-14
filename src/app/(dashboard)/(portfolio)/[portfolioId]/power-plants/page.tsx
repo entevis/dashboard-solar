@@ -40,7 +40,11 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
       },
       orderBy: { name: "asc" },
     }),
-    prisma.customer.findMany({ where: { active: 1 }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.customer.findMany({
+      where: { active: 1, powerPlants: { some: { portfolioId: pid, active: 1 } } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
     prisma.portfolio.findUnique({ where: { id: pid }, select: { id: true, name: true } }),
   ]);
 

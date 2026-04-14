@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { CustomerTable } from "@/components/admin/customer-table";
 import { CreateCustomerDialog } from "@/components/admin/create-customer-dialog";
 import { CustomerFilterBar } from "@/components/admin/customer-filter-bar";
+import { cookies } from "next/headers";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
@@ -16,18 +17,23 @@ export default async function CustomersPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
+  const cookieStore = await cookies();
+  const portfolioId = parseInt(cookieStore.get("portfolio_id")?.value ?? "") || null;
+
+  const where: Record<string, unknown> = { active: 1 };
+  if (portfolioId) {
+    where.powerPlants = { some: { portfolioId, active: 1 } };
+  }
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: "insensitive" } },
+      { rut: { contains: q, mode: "insensitive" } },
+      { altName: { contains: q, mode: "insensitive" } },
+    ];
+  }
 
   const customers = await prisma.customer.findMany({
-    where: {
-      active: 1,
-      ...(q ? {
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { rut: { contains: q, mode: "insensitive" } },
-          { altName: { contains: q, mode: "insensitive" } },
-        ],
-      } : {}),
-    },
+    where,
     include: {
       _count: {
         select: {
