@@ -14,6 +14,7 @@ import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
 
 interface Props {
+  isSelected?: boolean;
   name: string;
   description: string | null;
   logoUrl: string | null;
@@ -26,13 +27,20 @@ interface Props {
   href: string;
 }
 
-export function PortfolioVerticalCard({ name, description, logoUrl, customerCount, activePlants, totalCapacityKw, co2LastMonth, co2Year, lastMonthLabel, href }: Props) {
+export function PortfolioVerticalCard({ isSelected, name, description, logoUrl, customerCount, activePlants, totalCapacityKw, co2LastMonth, co2Year, lastMonthLabel, href }: Props) {
   const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const equivalentTrees = calculateEquivalentTrees(co2Year);
   const equivalentCars = calculateEquivalentCars(co2Year);
 
   return (
-    <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", transition: "box-shadow 150ms", "&:hover": { boxShadow: "0 4px 16px rgba(13,28,46,0.10)" } }}>
+    <Card elevation={0} sx={{
+      border: isSelected ? "2px solid" : "1px solid",
+      borderColor: isSelected ? "#2563eb" : "divider",
+      display: "flex", flexDirection: "column", height: "100%", overflow: "hidden",
+      transition: "all 200ms",
+      boxShadow: isSelected ? "0 0 0 3px rgba(37,99,235,0.12)" : "none",
+      "&:hover": { boxShadow: isSelected ? "0 0 0 3px rgba(37,99,235,0.18)" : "0 4px 16px rgba(13,28,46,0.10)" },
+    }}>
 
       {/* Header */}
       <Box sx={{ px: 3, pt: 3, pb: 2.5, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>

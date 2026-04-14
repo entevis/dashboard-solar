@@ -26,7 +26,7 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
   function handleChange(value: string) {
     const id = parseInt(value);
     document.cookie = `${COOKIE_NAME}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-    router.push(`/${id}/power-plants`);
+    router.push(`/dashboard`);
     router.refresh();
   }
 

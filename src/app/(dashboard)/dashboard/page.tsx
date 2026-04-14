@@ -1,5 +1,6 @@
 import { requireAuth } from "@/lib/auth/guards";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
@@ -164,6 +165,8 @@ export default async function DashboardPage() {
   // MAESTRO
   if (user.role === UserRole.MAESTRO) {
     const data = await getMaestroDashboardData();
+    const cookieStore = await cookies();
+    const selectedPortfolioId = parseInt(cookieStore.get("portfolio_id")?.value ?? "") || null;
 
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -178,6 +181,7 @@ export default async function DashboardPage() {
           {data.portfolios.map((portfolio) => (
             <PortfolioVerticalCard
               key={portfolio.id}
+              isSelected={portfolio.id === selectedPortfolioId}
               name={portfolio.name}
               description={portfolio.description}
               logoUrl={getPortfolioLogo(portfolio.id)}
