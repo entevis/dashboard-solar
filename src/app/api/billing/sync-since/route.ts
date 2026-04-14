@@ -7,7 +7,6 @@ import {
   extractReportUrl,
   getReportPeriod,
   extractDataFromReportPage,
-  calculateCo2Avoided,
 } from "@/lib/services/report-extraction.service";
 
 function normalizeRut(rut: string) {
@@ -132,15 +131,12 @@ export async function POST(request: NextRequest) {
 
       try {
         const { kwhGenerated, co2Avoided } = await extractDataFromReportPage(reportUrl);
-        // Fallback: calculate CO2 if we got kWh but not CO2
-        const finalCo2 = co2Avoided ?? (kwhGenerated ? calculateCo2Avoided(kwhGenerated) : null);
 
         if (existingReport) {
-          // Update existing report that was missing kWh or CO2
-          if (kwhGenerated != null || finalCo2 != null) {
+          if (kwhGenerated != null || co2Avoided != null) {
             const updateData: Record<string, unknown> = {};
             if (kwhGenerated != null && existingReport.kwhGenerated == null) updateData.kwhGenerated = kwhGenerated;
-            if (finalCo2 != null && existingReport.co2Avoided == null) updateData.co2Avoided = finalCo2;
+            if (co2Avoided != null && existingReport.co2Avoided == null) updateData.co2Avoided = co2Avoided;
             if (Object.keys(updateData).length > 0) {
               await prisma.generationReport.update({ where: { duemintId }, data: updateData });
               reportsUpdated++;
@@ -159,7 +155,7 @@ export async function POST(request: NextRequest) {
               fileUrl: reportUrl,
               fileName: `Reporte ${customer.name} - ${String(month).padStart(2, "0")}/${year}`,
               kwhGenerated: kwhGenerated ?? null,
-              co2Avoided: finalCo2 ?? null,
+              co2Avoided: co2Avoided ?? null,
               source: "duemint",
               duemintId,
             },

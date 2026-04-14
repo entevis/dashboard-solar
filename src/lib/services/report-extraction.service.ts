@@ -21,7 +21,6 @@
  *   <td data-v-xxx=""> 60.686 </td>
  */
 
-import { SIC_EMISSION_FACTOR_TCO2_PER_MWH } from "@/lib/constants";
 
 /**
  * Extract the dplus report URL from an invoice gloss field.
@@ -129,9 +128,3 @@ function parseChileanNumber(raw: string): number | null {
   return isNaN(n) ? null : n;
 }
 
-/**
- * Calculate CO2 avoided from kWh generated (fallback if not extracted from HTML).
- */
-export function calculateCo2Avoided(kwhGenerated: number): number {
-  return (kwhGenerated / 1000) * SIC_EMISSION_FACTOR_TCO2_PER_MWH;
-}
