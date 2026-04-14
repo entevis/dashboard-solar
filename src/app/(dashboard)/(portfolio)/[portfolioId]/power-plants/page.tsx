@@ -2,7 +2,6 @@ import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { PlantFilterBar } from "@/components/power-plants/plant-filter-bar";
 import { PlantTable } from "@/components/power-plants/plant-table";
-import { CreatePlantDialog } from "@/components/power-plants/create-plant-dialog";
 import { ExportPlantsButton } from "@/components/power-plants/export-plants-button";
 import { UserRole } from "@prisma/client";
 import Box from "@mui/material/Box";
@@ -63,7 +62,6 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <PlantFilterBar portfolios={[]} customers={customers} hidePortfolioFilter />
           {canEdit && <ExportPlantsButton />}
-          {canEdit && <CreatePlantDialog portfolios={portfolio ? [portfolio] : []} customers={customers} fixedPortfolioId={pid} />}
         </Box>
       </Box>
 
@@ -79,7 +77,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
             </Typography>
           </Box>
         ) : (
-          <PlantTable plants={plants} portfolios={[]} customers={customers} canEdit={canEdit} />
+          <PlantTable plants={plants} portfolios={[]} customers={customers} canEdit={false} />
         )}
       </Box>
     </Box>
