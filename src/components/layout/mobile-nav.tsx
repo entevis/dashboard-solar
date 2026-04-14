@@ -15,8 +15,6 @@ import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
@@ -62,14 +60,7 @@ export function MobileNav({ userRole, selectedPortfolioId }: MobileNavProps) {
     {
       roles: ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
-        { label: "Reportes",    href: p("/reports"),  icon: DescriptionOutlinedIcon },
         { label: "Facturación", href: p("/billing"),  icon: ReceiptLongOutlinedIcon },
-      ],
-    },
-    {
-      roles: ["MAESTRO", "OPERATIVO"],
-      items: [
-        { label: "Contingencias", href: p("/contingencies"), icon: WarningAmberOutlinedIcon },
       ],
     },
     {

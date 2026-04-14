@@ -12,8 +12,6 @@ import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
@@ -57,14 +55,7 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
     {
       roles: ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
-        { label: "Reportes",    href: p("/reports"),  icon: DescriptionOutlinedIcon },
         { label: "Facturación", href: p("/billing"),  icon: ReceiptLongOutlinedIcon },
-      ],
-    },
-    {
-      roles: ["MAESTRO", "OPERATIVO", "TECNICO"],
-      items: [
-        { label: "Contingencias", href: "/contingencies", icon: WarningAmberOutlinedIcon },
       ],
     },
     {

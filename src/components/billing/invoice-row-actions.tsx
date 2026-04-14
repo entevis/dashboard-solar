@@ -11,15 +11,17 @@ import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
+import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 
 interface Props {
   invoiceId: number;
   isPaid: boolean;
   url: string | null;
   pdfUrl: string | null;
+  reportUrl: string | null;
 }
 
-export function InvoiceRowActions({ invoiceId, isPaid, url, pdfUrl }: Props) {
+export function InvoiceRowActions({ invoiceId, isPaid, url, pdfUrl, reportUrl }: Props) {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -75,6 +77,15 @@ export function InvoiceRowActions({ invoiceId, isPaid, url, pdfUrl }: Props) {
             <PictureAsPdfOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
             Descargar PDF
           </MenuItem>
+        )}
+        {reportUrl && (
+          <>
+            {(url || pdfUrl) && <Divider />}
+            <MenuItem component="a" href={reportUrl} target="_blank" rel="noopener noreferrer" onClick={() => setAnchorEl(null)} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+              <AssessmentOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+              Ver reporte
+            </MenuItem>
+          </>
         )}
       </Menu>
     </>

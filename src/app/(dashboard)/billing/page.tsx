@@ -124,11 +124,27 @@ export default async function BillingPage({
     { label: "Nota de crédito", value: kpis.anulada,   count: kpiCounts.anulada,   color: "#434655" },
   ];
 
-  const serializedInvoices = invoices.map((inv) => ({
-    ...inv,
-    issueDate: inv.issueDate?.toISOString() ?? null,
-    dueDate: inv.dueDate?.toISOString() ?? null,
-  }));
+  // Look up generation reports linked to these invoices by duemintId
+  const invoiceDuemintIds = invoices.map((inv) => inv.duemintId).filter(Boolean) as string[];
+  const reports = invoiceDuemintIds.length > 0
+    ? await prisma.generationReport.findMany({
+        where: { duemintId: { in: invoiceDuemintIds }, active: 1 },
+        select: { duemintId: true, kwhGenerated: true, co2Avoided: true, fileUrl: true },
+      })
+    : [];
+  const reportByDuemintId = new Map(reports.map((r) => [r.duemintId, r]));
+
+  const serializedInvoices = invoices.map((inv) => {
+    const report = inv.duemintId ? reportByDuemintId.get(inv.duemintId) ?? null : null;
+    return {
+      ...inv,
+      issueDate: inv.issueDate?.toISOString() ?? null,
+      dueDate: inv.dueDate?.toISOString() ?? null,
+      kwhGenerated: report?.kwhGenerated ?? null,
+      co2Avoided: report?.co2Avoided ?? null,
+      reportUrl: report?.fileUrl ?? null,
+    };
+  });
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 3 }}>

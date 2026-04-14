@@ -13,7 +13,7 @@ import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import { InvoiceRowActions } from "@/components/billing/invoice-row-actions";
 import { BillingPagination } from "@/components/billing/billing-pagination";
-import { formatCLP } from "@/lib/utils/formatters";
+import { formatCLP, formatKwh } from "@/lib/utils/formatters";
 
 export type BillingSortKey = "number" | "customer" | "portfolio" | "issueDate" | "dueDate" | "total" | "amountDue" | "status";
 type SortDir = "asc" | "desc";
@@ -32,6 +32,9 @@ export interface SerializedInvoice {
   statusName: string | null;
   url: string | null;
   pdfUrl: string | null;
+  kwhGenerated: number | null;
+  co2Avoided: number | null;
+  reportUrl: string | null;
 }
 
 function formatDate(dateStr: string | null) {
@@ -118,6 +121,8 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                 </TableSortLabel>
               </TableCell>
               <TableCell><TableSortLabel {...col("status")}>Estado</TableSortLabel></TableCell>
+              <TableCell align="right">Generación</TableCell>
+              <TableCell align="right">CO₂ evitado</TableCell>
               <TableCell sx={{ width: 40 }} />
             </TableRow>
           </TableHead>
@@ -143,12 +148,21 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                   {inv.amountDue != null ? formatCLP(inv.amountDue) : "—"}
                 </TableCell>
                 <TableCell><StatusChip statusName={inv.statusName} /></TableCell>
+                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.8125rem" }}>
+                  {inv.kwhGenerated != null ? formatKwh(inv.kwhGenerated) : <span style={{ color: "#737686" }}>—</span>}
+                </TableCell>
+                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.8125rem" }}>
+                  {inv.co2Avoided != null ? (
+                    <>{inv.co2Avoided.toFixed(2)} <span style={{ color: "#737686", fontSize: "0.75rem" }}>ton</span></>
+                  ) : <span style={{ color: "#737686" }}>—</span>}
+                </TableCell>
                 <TableCell>
                   <InvoiceRowActions
                     invoiceId={inv.id}
                     isPaid={inv.statusName?.toLowerCase().includes("pag") || inv.statusName?.toLowerCase().includes("paid") || false}
                     url={inv.url ?? null}
                     pdfUrl={inv.pdfUrl ?? null}
+                    reportUrl={inv.reportUrl ?? null}
                   />
                 </TableCell>
               </TableRow>
