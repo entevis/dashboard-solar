@@ -181,6 +181,7 @@ export default async function DashboardPage() {
           {data.portfolios.map((portfolio) => (
             <PortfolioVerticalCard
               key={portfolio.id}
+              portfolioId={portfolio.id}
               isSelected={portfolio.id === selectedPortfolioId}
               name={portfolio.name}
               description={portfolio.description}

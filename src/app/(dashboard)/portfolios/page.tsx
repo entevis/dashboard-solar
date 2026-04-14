@@ -96,6 +96,7 @@ export default async function PortfoliosPage() {
         {portfolios.map((portfolio) => (
           <PortfolioVerticalCard
             key={portfolio.id}
+            portfolioId={portfolio.id}
             name={portfolio.name}
             description={portfolio.description}
             logoUrl={getPortfolioLogo(portfolio.id)}

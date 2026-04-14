@@ -12,8 +12,11 @@ import ParkOutlinedIcon from "@mui/icons-material/ParkOutlined";
 import DirectionsCarOutlinedIcon from "@mui/icons-material/DirectionsCarOutlined";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
+import { useRouter } from "next/navigation";
+import { toast } from "@/lib/utils/toast";
 
 interface Props {
+  portfolioId: number;
   isSelected?: boolean;
   name: string;
   description: string | null;
@@ -27,17 +30,28 @@ interface Props {
   href: string;
 }
 
-export function PortfolioVerticalCard({ isSelected, name, description, logoUrl, customerCount, activePlants, totalCapacityKw, co2LastMonth, co2Year, lastMonthLabel, href }: Props) {
+export function PortfolioVerticalCard({ portfolioId, isSelected, name, description, logoUrl, customerCount, activePlants, totalCapacityKw, co2LastMonth, co2Year, lastMonthLabel, href }: Props) {
+  const router = useRouter();
   const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   const equivalentTrees = calculateEquivalentTrees(co2Year);
   const equivalentCars = calculateEquivalentCars(co2Year);
 
+  function handleSelect() {
+    if (isSelected) return;
+    document.cookie = `portfolio_id=${portfolioId}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+    router.refresh();
+    setTimeout(() => {
+      toast.success(`Has cambiado al portafolio ${name}`);
+    }, 800);
+  }
+
   return (
-    <Card elevation={0} sx={{
+    <Card elevation={0} onClick={handleSelect} sx={{
       border: isSelected ? "2px solid" : "1px solid",
       borderColor: isSelected ? "#2563eb" : "divider",
       display: "flex", flexDirection: "column", height: "100%", overflow: "hidden",
       transition: "all 200ms",
+      cursor: isSelected ? "default" : "pointer",
       boxShadow: isSelected ? "0 0 0 3px rgba(37,99,235,0.12)" : "none",
       "&:hover": { boxShadow: isSelected ? "0 0 0 3px rgba(37,99,235,0.18)" : "0 4px 16px rgba(13,28,46,0.10)" },
     }}>
