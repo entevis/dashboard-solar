@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useTransition, useRef, useEffect } from "react";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -21,15 +21,24 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const pendingName = useRef<string | null>(null);
 
   const urlMatch = pathname.match(/^\/(\d+)(\/|$)/);
   const currentId = urlMatch ? parseInt(urlMatch[1]) : selectedPortfolioId;
+
+  useEffect(() => {
+    if (!isPending && pendingName.current) {
+      toast.success(`Has cambiado al portafolio ${pendingName.current}`);
+      pendingName.current = null;
+    }
+  }, [isPending]);
 
   function handleChange(value: string) {
     const id = parseInt(value);
     const portfolio = portfolios.find((p) => p.id === id);
     document.cookie = `${COOKIE_NAME}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+    pendingName.current = portfolio?.name ?? null;
 
     startTransition(() => {
       if (urlMatch) {
@@ -39,10 +48,6 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
         router.refresh();
       }
     });
-
-    if (portfolio) {
-      toast.success(`Has cambiado al portafolio ${portfolio.name}`);
-    }
   }
 
   return (
