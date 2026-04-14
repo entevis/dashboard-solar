@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const isPublicPath = pathname.startsWith("/login") || pathname.startsWith("/api/auth") || pathname.startsWith("/forgot-password");
+  const isPublicPath = pathname.startsWith("/login") || pathname.startsWith("/api/auth") || pathname.startsWith("/api/webhooks") || pathname.startsWith("/forgot-password");
   const isSetPassword = pathname.startsWith("/set-password");
   const isSelectPortfolio = pathname.startsWith("/select-portfolio");
 

@@ -391,3 +391,17 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+model WebhookLog {
+  id        Int      @id @default(autoincrement())
+  source    String
+  eventType String   @map("event_type")
+  payload   String   @db.Text
+  ip        String?
+  headers   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([source])
+  @@index([createdAt])
+  @@map("webhook_logs")
+}
