@@ -52,26 +52,41 @@ interface ReportData {
 /**
  * Fetch the dplus report HTML page and extract kWh and CO2.
  */
-export async function extractDataFromReportPage(url: string): Promise<ReportData> {
+export interface ReportDataDebug extends ReportData {
+  htmlLength?: number;
+  hasProduccionTotal?: boolean;
+  hasCo2Text?: boolean;
+  fetchStatus?: number;
+  error?: string;
+}
+
+export async function extractDataFromReportPage(url: string): Promise<ReportDataDebug> {
   try {
     const res = await fetch(url, {
       redirect: "follow",
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; DashboardSolar/1.0)",
-        "Accept": "text/html",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     });
 
-    if (!res.ok) return { kwhGenerated: null, co2Avoided: null };
+    if (!res.ok) return { kwhGenerated: null, co2Avoided: null, fetchStatus: res.status };
 
     const html = await res.text();
 
     const kwhGenerated = extractKwh(html);
     const co2Avoided = extractCo2(html);
 
-    return { kwhGenerated, co2Avoided };
-  } catch {
-    return { kwhGenerated: null, co2Avoided: null };
+    return {
+      kwhGenerated,
+      co2Avoided,
+      htmlLength: html.length,
+      hasProduccionTotal: /Producci[oó]n\s+Total/i.test(html),
+      hasCo2Text: /Cantidad\s+evitada\s+de\s+CO2/i.test(html),
+      fetchStatus: res.status,
+    };
+  } catch (err) {
+    return { kwhGenerated: null, co2Avoided: null, error: err instanceof Error ? err.message : "unknown" };
   }
 }
 

@@ -95,12 +95,22 @@ export async function PATCH(
   });
 
   // --- Sync linked generation report ---
-  const reportUrl = extractReportUrl(inv.gloss);
+  // Try gloss from Duemint API response first, fallback to stored gloss in DB
+  const storedInvoice = await prisma.invoice.findUnique({
+    where: { id },
+    select: { gloss: true, createdAt: true },
+  });
+  const gloss = inv.gloss ?? storedInvoice?.gloss ?? null;
+  const createdAt = inv.createdAt ?? storedInvoice?.createdAt?.toISOString() ?? null;
+  const reportUrl = extractReportUrl(gloss);
   let reportSynced = false;
+  let reportDebug: Record<string, unknown> = { gloss: !!gloss, createdAt: !!createdAt, reportUrl };
 
-  if (reportUrl && inv.createdAt) {
-    const { kwhGenerated, co2Avoided } = await extractDataFromReportPage(reportUrl);
-    const { month, year } = getReportPeriod(inv.createdAt);
+  if (reportUrl && createdAt) {
+    const extractionResult = await extractDataFromReportPage(reportUrl);
+    const { kwhGenerated, co2Avoided, ...debug } = extractionResult;
+    reportDebug = { ...reportDebug, ...debug, kwhGenerated, co2Avoided };
+    const { month, year } = getReportPeriod(createdAt);
 
     const customer = await prisma.customer.findUnique({
       where: { id: invoice.customerId },
@@ -139,5 +149,5 @@ export async function PATCH(
     }
   }
 
-  return NextResponse.json({ success: true, invoice: updated, reportSynced });
+  return NextResponse.json({ success: true, invoice: updated, reportSynced, reportDebug });
 }
