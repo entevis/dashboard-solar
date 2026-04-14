@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   if (emailMode === "smtp") {
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
-      { redirectTo: `${appUrl}/api/auth/callback?next=/set-password` }
+      { redirectTo: `${appUrl}/set-password` }
     );
     if (error || !data.user) {
       return NextResponse.json(
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "invite",
       email,
-      options: { redirectTo: `${appUrl}/api/auth/callback?next=/set-password` },
+      options: { redirectTo: `${appUrl}/set-password` },
     });
     if (error || !data.user) {
       return NextResponse.json(

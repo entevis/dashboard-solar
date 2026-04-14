@@ -46,14 +46,36 @@ export default function SetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.replace("/login?error=session");
-        return;
+
+    // Listen for auth state changes — Supabase JS auto-detects
+    // hash fragment tokens (#access_token=...) from invite/recovery links
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUserEmail(session.user.email ?? null);
+        setChecking(false);
       }
-      setUserEmail(data.user.email ?? null);
-      setChecking(false);
     });
+
+    // Also check if already logged in
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUserEmail(data.user.email ?? null);
+        setChecking(false);
+      }
+    });
+
+    // If no session after 5 seconds, redirect to login
+    const timeout = setTimeout(() => {
+      setChecking((current) => {
+        if (current) router.replace("/login?error=session");
+        return current;
+      });
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
