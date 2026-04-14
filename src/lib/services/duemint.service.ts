@@ -38,6 +38,7 @@ export interface DuemintInvoice {
     number: string | null;
     amount?: string | null;
   }> | null;
+  gloss: string | null;
 }
 
 interface DuemintResponse {

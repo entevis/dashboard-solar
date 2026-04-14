@@ -24,18 +24,42 @@ export default async function PortfolioReportsPage({ params, searchParams }: Pro
   const plantFilter = await buildPlantAccessFilter(user);
   const plantWhere = { ...plantFilter, portfolioId: pid };
 
-  const where: Record<string, unknown> = { active: 1, powerPlant: plantWhere };
+  // Include both plant-level reports (via powerPlant) and customer-level reports (via customer's plants in this portfolio)
+  const customerIdsInPortfolio = await prisma.powerPlant.findMany({
+    where: plantWhere,
+    select: { customerId: true },
+    distinct: ["customerId"],
+  }).then((rows) => rows.map((r) => r.customerId));
+
+  const where: Record<string, unknown> = {
+    active: 1,
+    OR: [
+      { powerPlant: plantWhere },
+      { powerPlantId: null, customerId: { in: customerIdsInPortfolio } },
+    ],
+  };
   if (sp.year) where.periodYear = parseInt(sp.year);
   if (sp.powerPlantId) where.powerPlantId = parseInt(sp.powerPlantId);
+
+  const baseWhere = {
+    active: 1,
+    OR: [
+      { powerPlant: plantWhere },
+      { powerPlantId: null, customerId: { in: customerIdsInPortfolio } },
+    ],
+  };
 
   const [reports, totalKwh, totalCo2, accessiblePlants] = await Promise.all([
     prisma.generationReport.findMany({
       where,
-      include: { powerPlant: { select: { id: true, name: true, portfolio: { select: { name: true } } } } },
+      include: {
+        powerPlant: { select: { id: true, name: true, portfolio: { select: { name: true } } } },
+        customer: { select: { name: true } },
+      },
       orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
     }),
-    prisma.generationReport.aggregate({ where: { active: 1, powerPlant: plantWhere }, _sum: { kwhGenerated: true } }).then((r) => r._sum.kwhGenerated ?? 0),
-    prisma.generationReport.aggregate({ where: { active: 1, powerPlant: plantWhere }, _sum: { co2Avoided: true } }).then((r) => r._sum.co2Avoided ?? 0),
+    prisma.generationReport.aggregate({ where: baseWhere, _sum: { kwhGenerated: true } }).then((r) => r._sum.kwhGenerated ?? 0),
+    prisma.generationReport.aggregate({ where: baseWhere, _sum: { co2Avoided: true } }).then((r) => r._sum.co2Avoided ?? 0),
     prisma.powerPlant.findMany({ where: plantWhere, select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 

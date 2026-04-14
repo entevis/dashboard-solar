@@ -33,7 +33,7 @@ export default async function PortfoliosPage() {
       select: { powerPlant: { select: { portfolioId: true } } },
     }),
     prisma.generationReport.findMany({
-      where: { active: 1 },
+      where: { active: 1, powerPlantId: { not: null } },
       select: { co2Avoided: true, powerPlant: { select: { portfolioId: true } } },
     }),
   ]);
@@ -46,6 +46,7 @@ export default async function PortfoliosPage() {
 
   const co2ByPortfolio = new Map<number, number>();
   for (const r of generationReports) {
+    if (!r.powerPlant || r.co2Avoided == null) continue;
     const pid = r.powerPlant.portfolioId;
     co2ByPortfolio.set(pid, (co2ByPortfolio.get(pid) ?? 0) + r.co2Avoided);
   }

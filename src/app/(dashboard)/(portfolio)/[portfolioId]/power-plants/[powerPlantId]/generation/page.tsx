@@ -49,8 +49,8 @@ export default async function PortfolioPlantGenerationPage({ params }: Props) {
 
   if (!plant) notFound();
 
-  const totalKwh = reports.reduce((sum, r) => sum + r.kwhGenerated, 0);
-  const totalCo2 = reports.reduce((sum, r) => sum + r.co2Avoided, 0);
+  const totalKwh = reports.reduce((sum, r) => sum + (r.kwhGenerated ?? 0), 0);
+  const totalCo2 = reports.reduce((sum, r) => sum + (r.co2Avoided ?? 0), 0);
   const base = `/${pid}/power-plants/${plant.id}`;
 
   return (
@@ -113,9 +113,9 @@ export default async function PortfolioPlantGenerationPage({ params }: Props) {
                     <TableCell>
                       <Chip label={formatPeriod(r.periodMonth, r.periodYear)} size="small" sx={{ backgroundColor: "#e6eeff", color: "#0d1c2e", fontWeight: 600, fontSize: "0.75rem", textTransform: "capitalize" }} />
                     </TableCell>
-                    <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{formatKwh(r.kwhGenerated)}</TableCell>
+                    <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{r.kwhGenerated != null ? formatKwh(r.kwhGenerated) : "—"}</TableCell>
                     <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>
-                      <Box component="span" fontWeight={500}>{r.co2Avoided.toFixed(2)}</Box>
+                      <Box component="span" fontWeight={500}>{r.co2Avoided != null ? r.co2Avoided.toFixed(2) : "—"}</Box>
                       <Box component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", ml: 0.5 }}>ton</Box>
                     </TableCell>
                     <TableCell>

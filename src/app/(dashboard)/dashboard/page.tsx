@@ -35,7 +35,7 @@ async function getMaestroDashboardData() {
       select: { powerPlant: { select: { portfolioId: true } } },
     }),
     prisma.generationReport.findMany({
-      where: { active: 1 },
+      where: { active: 1, powerPlantId: { not: null } },
       select: { co2Avoided: true, powerPlant: { select: { portfolioId: true } } },
     }),
   ]);
@@ -48,6 +48,7 @@ async function getMaestroDashboardData() {
 
   const co2ByPortfolio = new Map<number, number>();
   for (const r of generationReports) {
+    if (!r.powerPlant || r.co2Avoided == null) continue;
     const pid = r.powerPlant.portfolioId;
     co2ByPortfolio.set(pid, (co2ByPortfolio.get(pid) ?? 0) + r.co2Avoided);
   }
@@ -62,7 +63,13 @@ async function getClienteDashboardData(customerId: number) {
       select: { id: true, name: true, status: true, capacityKw: true, location: true },
     }),
     prisma.generationReport.aggregate({
-      where: { active: 1, powerPlant: { customerId, active: 1 } },
+      where: {
+        active: 1,
+        OR: [
+          { powerPlant: { customerId, active: 1 } },
+          { powerPlantId: null, customerId },
+        ],
+      },
       _sum: { kwhGenerated: true, co2Avoided: true },
     }),
   ]);

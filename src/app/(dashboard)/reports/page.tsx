@@ -22,23 +22,45 @@ export default async function ReportsPage({ searchParams }: Props) {
 
   const plantFilter = await buildPlantAccessFilter(user);
 
-  const where: Record<string, unknown> = { active: 1, powerPlant: plantFilter };
+  const customerIdsAccessible = await prisma.powerPlant.findMany({
+    where: plantFilter,
+    select: { customerId: true },
+    distinct: ["customerId"],
+  }).then((rows) => rows.map((r) => r.customerId));
+
+  const where: Record<string, unknown> = {
+    active: 1,
+    OR: [
+      { powerPlant: plantFilter },
+      { powerPlantId: null, customerId: { in: customerIdsAccessible } },
+    ],
+  };
   if (params.year)         where.periodYear    = parseInt(params.year);
   if (params.powerPlantId) where.powerPlantId  = parseInt(params.powerPlantId);
+
+  const baseWhere = {
+    active: 1,
+    OR: [
+      { powerPlant: plantFilter },
+      { powerPlantId: null, customerId: { in: customerIdsAccessible } },
+    ],
+  };
 
   const [reports, totalKwh, totalCo2] = await Promise.all([
     prisma.generationReport.findMany({
       where,
-      include: { powerPlant: { select: { id: true, name: true, portfolio: { select: { name: true } } } } },
+      include: {
+        powerPlant: { select: { id: true, name: true, portfolio: { select: { name: true } } } },
+        customer: { select: { name: true } },
+      },
       orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
     }),
     prisma.generationReport
-      .aggregate({ where: { active: 1, powerPlant: plantFilter }, _sum: { kwhGenerated: true } })
+      .aggregate({ where: baseWhere, _sum: { kwhGenerated: true } })
       .then((r) => r._sum.kwhGenerated ?? 0),
     prisma.generationReport
-      .aggregate({ where: { active: 1, powerPlant: plantFilter }, _sum: { co2Avoided: true } })
+      .aggregate({ where: baseWhere, _sum: { co2Avoided: true } })
       .then((r) => r._sum.co2Avoided ?? 0),
-    prisma.powerPlant.findMany({ where: plantFilter, select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
   const accessiblePlants = await prisma.powerPlant.findMany({

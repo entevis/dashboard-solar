@@ -91,10 +91,11 @@ model Customer {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  powerPlants PowerPlant[]
-  invoices    Invoice[]
-  users       User[]
-  contacts    Contact[]
+  powerPlants       PowerPlant[]
+  invoices          Invoice[]
+  generationReports GenerationReport[]
+  users             User[]
+  contacts          Contact[]
 
   @@map("customers")
 }
@@ -233,21 +234,26 @@ model UserPortfolioPermission {
 
 model GenerationReport {
   id           Int      @id @default(autoincrement())
-  powerPlantId Int      @map("power_plant_id")
+  powerPlantId Int?     @map("power_plant_id")
+  customerId   Int?     @map("customer_id")
   periodMonth  Int      @map("period_month")
   periodYear   Int      @map("period_year")
   fileUrl      String   @map("file_url")
   fileName     String   @map("file_name")
-  kwhGenerated Float    @map("kwh_generated")
-  co2Avoided   Float    @map("co2_avoided")
+  kwhGenerated Float?   @map("kwh_generated")
+  co2Avoided   Float?   @map("co2_avoided")
+  source       String   @default("manual")
+  duemintId    String?  @unique @map("duemint_id")
   active       Int      @default(1)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  powerPlant PowerPlant @relation(fields: [powerPlantId], references: [id])
+  powerPlant PowerPlant? @relation(fields: [powerPlantId], references: [id])
+  customer   Customer?   @relation(fields: [customerId], references: [id])
 
   @@unique([powerPlantId, periodMonth, periodYear])
   @@index([powerPlantId])
+  @@index([customerId])
   @@map("generation_reports")
 }
 
@@ -284,6 +290,7 @@ model Invoice {
   // Credit note (first element if exists)
   creditNoteId     String? @map("credit_note_id")
   creditNoteNumber String? @map("credit_note_number")
+  gloss            String? @db.Text
 
   portfolioId Int? @map("portfolio_id")
 

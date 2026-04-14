@@ -20,25 +20,29 @@ interface Report {
   id: number;
   periodYear: number;
   periodMonth: number;
-  kwhGenerated: number;
-  co2Avoided: number;
+  kwhGenerated: number | null;
+  co2Avoided: number | null;
   fileUrl: string;
   fileName: string | null;
-  powerPlant: { id: number; name: string; portfolio: { name: string } };
+  powerPlant: { id: number; name: string; portfolio: { name: string } } | null;
+  customer: { name: string } | null;
 }
 
 type SortKey = "plant" | "portfolio" | "period" | "kwh" | "co2";
 type SortDir = "asc" | "desc";
 
+function getPlantName(r: Report) { return r.powerPlant?.name ?? r.customer?.name ?? "—"; }
+function getPortfolioName(r: Report) { return r.powerPlant?.portfolio.name ?? "—"; }
+
 function sortReports(reports: Report[], key: SortKey, dir: SortDir): Report[] {
   return [...reports].sort((a, b) => {
     let cmp: number;
     switch (key) {
-      case "plant":     cmp = a.powerPlant.name.localeCompare(b.powerPlant.name, "es"); break;
-      case "portfolio": cmp = a.powerPlant.portfolio.name.localeCompare(b.powerPlant.portfolio.name, "es"); break;
+      case "plant":     cmp = getPlantName(a).localeCompare(getPlantName(b), "es"); break;
+      case "portfolio": cmp = getPortfolioName(a).localeCompare(getPortfolioName(b), "es"); break;
       case "period":    cmp = (a.periodYear * 12 + a.periodMonth) - (b.periodYear * 12 + b.periodMonth); break;
-      case "kwh":       cmp = a.kwhGenerated - b.kwhGenerated; break;
-      case "co2":       cmp = a.co2Avoided - b.co2Avoided; break;
+      case "kwh":       cmp = (a.kwhGenerated ?? 0) - (b.kwhGenerated ?? 0); break;
+      case "co2":       cmp = (a.co2Avoided ?? 0) - (b.co2Avoided ?? 0); break;
     }
     return dir === "asc" ? cmp : -cmp;
   });
@@ -104,16 +108,20 @@ export function ReportTable({ reports, portfolioId }: Props) {
           {sorted.map((r) => (
             <TableRow key={r.id} hover>
               <TableCell sx={{ fontSize: "0.8125rem" }}>
-                <Link
-                  href={`/${portfolioId}/power-plants/${r.powerPlant.id}/generation`}
-                  style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none" }}
-                  onMouseOver={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                  onMouseOut={(e) => (e.currentTarget.style.textDecoration = "none")}
-                >
-                  {r.powerPlant.name}
-                </Link>
+                {r.powerPlant ? (
+                  <Link
+                    href={`/${portfolioId}/power-plants/${r.powerPlant.id}/generation`}
+                    style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none" }}
+                    onMouseOver={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                    onMouseOut={(e) => (e.currentTarget.style.textDecoration = "none")}
+                  >
+                    {r.powerPlant.name}
+                  </Link>
+                ) : (
+                  <span style={{ color: "#434655", fontWeight: 500 }}>{r.customer?.name ?? "—"}</span>
+                )}
               </TableCell>
-              <TableCell sx={{ color: "text.secondary", fontSize: "0.8125rem" }}>{r.powerPlant.portfolio.name}</TableCell>
+              <TableCell sx={{ color: "text.secondary", fontSize: "0.8125rem" }}>{getPortfolioName(r)}</TableCell>
               <TableCell>
                 <Chip
                   label={formatPeriod(r.periodMonth, r.periodYear)}
@@ -122,11 +130,15 @@ export function ReportTable({ reports, portfolioId }: Props) {
                 />
               </TableCell>
               <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 500, fontSize: "0.8125rem" }}>
-                {formatKwh(r.kwhGenerated)}
+                {r.kwhGenerated != null ? formatKwh(r.kwhGenerated) : <span style={{ color: "#737686" }}>—</span>}
               </TableCell>
               <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontSize: "0.8125rem" }}>
-                <Box component="span" fontWeight={500}>{r.co2Avoided.toFixed(2)}</Box>
-                <Box component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", ml: 0.5 }}>ton</Box>
+                {r.co2Avoided != null ? (
+                  <>
+                    <Box component="span" fontWeight={500}>{r.co2Avoided.toFixed(2)}</Box>
+                    <Box component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", ml: 0.5 }}>ton</Box>
+                  </>
+                ) : <span style={{ color: "#737686" }}>—</span>}
               </TableCell>
               <TableCell>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
