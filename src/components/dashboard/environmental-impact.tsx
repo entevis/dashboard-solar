@@ -10,6 +10,7 @@ interface EnvironmentalImpactProps {
   co2Tonnes: number;
   equivalentTrees: number;
   equivalentCars: number;
+  yearLabel?: string;
 }
 
 const items = [
@@ -18,7 +19,7 @@ const items = [
   { icon: <DirectionsCarOutlinedIcon sx={{ fontSize: 22, color: "#434655" }} />, bg: "#e6eeff" },
 ];
 
-export function EnvironmentalImpact({ co2Tonnes, equivalentTrees, equivalentCars }: EnvironmentalImpactProps) {
+export function EnvironmentalImpact({ co2Tonnes, equivalentTrees, equivalentCars, yearLabel }: EnvironmentalImpactProps) {
   const stats = [
     { value: co2Tonnes.toFixed(1), label: "ton CO₂ evitadas" },
     { value: equivalentTrees.toLocaleString("es-CL"), label: "árboles equivalentes" },
@@ -28,7 +29,7 @@ export function EnvironmentalImpact({ co2Tonnes, equivalentTrees, equivalentCars
   return (
     <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
       <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-        <Typography fontSize="0.875rem" fontWeight={600}>Impacto medioambiental</Typography>
+        <Typography fontSize="0.875rem" fontWeight={600}>Impacto medioambiental{yearLabel ? ` (${yearLabel})` : ""}</Typography>
       </Box>
       <CardContent>
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 3 }}>

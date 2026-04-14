@@ -10,8 +10,6 @@ import Divider from "@mui/material/Divider";
 import EnergySavingsLeafOutlinedIcon from "@mui/icons-material/EnergySavingsLeafOutlined";
 import ParkOutlinedIcon from "@mui/icons-material/ParkOutlined";
 import DirectionsCarOutlinedIcon from "@mui/icons-material/DirectionsCarOutlined";
-import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
 
@@ -22,22 +20,22 @@ interface Props {
   customerCount: number;
   activePlants: number;
   totalCapacityKw: number;
-  openContingencies: number;
-  co2Avoided: number;
+  co2LastMonth: number;
+  co2Year: number;
+  lastMonthLabel: string;
   href: string;
 }
 
-export function PortfolioVerticalCard({ name, description, logoUrl, customerCount, activePlants, totalCapacityKw, openContingencies, co2Avoided, href }: Props) {
+export function PortfolioVerticalCard({ name, description, logoUrl, customerCount, activePlants, totalCapacityKw, co2LastMonth, co2Year, lastMonthLabel, href }: Props) {
   const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-  const equivalentTrees = calculateEquivalentTrees(co2Avoided);
-  const equivalentCars = calculateEquivalentCars(co2Avoided);
+  const equivalentTrees = calculateEquivalentTrees(co2Year);
+  const equivalentCars = calculateEquivalentCars(co2Year);
 
   return (
     <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", transition: "box-shadow 150ms", "&:hover": { boxShadow: "0 4px 16px rgba(13,28,46,0.10)" } }}>
 
-      {/* Header — subtle, light */}
+      {/* Header */}
       <Box sx={{ px: 3, pt: 3, pb: 2.5, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-        {/* Logo */}
         <Box sx={{
           width: 80, height: 80, borderRadius: 2.5,
           backgroundColor: "#eff4ff",
@@ -51,7 +49,6 @@ export function PortfolioVerticalCard({ name, description, logoUrl, customerCoun
           }
         </Box>
 
-        {/* Name + description */}
         <Box sx={{ textAlign: "center" }}>
           <Typography fontSize="0.9375rem" fontWeight={700} color="text.primary" sx={{ lineHeight: 1.3 }}>{name}</Typography>
           {description && (
@@ -82,36 +79,34 @@ export function PortfolioVerticalCard({ name, description, logoUrl, customerCoun
 
       <Divider />
 
-      {/* Contingencias */}
-      <Box sx={{ px: 3, py: 1.5 }}>
-        {openContingencies === 0 ? (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CheckCircleOutlinedIcon sx={{ fontSize: 15, color: "#16a34a" }} />
-            <Typography fontSize="0.8125rem" color="text.secondary">
-              <Box component="span" fontWeight={600} color="text.primary">0</Box> contingencias abiertas
-            </Typography>
+      {/* CO2 — Last month + Year */}
+      <Box sx={{ px: 3, py: 2 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", textTransform: "uppercase", letterSpacing: "0.06em", mb: 1.25 }}>
+          CO₂ evitado
+        </Typography>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.25 }}>{lastMonthLabel}</Typography>
+            <Typography fontSize="1rem" fontWeight={700} sx={{ color: "#16a34a" }}>{co2LastMonth.toFixed(1)} <Typography component="span" fontSize="0.75rem" color="text.secondary">ton</Typography></Typography>
           </Box>
-        ) : (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 0.75, borderRadius: 1.5, backgroundColor: "#fef9c3" }}>
-            <WarningAmberOutlinedIcon sx={{ fontSize: 15, color: "#a16207" }} />
-            <Typography fontSize="0.8125rem" fontWeight={700} sx={{ color: "#a16207" }}>{openContingencies}</Typography>
-            <Typography fontSize="0.8125rem" color="text.primary">contingencias abiertas</Typography>
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.25 }}>Acumulado año</Typography>
+            <Typography fontSize="1rem" fontWeight={700} sx={{ color: "#16a34a" }}>{co2Year.toFixed(1)} <Typography component="span" fontSize="0.75rem" color="text.secondary">ton</Typography></Typography>
           </Box>
-        )}
+        </Box>
       </Box>
 
       <Divider />
 
-      {/* Impacto ambiental */}
+      {/* Impacto ambiental — based on year total */}
       <Box sx={{ px: 3, py: 2, flex: 1 }}>
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", textTransform: "uppercase", letterSpacing: "0.06em", mb: 1.25 }}>
-          Impacto medioambiental
+          Impacto medioambiental (año)
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {[
-            { icon: <EnergySavingsLeafOutlinedIcon sx={{ fontSize: 14, color: "#16a34a" }} />, value: co2Avoided.toFixed(1), label: "t CO₂ evitadas" },
             { icon: <ParkOutlinedIcon sx={{ fontSize: 14, color: "#16a34a" }} />, value: equivalentTrees.toLocaleString("es-CL"), label: "árboles equivalentes" },
-            { icon: <DirectionsCarOutlinedIcon sx={{ fontSize: 14, color: "#6b7280" }} />, value: equivalentCars.toFixed(1), label: "autos equivalentes" },
+            { icon: <DirectionsCarOutlinedIcon sx={{ fontSize: 14, color: "#6b7280" }} />, value: equivalentCars.toFixed(1), label: "autos retirados" },
           ].map((item) => (
             <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               {item.icon}
