@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { fetchInvoiceById, toFloat } from "@/lib/services/duemint.service";
+import {
+  extractReportUrl,
+  getReportPeriod,
+  extractDataFromReportPage,
+} from "@/lib/services/report-extraction.service";
 
 export async function PATCH(
   _request: NextRequest,
@@ -20,7 +25,7 @@ export async function PATCH(
 
   const invoice = await prisma.invoice.findUnique({
     where: { id },
-    select: { id: true, duemintId: true, portfolioId: true },
+    select: { id: true, duemintId: true, portfolioId: true, customerId: true },
   });
 
   if (!invoice || !invoice.duemintId) {
@@ -76,6 +81,7 @@ export async function PATCH(
       duemintClientName: inv.client?.name ?? null,
       creditNoteId: creditNote?.id ?? null,
       creditNoteNumber: creditNote?.number ?? null,
+      gloss: inv.gloss ?? null,
     },
     select: {
       id: true,
@@ -88,5 +94,50 @@ export async function PATCH(
     },
   });
 
-  return NextResponse.json({ success: true, invoice: updated });
+  // --- Sync linked generation report ---
+  const reportUrl = extractReportUrl(inv.gloss);
+  let reportSynced = false;
+
+  if (reportUrl && inv.createdAt) {
+    const { kwhGenerated, co2Avoided } = await extractDataFromReportPage(reportUrl);
+    const { month, year } = getReportPeriod(inv.createdAt);
+
+    const customer = await prisma.customer.findUnique({
+      where: { id: invoice.customerId },
+      select: { name: true },
+    });
+
+    const existingReport = await prisma.generationReport.findUnique({
+      where: { duemintId: invoice.duemintId },
+    });
+
+    if (existingReport) {
+      await prisma.generationReport.update({
+        where: { duemintId: invoice.duemintId },
+        data: {
+          fileUrl: reportUrl,
+          kwhGenerated: kwhGenerated ?? null,
+          co2Avoided: co2Avoided ?? null,
+        },
+      });
+      reportSynced = true;
+    } else {
+      await prisma.generationReport.create({
+        data: {
+          customerId: invoice.customerId,
+          periodMonth: month,
+          periodYear: year,
+          fileUrl: reportUrl,
+          fileName: `Reporte ${customer?.name ?? "Cliente"} - ${String(month).padStart(2, "0")}/${year}`,
+          kwhGenerated: kwhGenerated ?? null,
+          co2Avoided: co2Avoided ?? null,
+          source: "duemint",
+          duemintId: invoice.duemintId,
+        },
+      });
+      reportSynced = true;
+    }
+  }
+
+  return NextResponse.json({ success: true, invoice: updated, reportSynced });
 }
