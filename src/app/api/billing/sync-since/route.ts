@@ -114,9 +114,8 @@ export async function POST(request: NextRequest) {
       }
 
       // --- Report extraction ---
-      // Skip cancelled/credit note invoices
-      const sn = (inv.statusName ?? "").toLowerCase();
-      if (sn.includes("nul") || sn.includes("cancel")) {
+      // Skip "Documento" (statusCode 4) invoices — no report to extract
+      if (inv.status === 4) {
         reportsSkipped++;
         continue;
       }

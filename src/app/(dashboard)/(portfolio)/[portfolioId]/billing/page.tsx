@@ -52,7 +52,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const periodStart = new Date(year, month - 1, 1);
   const periodEnd = new Date(year, month, 1);
 
-  const VALID_STATUSES = ["pagada", "porVencer", "vencida", "anulada"];
+  const VALID_STATUSES = ["pagada", "porVencer", "vencida", "documento"];
   const status = VALID_STATUSES.includes(sp.status ?? "") ? sp.status! : "all";
 
   const sortBy = VALID_SORT_KEYS.includes(sp.sortBy as BillingSortKey) ? sp.sortBy as BillingSortKey : "issueDate";
@@ -69,16 +69,12 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     invoiceWhere = { ...invoiceWhere, customerId: { in: customerIds } };
   }
 
-  const i = "insensitive" as const;
+  // statusCode: 1=Pagada, 2=Por vencer, 3=Vencida, 4=Documento
   const statusConditions: Record<string, object> = {
-    pagada:    { OR: [{ statusName: { contains: "pag", mode: i } }, { statusName: { contains: "paid", mode: i } }] },
-    vencida:   { OR: [{ statusName: { contains: "venc", mode: i } }, { statusName: { contains: "overdue", mode: i } }] },
-    anulada:   { OR: [{ statusName: { contains: "nul", mode: i } }, { statusName: { contains: "cancel", mode: i } }] },
-    porVencer: { NOT: { OR: [
-      { statusName: { contains: "pag", mode: i } }, { statusName: { contains: "paid", mode: i } },
-      { statusName: { contains: "venc", mode: i } }, { statusName: { contains: "overdue", mode: i } },
-      { statusName: { contains: "nul", mode: i } }, { statusName: { contains: "cancel", mode: i } },
-    ]}},
+    pagada:    { statusCode: 1 },
+    porVencer: { statusCode: 2 },
+    vencida:   { statusCode: 3 },
+    documento: { statusCode: 4 },
   };
   const tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
   const isMaestro = user.role === UserRole.MAESTRO;
@@ -92,31 +88,33 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusName: true } }),
+    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true } }),
     isMaestro ? prisma.portfolio.findMany({ where: { active: 1, duemintCompanyId: { not: null } }, select: { id: true, name: true } }) : Promise.resolve([]),
   ]);
 
-  function categorize(statusName: string | null) {
-    const s = (statusName ?? "").toLowerCase();
-    if (s.includes("pag") || s.includes("paid")) return "pagada";
-    if (s.includes("venc") || s.includes("overdue")) return "vencida";
-    if (s.includes("nul") || s.includes("cancel")) return "anulada";
-    return "porVencer";
+  function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | "documento" {
+    switch (statusCode) {
+      case 1: return "pagada";
+      case 2: return "porVencer";
+      case 3: return "vencida";
+      case 4: return "documento";
+      default: return "porVencer";
+    }
   }
 
-  const kpis = { pagada: 0, porVencer: 0, vencida: 0, anulada: 0 };
-  const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, anulada: 0 };
+  const kpis = { pagada: 0, porVencer: 0, vencida: 0, documento: 0 };
+  const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, documento: 0 };
   for (const inv of allInvoices) {
-    const cat = categorize(inv.statusName);
+    const cat = categorize(inv.statusCode);
     kpis[cat] += inv.total ?? 0;
     kpiCounts[cat]++;
   }
 
   const kpiCards = [
-    { label: "Pagada",          value: kpis.pagada,    count: kpiCounts.pagada,    color: "#15803d" },
-    { label: "Por vencer",      value: kpis.porVencer, count: kpiCounts.porVencer, color: "#a16207" },
-    { label: "Vencida",         value: kpis.vencida,   count: kpiCounts.vencida,   color: "#dc2626" },
-    { label: "Nota de crédito", value: kpis.anulada,   count: kpiCounts.anulada,   color: "#434655" },
+    { label: "Pagadas",     value: kpis.pagada,    count: kpiCounts.pagada,    color: "#15803d" },
+    { label: "Por vencer",  value: kpis.porVencer, count: kpiCounts.porVencer, color: "#a16207" },
+    { label: "Vencidas",    value: kpis.vencida,   count: kpiCounts.vencida,   color: "#dc2626" },
+    { label: "Documentos",  value: kpis.documento, count: kpiCounts.documento, color: "#434655" },
   ];
 
   const invoiceDuemintIds = invoices.map((inv) => inv.duemintId).filter(Boolean) as string[];

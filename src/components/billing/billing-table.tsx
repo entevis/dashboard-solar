@@ -28,6 +28,7 @@ export interface SerializedInvoice {
   issueDate: string | null;
   dueDate: string | null;
   total: number | null;
+  statusCode: number | null;
   statusName: string | null;
   url: string | null;
   pdfUrl: string | null;
@@ -50,20 +51,19 @@ function formatReportPeriod(month: number | null, year: number | null) {
   return `${MONTH_SHORT[month - 1]} ${year}`;
 }
 
-function isAnulada(statusName: string | null) {
-  if (!statusName) return false;
-  const n = statusName.toLowerCase();
-  return n.includes("nul") || n.includes("cancel");
+function isDocumento(statusCode: number | null) {
+  return statusCode === 4;
 }
 
-function StatusChip({ statusName }: { statusName: string | null }) {
+function StatusChip({ statusCode, statusName }: { statusCode: number | null; statusName: string | null }) {
   if (!statusName) return <Typography variant="caption" color="text.secondary">—</Typography>;
-  const n = statusName.toLowerCase();
   let sx = { backgroundColor: "#e6eeff", color: "#434655" };
-  if (n.includes("pag") || n.includes("paid"))                    sx = { backgroundColor: "#dcfce7", color: "#15803d" };
-  else if (n.includes("venc") || n.includes("overdue"))           sx = { backgroundColor: "#fee2e2", color: "#dc2626" };
-  else if (n.includes("pend") || n.includes("emiti") || n.includes("vencer")) sx = { backgroundColor: "#fef9c3", color: "#a16207" };
-  else if (isAnulada(statusName))                                  sx = { backgroundColor: "#f1f5f9", color: "#64748b" };
+  switch (statusCode) {
+    case 1: sx = { backgroundColor: "#dcfce7", color: "#15803d" }; break; // Pagada
+    case 2: sx = { backgroundColor: "#fef9c3", color: "#a16207" }; break; // Por vencer
+    case 3: sx = { backgroundColor: "#fee2e2", color: "#dc2626" }; break; // Vencida
+    case 4: sx = { backgroundColor: "#f1f5f9", color: "#64748b" }; break; // Documento
+  }
   return <Chip label={statusName} size="small" sx={{ ...sx, fontSize: "0.6875rem", height: 20, fontWeight: 600 }} />;
 }
 
@@ -164,7 +164,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
               const numberText = inv.number ?? `#${inv.duemintId}`;
               const customerName = inv.customer.name;
               const totalText = inv.total != null ? formatCLP(inv.total) : "—";
-              const anulada = isAnulada(inv.statusName);
+              const anulada = isDocumento(inv.statusCode);
               const periodText = anulada ? "--" : formatReportPeriod(inv.reportPeriodMonth, inv.reportPeriodYear);
               const kwhText = anulada ? "--" : (inv.kwhGenerated != null ? new Intl.NumberFormat("es-CL").format(Math.round(inv.kwhGenerated)) : "—");
               const co2Text = anulada ? "--" : (inv.co2Avoided != null ? inv.co2Avoided.toFixed(2) : "—");
@@ -182,7 +182,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                   <TableCell sx={{ ...cellSx, color: "text.secondary" }}>{formatDate(inv.issueDate)}</TableCell>
                   <TableCell sx={{ ...cellSx, color: "text.secondary" }}>{formatDate(inv.dueDate)}</TableCell>
                   <TableCell align="right" sx={{ ...cellSx, fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{totalText}</TableCell>
-                  <TableCell sx={cellSx}><StatusChip statusName={inv.statusName} /></TableCell>
+                  <TableCell sx={cellSx}><StatusChip statusCode={inv.statusCode} statusName={inv.statusName} /></TableCell>
                   <TableCell sx={{ ...cellSx, color: "text.secondary" }}>
                     {periodText === "—" ? <span style={{ color: "#737686" }}>—</span> : periodText}
                   </TableCell>
@@ -195,7 +195,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                   <TableCell>
                     <InvoiceRowActions
                       invoiceId={inv.id}
-                      isPaid={inv.statusName?.toLowerCase().includes("pag") || inv.statusName?.toLowerCase().includes("paid") || false}
+                      isPaid={inv.statusCode === 1}
                       url={inv.url ?? null}
                       pdfUrl={inv.pdfUrl ?? null}
                       reportUrl={inv.reportUrl ?? null}

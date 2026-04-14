@@ -18,10 +18,10 @@ const MONTHS = [
 
 const STATUS_OPTIONS = [
   { value: "all",      label: "Todos los estados" },
-  { value: "pagada",   label: "Pagada" },
-  { value: "porVencer",label: "Por vencer" },
-  { value: "vencida",  label: "Vencida" },
-  { value: "anulada",  label: "Nota de Crédito" },
+  { value: "pagada",    label: "Pagadas" },
+  { value: "porVencer", label: "Por vencer" },
+  { value: "vencida",   label: "Vencidas" },
+  { value: "documento", label: "Documentos" },
 ];
 
 function getYears() {
