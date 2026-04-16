@@ -1,10 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
-import Chip from "@mui/material/Chip";
-import { Bar, Line } from "react-chartjs-2";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
+import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
+import SpeedOutlinedIcon from "@mui/icons-material/SpeedOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
+import EnergySavingsLeafOutlinedIcon from "@mui/icons-material/EnergySavingsLeafOutlined";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,8 +30,8 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const MONTHS_FULL = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 11 };
+const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const MONTHS_SHORT = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 
 interface Props {
   rawJson: Record<string, unknown>;
@@ -30,36 +41,44 @@ interface Props {
   periodYear: number;
 }
 
-// Safe accessors
 function get(obj: unknown, path: string): unknown {
   const parts = path.split(".");
-  let current: unknown = obj;
-  for (const part of parts) {
-    if (current == null || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[part];
-  }
-  return current;
+  let c: unknown = obj;
+  for (const p of parts) { if (c == null || typeof c !== "object") return undefined; c = (c as Record<string, unknown>)[p]; }
+  return c;
 }
-
-function num(obj: unknown, path: string, fallback = 0): number {
-  const v = get(obj, path);
-  return typeof v === "number" ? v : fallback;
-}
-
-function str(obj: unknown, path: string, fallback = ""): string {
-  const v = get(obj, path);
-  return typeof v === "string" ? v : fallback;
-}
-
-function fmt(n: number, decimals = 0): string {
-  return n.toLocaleString("es-CL", { maximumFractionDigits: decimals, minimumFractionDigits: decimals });
-}
-
+function num(obj: unknown, path: string, fb = 0): number { const v = get(obj, path); return typeof v === "number" ? v : fb; }
+function str(obj: unknown, path: string, fb = ""): string { const v = get(obj, path); return typeof v === "string" ? v : fb; }
+function fmt(n: number, d = 0): string { return n.toLocaleString("es-CL", { maximumFractionDigits: d, minimumFractionDigits: d }); }
 function fmtDate(iso: string): string {
   if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleDateString("es-CL", { day: "numeric", month: "long" });
+  const dt = new Date(iso);
+  const days = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  return `${days[dt.getDay()]}, ${dt.getDate()} de ${MONTHS[dt.getMonth()].toLowerCase()}`;
 }
+
+const brandBlue = "#2A6EF5";
+const brandBlueSoft = "rgba(42, 110, 245, 0.85)";
+const secondary = "#7C8DB5";
+const greenColor = "#10B981";
+const warningColor = "#F59E0B";
+const dangerColor = "#EF4444";
+
+const tooltipStyle = {
+  backgroundColor: "#0B1220",
+  titleColor: "#ffffff",
+  bodyColor: "#E5EAF2",
+  cornerRadius: 8,
+  padding: 12,
+  titleFont: { weight: 600 as const, size: 13 },
+  bodyFont: { size: 12 },
+  borderColor: "rgba(255,255,255,0.1)",
+  borderWidth: 1,
+  displayColors: true,
+  boxPadding: 4,
+};
+
+const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 12 };
 
 export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Props) {
   const planta = rawJson.planta as Record<string, unknown> | undefined;
@@ -73,170 +92,210 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
   const eventos = (get(datos, "eventos_indisponibilidad") ?? []) as Record<string, unknown>[];
 
   const pNom = num(planta, "p_nom");
+  const portafolio = str(planta, "portafolio");
+  const sigla = str(planta, "sigla");
   const inversores = (get(planta, "inversores") ?? []) as Record<string, unknown>[];
   const tablaGen = (get(generacion, "tabla_generacion") ?? []) as Record<string, unknown>[];
   const tablaRend = (get(rendimiento, "tabla_rendimiento") ?? []) as Record<string, unknown>[];
+  const codigo = str(reporte, "codigo");
   const fechaCreacion = str(datos, "fecha_creacion");
-
-  const periodLabel = `${MONTHS_FULL[periodMonth - 1]} ${periodYear}`;
+  const periodLabel = `${MONTHS[periodMonth - 1]} ${periodYear}`;
 
   // KPIs
   const produccionTotal = num(tecnico, "produccion_total");
   const pr = num(tecnico, "pr");
-  const prSimulado = num(tecnico, "pr_simulado");
-  const irradiacionTotal = num(tecnico, "irradiacion_total");
-  const rendEspecifico = num(tecnico, "rend_especifico");
+  const prSim = num(tecnico, "pr_simulado");
+  const irr = num(tecnico, "irradiacion_total");
+  const rendEsp = num(tecnico, "rend_especifico");
   const dispOm = num(tecnico, "disponibilidad_om");
   const dispReal = num(tecnico, "disponibilidad_real");
   const co2 = num(tecnico, "co2");
-
-  // Relevant days
+  const mayorVal = num(tecnico, "mayor_produccion_valor");
   const mayorFecha = str(tecnico, "mayor_produccion_fecha");
-  const mayorValor = num(tecnico, "mayor_produccion_valor");
+  const menorVal = num(tecnico, "menor_produccion_valor");
   const menorFecha = str(tecnico, "menor_produccion_fecha");
-  const menorValor = num(tecnico, "menor_produccion_valor");
+  const medianaVal = num(tecnico, "mediana_valor");
   const medianaFecha = str(tecnico, "mediana_fecha");
-  const medianaValor = num(tecnico, "mediana_valor");
-  const promedioDiario = num(tecnico, "promedio_diario");
+  const promDiario = num(tecnico, "promedio_diario");
 
-  // Daily chart data
-  const dailyLabels = tablaGen.map((d) => {
-    const fecha = str(d, "Fecha");
-    if (!fecha) return "";
-    return new Date(fecha).getDate().toString();
-  });
+  // Inverter codes from daily table
+  const invCodes = tablaGen.length > 0
+    ? Object.keys(tablaGen[0]).filter((k) => !["Fecha", "Total"].includes(k)).sort()
+    : [];
+
+  // Daily data
+  const dailyLabels = tablaGen.map((d) => { const f = str(d, "Fecha"); return f ? String(new Date(f).getDate()) : ""; });
   const dailyTotals = tablaGen.map((d) => num(d, "Total"));
+  const maxDay = Math.max(...dailyTotals);
+  const minDay = Math.min(...dailyTotals);
+  const avg = promDiario || (dailyTotals.reduce((a, b) => a + b, 0) / (dailyTotals.length || 1));
 
   // Historic
-  const histGen = get(historico, "prod_real") as number | undefined;
-  const histGenSim = get(historico, "prod_sim") as number | undefined;
+  const histProdReal = num(historico, "prod_real");
+  const histProdSim = num(historico, "prod_sim");
+  const histIrrReal = num(historico, "irr_real");
+  const histIrrSim = num(historico, "irr_sim");
+  const histPr = num(historico, "pr");
+  const histPrSim = num(historico, "pr_sim");
+  const histDisp = num(historico, "disp");
+  const histDispSim = num(historico, "disp_sim");
 
+  const [dailyView, setDailyView] = useState<"total" | "inverters">("total");
+  const [histView, setHistView] = useState<"gen" | "rad">("gen");
+  const [search, setSearch] = useState("");
+
+  // Styles
   const kpiSx = {
-    border: "1px solid",
-    borderColor: "divider",
-    borderRadius: 3,
-    p: 2.5,
-    transition: "all 200ms",
-    "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 24px rgba(13,28,46,0.10)" },
+    border: "1px solid", borderColor: "#E5EAF2", borderRadius: "14px", p: "20px 22px",
+    position: "relative", overflow: "hidden", cursor: "default",
+    transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
+    "&::before": { content: '""', position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: brandBlue, opacity: 0, transition: "opacity 0.18s" },
+    "&:hover": { transform: "translateY(-2px)", boxShadow: "0 1px 3px rgba(15,23,42,0.06), 0 18px 40px -18px rgba(15,23,42,0.14)", borderColor: "#D5DEEC", "&::before": { opacity: 1 } },
   };
+  const kLabel = { fontSize: "0.75rem", color: "#64748B", letterSpacing: "0.02em", mb: 1.5, display: "flex", alignItems: "center", gap: 0.75 };
+  const kValue = { fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.025em", lineHeight: 1, mb: 0.5 };
+  const kUnit = { fontSize: "0.875rem", color: "#64748B", fontWeight: 500, ml: 0.5 };
+  const kDelta = { fontSize: "0.75rem", fontWeight: 500, mt: 1, display: "inline-flex", alignItems: "center", gap: 0.5 };
+  const iconSx = { fontSize: 16, color: brandBlue };
 
-  const labelSx = { fontSize: "0.6875rem", color: "text.secondary", letterSpacing: "0.02em", mb: 1.5 };
-  const valueSx = { fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.025em", lineHeight: 1 };
-  const unitSx = { fontSize: "0.875rem", color: "text.secondary", fontWeight: 500, ml: 0.5 };
+  const toggleSx = (active: boolean) => ({
+    border: 0, borderRadius: "8px", px: 1.75, py: 0.75, fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer", minWidth: 0,
+    background: active ? "#fff" : "transparent", color: active ? "#0B1220" : "#64748B",
+    boxShadow: active ? "0 1px 2px rgba(15,23,42,0.04)" : "none",
+    "&:hover": { color: "#334155" },
+  });
+
+  const tileSx = (color: string) => ({ backgroundColor: color, borderRadius: "10px", p: 2 });
+  const tileLabel = { fontSize: "0.6875rem", textTransform: "uppercase" as const, letterSpacing: "0.07em", color: "#64748B", fontWeight: 500, mb: 1 };
+  const tileValue = { fontSize: "1.375rem", fontWeight: 600, letterSpacing: "-0.02em", lineHeight: 1.1 };
+  const tileSub = { fontSize: "0.8125rem", color: "#334155", mt: 0.5 };
+
+  // Build daily chart
+  function getDailyDatasets() {
+    if (dailyView === "total") {
+      return [{
+        type: "bar" as const,
+        label: "Generación (kWh)",
+        data: dailyTotals,
+        backgroundColor: dailyTotals.map((v) => v === maxDay ? greenColor : v === minDay ? dangerColor : brandBlueSoft),
+        borderRadius: 4, borderSkipped: false as const, yAxisID: "y", order: 2,
+      }];
+    }
+    const colors = [brandBlue, secondary, "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899"];
+    return invCodes.map((code, i) => ({
+      type: "bar" as const,
+      label: `Inversor ${code}`,
+      data: tablaGen.map((d) => num(d, code)),
+      backgroundColor: colors[i % colors.length],
+      borderRadius: 4, borderSkipped: false as const, stack: "inv", yAxisID: "y", order: 2,
+    }));
+  }
+
+  // Filtered table data
+  const filteredDaily = tablaGen.filter((d) => {
+    if (!search) return true;
+    const day = String(new Date(str(d, "Fecha")).getDate()).padStart(2, "0");
+    return day.includes(search) || `${day} ${MONTHS_SHORT[periodMonth - 1].toLowerCase()}`.includes(search.toLowerCase());
+  });
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 6 }}>
 
-      {/* HERO */}
-      <Box sx={{ pt: 2 }}>
-        <Typography fontSize="0.75rem" color="primary.main" fontWeight={500} letterSpacing="0.05em" textTransform="uppercase" sx={{ mb: 1 }}>
-          Planta Solar Fotovoltaica
-        </Typography>
-        <Typography variant="h4" fontWeight={600} letterSpacing="-0.03em" sx={{ mb: 0.5 }}>
-          {plantName ?? "Planta"}
-        </Typography>
-        <Typography color="text.secondary" fontSize="0.9375rem">
-          {pNom} kW nominales · {inversores.length} inversor{inversores.length !== 1 ? "es" : ""} · {periodLabel}
-        </Typography>
-
-        {fechaCreacion && (
-          <Box sx={{ mt: 2, display: "inline-flex", gap: 2, alignItems: "center", border: "1px solid", borderColor: "divider", borderRadius: 3, px: 2, py: 1.5 }}>
-            <Box>
-              <Typography fontSize="0.6875rem" color="text.secondary" textTransform="uppercase" letterSpacing="0.07em">Periodo</Typography>
-              <Typography fontSize="0.875rem" fontWeight={600}>{periodLabel}</Typography>
-            </Box>
-            <Box sx={{ width: 1, height: 36, backgroundColor: "divider" }} />
-            <Box>
-              <Typography fontSize="0.6875rem" color="text.secondary" textTransform="uppercase" letterSpacing="0.07em">Emitido</Typography>
-              <Typography fontSize="0.875rem" fontWeight={600}>{new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" })}</Typography>
-            </Box>
+      {/* ── HERO ── */}
+      <Box sx={{ pt: 2, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 3 }}>
+        <Box>
+          <Typography fontSize="0.75rem" color={brandBlue} fontWeight={500} letterSpacing="0.05em" textTransform="uppercase" sx={{ mb: 1 }}>
+            Planta Solar Fotovoltaica
+          </Typography>
+          <Typography sx={{ fontSize: "2.125rem", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.1, mb: 0.75 }}>
+            {plantName ?? "Planta"}
+          </Typography>
+          <Typography sx={{ color: "#64748B", fontSize: "0.9375rem" }}>
+            {pNom} kW nominales · {inversores.length} inversor{inversores.length !== 1 ? "es" : ""}{portafolio ? ` · Portafolio ${portafolio}` : ""}
+          </Typography>
+        </Box>
+        <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", p: "14px 18px", display: "flex", alignItems: "center", gap: 2.5, boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
+          <Box>
+            <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", mb: 0.25 }}>Periodo</Typography>
+            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{periodLabel}</Typography>
           </Box>
-        )}
+          <Box sx={{ width: 1, height: 36, background: "#E5EAF2" }} />
+          <Box>
+            <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", mb: 0.25 }}>Emitido</Typography>
+            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{fechaCreacion ? new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+          </Box>
+        </Box>
       </Box>
 
-      {/* KPI ROW 1 */}
+      {/* ── KPI ROW 1 ── */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 2 }}>
         <Card elevation={0} sx={kpiSx}>
-          <Typography sx={labelSx}>Producción total</Typography>
-          <Typography sx={valueSx}>{fmt(produccionTotal)}<Typography component="span" sx={unitSx}>kWh</Typography></Typography>
+          <Typography sx={kLabel}><BoltOutlinedIcon sx={iconSx} /> Producción total</Typography>
+          <Typography sx={kValue}>{fmt(produccionTotal)}<Typography component="span" sx={kUnit}>kWh</Typography></Typography>
         </Card>
         <Card elevation={0} sx={kpiSx}>
-          <Typography sx={labelSx}>Performance Ratio O&M</Typography>
-          <Typography sx={valueSx}>{fmt(pr, 2)}<Typography component="span" sx={unitSx}>%</Typography></Typography>
-          <Typography fontSize="0.75rem" color={pr > prSimulado ? "#16a34a" : "#dc2626"} fontWeight={500} sx={{ mt: 1 }}>
-            {pr > prSimulado ? "+" : ""}{fmt(pr - prSimulado, 1)} p.p. vs simulado
-          </Typography>
+          <Typography sx={kLabel}><AccessTimeOutlinedIcon sx={iconSx} /> Performance Ratio O&M</Typography>
+          <Typography sx={kValue}>{fmt(pr, 2)}<Typography component="span" sx={kUnit}>%</Typography></Typography>
+          <Typography sx={{ ...kDelta, color: pr >= prSim ? greenColor : dangerColor }}>{pr >= prSim ? "+" : ""}{fmt(pr - prSim, 1)} p.p. vs simulado</Typography>
         </Card>
         <Card elevation={0} sx={kpiSx}>
-          <Typography sx={labelSx}>Irradiación total</Typography>
-          <Typography sx={valueSx}>{fmt(irradiacionTotal, 2)}<Typography component="span" sx={unitSx}>kWh/m²</Typography></Typography>
+          <Typography sx={kLabel}><WbSunnyOutlinedIcon sx={iconSx} /> Irradiación total</Typography>
+          <Typography sx={kValue}>{fmt(irr, 2)}<Typography component="span" sx={kUnit}>kWh/m²</Typography></Typography>
         </Card>
         <Card elevation={0} sx={kpiSx}>
-          <Typography sx={labelSx}>Rendimiento específico</Typography>
-          <Typography sx={valueSx}>{fmt(rendEspecifico, 2)}<Typography component="span" sx={unitSx}>kWh/kWp</Typography></Typography>
+          <Typography sx={kLabel}><SpeedOutlinedIcon sx={iconSx} /> Rendimiento específico</Typography>
+          <Typography sx={kValue}>{fmt(rendEsp, 2)}<Typography component="span" sx={kUnit}>kWh/kWp</Typography></Typography>
         </Card>
       </Box>
 
-      {/* KPI ROW 2 */}
+      {/* ── KPI ROW 2 ── */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(3, 1fr)" }, gap: 2 }}>
         <Card elevation={0} sx={kpiSx}>
-          <Typography sx={labelSx}>Disponibilidad O&M</Typography>
-          <Typography sx={valueSx}>{fmt(dispOm, 2)}<Typography component="span" sx={unitSx}>%</Typography></Typography>
+          <Typography sx={kLabel}><CheckCircleOutlinedIcon sx={iconSx} /> Disponibilidad O&M</Typography>
+          <Typography sx={kValue}>{fmt(dispOm, 2)}<Typography component="span" sx={kUnit}>%</Typography></Typography>
+          <Typography sx={{ ...kDelta, color: greenColor }}>Garantía 97% · +{fmt(dispOm - 97, 1)} p.p.</Typography>
         </Card>
         <Card elevation={0} sx={kpiSx}>
-          <Typography sx={labelSx}>Disponibilidad real</Typography>
-          <Typography sx={valueSx}>{fmt(dispReal, 2)}<Typography component="span" sx={unitSx}>%</Typography></Typography>
+          <Typography sx={kLabel}><TuneOutlinedIcon sx={iconSx} /> Disponibilidad real</Typography>
+          <Typography sx={kValue}>{fmt(dispReal, 2)}<Typography component="span" sx={kUnit}>%</Typography></Typography>
+          <Typography sx={{ ...kDelta, color: "#64748B" }}>{eventos.length === 0 ? "Sin eventos registrados" : `${eventos.length} evento${eventos.length > 1 ? "s" : ""}`}</Typography>
         </Card>
         <Card elevation={0} sx={kpiSx}>
-          <Typography sx={labelSx}>CO₂ evitado</Typography>
-          <Typography sx={valueSx}>{fmt(co2, 2)}<Typography component="span" sx={unitSx}>toneladas</Typography></Typography>
+          <Typography sx={kLabel}><EnergySavingsLeafOutlinedIcon sx={iconSx} /> CO₂ evitado</Typography>
+          <Typography sx={kValue}>{fmt(co2, 2)}<Typography component="span" sx={kUnit}>toneladas</Typography></Typography>
         </Card>
       </Box>
 
-      {/* DAILY PRODUCTION CHART */}
+      {/* ── DAILY PRODUCTION ── */}
       {tablaGen.length > 0 && (
-        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, p: 3 }}>
-          <Typography fontSize="1.125rem" fontWeight={600} letterSpacing="-0.02em" sx={{ mb: 0.5 }}>
-            Generación diaria · {periodLabel}
-          </Typography>
-          <Typography fontSize="0.8125rem" color="text.secondary" sx={{ mb: 2.5 }}>
-            Producción por día en kWh.
-          </Typography>
-          <Box sx={{ height: 340 }}>
+        <Card elevation={0} sx={{ border: "1px solid #E5EAF2", borderRadius: "14px", p: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2.5, flexWrap: "wrap", gap: 2 }}>
+            <Box>
+              <Typography sx={{ fontSize: "1.125rem", fontWeight: 600, letterSpacing: "-0.02em", mb: 0.25 }}>Generación diaria · {periodLabel}</Typography>
+              <Typography sx={{ color: "#64748B", fontSize: "0.8125rem" }}>Producción por día en kWh. Pasá el cursor por las barras para ver el detalle.</Typography>
+            </Box>
+            <Box sx={{ display: "inline-flex", background: "#EEF2F8", borderRadius: "10px", p: "3px", gap: "2px" }}>
+              <Button disableElevation sx={toggleSx(dailyView === "total")} onClick={() => setDailyView("total")}>Total</Button>
+              <Button disableElevation sx={toggleSx(dailyView === "inverters")} onClick={() => setDailyView("inverters")}>Por inversor</Button>
+            </Box>
+          </Box>
+
+          <Box sx={{ height: 380 }}>
             <Bar
-              data={{
-                labels: dailyLabels,
-                datasets: [{
-                  data: dailyTotals,
-                  backgroundColor: dailyTotals.map((v) =>
-                    v === mayorValor ? "#10B981" :
-                    v === menorValor ? "#EF4444" :
-                    "rgba(42, 110, 245, 0.85)"
-                  ),
-                  borderRadius: 4,
-                  borderSkipped: false,
-                }],
-              }}
+              data={{ labels: dailyLabels, datasets: getDailyDatasets() }}
               options={{
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: "index" as const, intersect: false },
                 plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    backgroundColor: "#0B1220",
-                    titleColor: "#fff",
-                    bodyColor: "#E5EAF2",
-                    cornerRadius: 8,
-                    padding: 12,
-                    callbacks: {
-                      title: (items) => `Día ${items[0].label} de ${MONTHS_FULL[periodMonth - 1].toLowerCase()}`,
-                      label: (ctx) => `  ${(ctx.parsed.y ?? 0).toLocaleString("es-CL", { maximumFractionDigits: 1 })} kWh`,
-                    },
-                  },
+                  legend: { display: dailyView === "inverters", position: "bottom" as const, labels: { usePointStyle: true, boxWidth: 8, padding: 16, font: FONT } },
+                  tooltip: { ...tooltipStyle, callbacks: {
+                    title: (items) => `Día ${items[0].label} de ${MONTHS[periodMonth - 1].toLowerCase()}`,
+                    label: (ctx) => `  ${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toLocaleString("es-CL", { maximumFractionDigits: 1 })} kWh`,
+                  }},
                 },
                 scales: {
-                  y: { beginAtZero: true, grid: { color: "#F1F5F9" }, ticks: { font: FONT, callback: (v) => `${Number(v) / 1000}k` }, border: { color: "#E5EAF2" } },
-                  x: { grid: { display: false }, ticks: { font: FONT }, border: { color: "#E5EAF2" } },
+                  x: { grid: { display: false }, stacked: dailyView === "inverters", ticks: { color: "#94A3B8", font: FONT }, border: { color: "#E5EAF2" } },
+                  y: { position: "left" as const, beginAtZero: true, stacked: dailyView === "inverters", grid: { color: "#F1F5F9" }, ticks: { color: "#94A3B8", font: FONT, callback: (v: string | number) => `${Number(v) / 1000}k` }, border: { color: "#E5EAF2" }, title: { display: true, text: "Generación (kWh)", color: "#64748B", font: { ...FONT, size: 11 } } },
                 },
               }}
             />
@@ -244,67 +303,75 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
 
           {/* Relevant days */}
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 1.5, mt: 2.5 }}>
-            {[
-              { label: "Mayor producción", value: `${fmt(mayorValor)} kWh`, sub: fmtDate(mayorFecha), color: "#E7F7F1" },
-              { label: "Mediana", value: `${fmt(medianaValor)} kWh`, sub: fmtDate(medianaFecha), color: "#EAF1FF" },
-              { label: "Menor producción", value: `${fmt(menorValor)} kWh`, sub: fmtDate(menorFecha), color: "#FEECEC" },
-              { label: "Promedio diario", value: `${fmt(promedioDiario)} kWh`, sub: `${tablaGen.length} días operativos`, color: "#F6F8FB" },
-            ].map((d) => (
-              <Box key={d.label} sx={{ backgroundColor: d.color, borderRadius: 2, p: 2 }}>
-                <Typography fontSize="0.6875rem" color="text.secondary" textTransform="uppercase" letterSpacing="0.07em" fontWeight={500} sx={{ mb: 1 }}>{d.label}</Typography>
-                <Typography fontSize="1.25rem" fontWeight={600} letterSpacing="-0.02em">{d.value}</Typography>
-                <Typography fontSize="0.8125rem" color="text.secondary" sx={{ mt: 0.5 }}>{d.sub}</Typography>
-              </Box>
-            ))}
+            <Box sx={tileSx("#E7F7F1")}>
+              <Typography sx={tileLabel}>Día de mayor producción</Typography>
+              <Typography sx={tileValue}>{fmt(mayorVal)} kWh</Typography>
+              <Typography sx={tileSub}>{fmtDate(mayorFecha)}</Typography>
+            </Box>
+            <Box sx={tileSx("#EAF1FF")}>
+              <Typography sx={tileLabel}>Mediana</Typography>
+              <Typography sx={tileValue}>{fmt(medianaVal)} kWh</Typography>
+              <Typography sx={tileSub}>{fmtDate(medianaFecha)}</Typography>
+            </Box>
+            <Box sx={tileSx("#FEECEC")}>
+              <Typography sx={tileLabel}>Día de menor producción</Typography>
+              <Typography sx={tileValue}>{fmt(menorVal)} kWh</Typography>
+              <Typography sx={tileSub}>{fmtDate(menorFecha)}</Typography>
+            </Box>
+            <Box sx={tileSx("#F6F8FB")}>
+              <Typography sx={tileLabel}>Promedio diario</Typography>
+              <Typography sx={tileValue}>{fmt(promDiario)} kWh</Typography>
+              <Typography sx={tileSub}>{tablaGen.length} días operativos</Typography>
+            </Box>
           </Box>
         </Card>
       )}
 
-      {/* INVERTER BREAKDOWN */}
+      {/* ── INVERTER BREAKDOWN ── */}
       {tablaRend.length > 0 && (
         <>
           <Box sx={{ pt: 1 }}>
-            <Typography fontSize="1.25rem" fontWeight={600} letterSpacing="-0.02em">Rendimiento por inversor</Typography>
-            <Typography fontSize="0.8125rem" color="text.secondary">Desempeño individual de cada equipo del sistema.</Typography>
+            <Typography sx={{ fontSize: "1.25rem", fontWeight: 600, letterSpacing: "-0.02em" }}>Rendimiento por inversor</Typography>
+            <Typography sx={{ fontSize: "0.8125rem", color: "#64748B" }}>Desempeño individual de cada equipo del sistema.</Typography>
           </Box>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2.5 }}>
             {tablaRend.map((inv, idx) => {
               const code = str(inv, "inversor");
               const modelo = inversores.find((i) => str(i, "codigo") === code);
+              const color = idx === 0 ? brandBlue : secondary;
               return (
-                <Card key={code} elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, p: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
-                    <Box sx={{ width: 34, height: 34, borderRadius: 2, backgroundColor: idx === 0 ? "#2A6EF5" : "#7C8DB5", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, fontSize: "1rem" }}>
-                      {code}
+                <Card key={code} elevation={0} sx={{ border: "1px solid #E5EAF2", borderRadius: "14px", p: 3, position: "relative", overflow: "hidden", "&::before": { content: '""', position: "absolute", top: 0, right: 0, bottom: 0, width: 120, background: `linear-gradient(135deg, transparent, ${idx === 0 ? "#EAF1FF" : "#F1F3F8"} 150%)`, pointerEvents: "none" } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2.5, position: "relative" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <Box sx={{ width: 34, height: 34, borderRadius: "10px", background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, fontSize: "1rem" }}>{code}</Box>
+                      <Box>
+                        <Typography sx={{ fontSize: "0.9375rem", fontWeight: 600 }}>{modelo ? str(modelo, "modelo") : `Inversor ${code}`}</Typography>
+                        <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>{modelo ? `${str(modelo, "n_paneles")} paneles · ${Number(str(modelo, "p_peak")) / 1000} kWp` : ""}</Typography>
+                      </Box>
                     </Box>
-                    <Box>
-                      <Typography fontSize="0.9375rem" fontWeight={600}>{modelo ? str(modelo, "modelo") : `Inversor ${code}`}</Typography>
-                      <Typography fontSize="0.75rem" color="text.secondary">
-                        {modelo ? `${str(modelo, "n_paneles")} paneles · ${str(modelo, "p_peak")} Wp` : ""}
-                      </Typography>
-                    </Box>
+                    <Box sx={{ fontSize: "0.6875rem", px: 1.25, py: 0.5, background: "#EAF1FF", color: "#1E57D4", borderRadius: "6px", fontWeight: 500 }}>{idx === 0 ? "Principal" : "Secundario"}</Box>
                   </Box>
-                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 20px", position: "relative" }}>
                     <Box>
-                      <Typography fontSize="0.75rem" color="text.secondary" sx={{ mb: 0.5 }}>Producción</Typography>
-                      <Typography fontSize="1.125rem" fontWeight={600}>{fmt(num(inv, "generacion"))}<Typography component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", ml: 0.5 }}>kWh</Typography></Typography>
+                      <Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.25 }}>Producción</Typography>
+                      <Typography sx={{ fontSize: "1.125rem", fontWeight: 600 }}>{fmt(num(inv, "generacion"))}<Typography component="span" sx={{ fontSize: "0.75rem", color: "#64748B", ml: 0.5 }}>kWh</Typography></Typography>
                     </Box>
                     <Box>
-                      <Typography fontSize="0.75rem" color="text.secondary" sx={{ mb: 0.5 }}>Rendimiento</Typography>
-                      <Typography fontSize="1.125rem" fontWeight={600}>{fmt(num(inv, "rendimiento"), 2)}<Typography component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", ml: 0.5 }}>kWh/kWp</Typography></Typography>
+                      <Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.25 }}>Rendimiento</Typography>
+                      <Typography sx={{ fontSize: "1.125rem", fontWeight: 600 }}>{fmt(num(inv, "rendimiento"), 2)}<Typography component="span" sx={{ fontSize: "0.75rem", color: "#64748B", ml: 0.5 }}>kWh/kWp</Typography></Typography>
                     </Box>
                     <Box>
-                      <Typography fontSize="0.75rem" color="text.secondary" sx={{ mb: 0.5 }}>PR O&M</Typography>
-                      <Typography fontSize="1.125rem" fontWeight={600}>{fmt(num(inv, "pr"), 2)}%</Typography>
-                      <Box sx={{ height: 5, backgroundColor: "#EEF2F8", borderRadius: 999, mt: 1, overflow: "hidden" }}>
-                        <Box sx={{ height: "100%", width: `${Math.min(num(inv, "pr"), 100)}%`, backgroundColor: idx === 0 ? "#2A6EF5" : "#7C8DB5", borderRadius: 999 }} />
+                      <Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.25 }}>Performance Ratio</Typography>
+                      <Typography sx={{ fontSize: "1.125rem", fontWeight: 600 }}>{fmt(num(inv, "pr"), 2)}%</Typography>
+                      <Box sx={{ height: 6, background: "#EEF2F8", borderRadius: 999, mt: 1.5, overflow: "hidden" }}>
+                        <Box sx={{ height: "100%", width: `${Math.min(num(inv, "pr"), 100)}%`, background: color, borderRadius: 999 }} />
                       </Box>
                     </Box>
                     <Box>
-                      <Typography fontSize="0.75rem" color="text.secondary" sx={{ mb: 0.5 }}>Disponibilidad real</Typography>
-                      <Typography fontSize="1.125rem" fontWeight={600}>{fmt(num(inv, "disponibilidad_real"), 2)}%</Typography>
-                      <Box sx={{ height: 5, backgroundColor: "#EEF2F8", borderRadius: 999, mt: 1, overflow: "hidden" }}>
-                        <Box sx={{ height: "100%", width: `${Math.min(num(inv, "disponibilidad_real"), 100)}%`, backgroundColor: idx === 0 ? "#2A6EF5" : "#7C8DB5", borderRadius: 999 }} />
+                      <Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.25 }}>Disponibilidad real</Typography>
+                      <Typography sx={{ fontSize: "1.125rem", fontWeight: 600 }}>{fmt(num(inv, "disponibilidad_real"), 2)}%</Typography>
+                      <Box sx={{ height: 6, background: "#EEF2F8", borderRadius: 999, mt: 1.5, overflow: "hidden" }}>
+                        <Box sx={{ height: "100%", width: `${Math.min(num(inv, "disponibilidad_real"), 100)}%`, background: color, borderRadius: 999 }} />
                       </Box>
                     </Box>
                   </Box>
@@ -315,55 +382,171 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
         </>
       )}
 
-      {/* AVAILABILITY */}
+      {/* ── AVAILABILITY ── */}
       {disponibilidad && (
-        <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 3, p: 3 }}>
-          <Typography fontSize="1.125rem" fontWeight={600} letterSpacing="-0.02em" sx={{ mb: 2 }}>Disponibilidad y horas de operación</Typography>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 2, mb: 2 }}>
-            <Box>
-              <Typography fontSize="0.75rem" color="text.secondary">Disponibilidad O&M</Typography>
-              <Typography fontSize="1.125rem" fontWeight={600}>{fmt(dispOm, 2)}%</Typography>
+        <Card elevation={0} sx={{ border: "1px solid #E5EAF2", borderRadius: "14px", p: 3 }}>
+          <Typography sx={{ fontSize: "1.125rem", fontWeight: 600, letterSpacing: "-0.02em", mb: 0.25 }}>Disponibilidad y horas de operación</Typography>
+          <Typography sx={{ fontSize: "0.8125rem", color: "#64748B", mb: 2.5 }}>Horas de operación diaria sobre el umbral mínimo de irradiancia (MIT).</Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "250px 1fr" }, gap: 3, alignItems: "center" }}>
+            {/* Ring */}
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+              <Box sx={{ position: "relative", width: 180, height: 180 }}>
+                <svg viewBox="0 0 180 180" width="180" height="180">
+                  <circle cx="90" cy="90" r="78" fill="none" stroke="#EEF2F8" strokeWidth="12" />
+                  <circle cx="90" cy="90" r="78" fill="none" stroke={brandBlue} strokeWidth="12" strokeLinecap="round"
+                    strokeDasharray="490" strokeDashoffset={490 * (1 - dispReal / 100)} transform="rotate(-90 90 90)" />
+                </svg>
+                <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+                  <Typography sx={{ fontSize: "2rem", fontWeight: 600, letterSpacing: "-0.025em", lineHeight: 1 }}>{fmt(dispReal, 2)}%</Typography>
+                  <Typography sx={{ fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.07em", mt: 0.5 }}>Disponibilidad</Typography>
+                </Box>
+              </Box>
             </Box>
             <Box>
-              <Typography fontSize="0.75rem" color="text.secondary">Horas totales de luz</Typography>
-              <Typography fontSize="1.125rem" fontWeight={600}>{fmt(num(disponibilidad, "horas_totales"), 2)} h</Typography>
-            </Box>
-            <Box>
-              <Typography fontSize="0.75rem" color="text.secondary">Duración promedio del día</Typography>
-              <Typography fontSize="1.125rem" fontWeight={600}>{fmt(num(disponibilidad, "duracion_promedio"), 2)} h</Typography>
-            </Box>
-            <Box>
-              <Typography fontSize="0.75rem" color="text.secondary">Eventos de indisponibilidad</Typography>
-              <Typography fontSize="1.125rem" fontWeight={600}>{eventos.length} registrados</Typography>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, mb: 2 }}>
+                <Box><Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.25 }}>Horas totales de luz (sobre MIT)</Typography><Typography sx={{ fontSize: "1.125rem", fontWeight: 600 }}>{fmt(num(disponibilidad, "horas_totales"), 2)} h</Typography></Box>
+                <Box><Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.25 }}>Duración promedio del día</Typography><Typography sx={{ fontSize: "1.125rem", fontWeight: 600 }}>{fmt(num(disponibilidad, "duracion_promedio"), 2)} h</Typography></Box>
+                <Box><Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.25 }}>Eventos de indisponibilidad</Typography><Typography sx={{ fontSize: "1.125rem", fontWeight: 600 }}>{eventos.length} registrados</Typography></Box>
+                <Box><Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.25 }}>Mantenimiento correctivo</Typography><Typography sx={{ fontSize: "1.125rem", fontWeight: 600 }}>{eventos.length > 0 ? `${eventos.length} intervención${eventos.length > 1 ? "es" : ""}` : "Sin intervenciones"}</Typography></Box>
+              </Box>
             </Box>
           </Box>
 
-          {/* Events table */}
+          {/* Events */}
           {eventos.length > 0 && (
-            <Box sx={{ mt: 2, borderTop: "1px solid", borderColor: "divider", pt: 2 }}>
-              <Typography fontSize="0.8125rem" fontWeight={600} sx={{ mb: 1.5 }}>Eventos de indisponibilidad</Typography>
-              {eventos.map((ev, i) => (
-                <Box key={i} sx={{ display: "flex", gap: 2, py: 1, borderBottom: i < eventos.length - 1 ? "1px solid" : "none", borderColor: "divider" }}>
-                  <Chip label={str(ev, "evento") || "Desconocido"} size="small" sx={{ fontSize: "0.6875rem", height: 20 }} />
-                  <Typography fontSize="0.8125rem" sx={{ flex: 1 }}>{str(ev, "descripcion")}</Typography>
-                  <Typography fontSize="0.8125rem" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>{str(ev, "fecha_incidencia")}</Typography>
-                  <Typography fontSize="0.8125rem" fontWeight={500}>{fmt(num(ev, "horas_indisponibilidad"), 2)} h</Typography>
-                </Box>
-              ))}
+            <Box sx={{ mt: 2.5, borderTop: "1px solid #EEF2F8", pt: 2 }}>
+              <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, mb: 1.5 }}>Eventos de indisponibilidad</Typography>
+              <Box sx={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #E5EAF2" }}>
+                      <th style={{ textAlign: "left", padding: "8px 12px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500 }}>N°</th>
+                      <th style={{ textAlign: "left", padding: "8px 12px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500 }}>Tipo</th>
+                      <th style={{ textAlign: "left", padding: "8px 12px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500 }}>Descripción</th>
+                      <th style={{ textAlign: "left", padding: "8px 12px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500 }}>Fecha</th>
+                      <th style={{ textAlign: "right", padding: "8px 12px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500 }}>Horas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eventos.map((ev, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid #EEF2F8" }}>
+                        <td style={{ padding: "10px 12px" }}>{i + 1}</td>
+                        <td style={{ padding: "10px 12px" }}>{str(ev, "evento") || "Desconocido"}</td>
+                        <td style={{ padding: "10px 12px" }}>{str(ev, "descripcion")}</td>
+                        <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>{str(ev, "fecha_incidencia")}</td>
+                        <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 500 }}>{fmt(num(ev, "horas_indisponibilidad"), 2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Box>
             </Box>
           )}
         </Card>
       )}
 
-      {/* FOOTER */}
-      <Box sx={{ borderTop: "1px solid", borderColor: "divider", pt: 3, mt: 2, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+      {/* ── HISTORIC ── */}
+      {historico && (
+        <Card elevation={0} sx={{ border: "1px solid #E5EAF2", borderRadius: "14px", p: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2.5, flexWrap: "wrap", gap: 2 }}>
+            <Box>
+              <Typography sx={{ fontSize: "1.125rem", fontWeight: 600, letterSpacing: "-0.02em", mb: 0.25 }}>Resumen histórico · Año {periodYear}</Typography>
+              <Typography sx={{ fontSize: "0.8125rem", color: "#64748B" }}>Comparativo acumulado real vs. simulado.</Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: 2, mb: 2.5, pb: 2.5, borderBottom: "1px solid #EEF2F8" }}>
+            {[
+              { label: "Generación acumulada", value: `${fmt(histProdReal)} kWh`, diff: histProdSim ? ((histProdReal / histProdSim - 1) * 100) : 0, sub: `vs. ${fmt(histProdSim)} kWh simulados` },
+              { label: "Irradiación acumulada", value: `${fmt(histIrrReal, 0)} kWh/m²`, diff: histIrrSim ? ((histIrrReal / histIrrSim - 1) * 100) : 0, sub: `vs. ${fmt(histIrrSim, 0)} kWh/m² simulados` },
+              { label: "PR O&M promedio", value: `${fmt(histPr, 1)}%`, diff: histPr - histPrSim, sub: `vs. ${fmt(histPrSim, 1)}% simulado` },
+              { label: "Disponibilidad promedio", value: `${fmt(histDisp, 1)}%`, diff: histDisp - histDispSim, sub: `vs. ${fmt(histDispSim, 1)}% garantizado` },
+            ].map((s) => (
+              <Box key={s.label}>
+                <Typography sx={{ fontSize: "0.75rem", color: "#64748B", mb: 0.75 }}>{s.label}</Typography>
+                <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                  <Typography sx={{ fontSize: "1.375rem", fontWeight: 600, letterSpacing: "-0.02em" }}>{s.value}</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 500, px: 1, py: 0.25, borderRadius: "6px", background: s.diff >= 0 ? "#E7F7F1" : "#FEECEC", color: s.diff >= 0 ? greenColor : dangerColor }}>
+                    {s.diff >= 0 ? "+" : ""}{fmt(s.diff, 1)}%
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontSize: "0.75rem", color: "#64748B", mt: 0.25 }}>{s.sub}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Card>
+      )}
+
+      {/* ── DATA TABLE ── */}
+      {tablaGen.length > 0 && (
+        <Card elevation={0} sx={{ border: "1px solid #E5EAF2", borderRadius: "14px", p: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2, flexWrap: "wrap", gap: 2 }}>
+            <Box>
+              <Typography sx={{ fontSize: "1.125rem", fontWeight: 600, letterSpacing: "-0.02em", mb: 0.25 }}>Detalle diario por inversor</Typography>
+              <Typography sx={{ fontSize: "0.8125rem", color: "#64748B" }}>Generación día a día.</Typography>
+            </Box>
+            <TextField
+              size="small"
+              placeholder="Filtrar por día..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchOutlinedIcon sx={{ fontSize: 14, color: "#64748B" }} /></InputAdornment> } }}
+              sx={{ width: 220, "& .MuiOutlinedInput-root": { fontSize: "0.8125rem" } }}
+            />
+          </Box>
+          <Box sx={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #E5EAF2" }}>
+                  <th style={{ textAlign: "left", padding: "10px 14px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500 }}>Día</th>
+                  {invCodes.map((c) => (
+                    <th key={c} style={{ textAlign: "right", padding: "10px 14px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500 }}>Inv {c} (kWh)</th>
+                  ))}
+                  <th style={{ textAlign: "right", padding: "10px 14px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500 }}>Total (kWh)</th>
+                  <th style={{ padding: "10px 14px", fontSize: "0.6875rem", color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 500, minWidth: 140 }}>vs promedio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDaily.map((d) => {
+                  const day = new Date(str(d, "Fecha")).getDate();
+                  const total = num(d, "Total");
+                  const pct = avg ? (total / avg * 100) : 0;
+                  const ratio = maxDay ? (total / maxDay * 100) : 0;
+                  const color = total >= avg ? greenColor : total < avg * 0.7 ? dangerColor : warningColor;
+                  return (
+                    <tr key={day} style={{ borderBottom: "1px solid #EEF2F8" }}>
+                      <td style={{ padding: "11px 14px", color: total === maxDay ? greenColor : total === minDay ? dangerColor : undefined, fontWeight: total === maxDay || total === minDay ? 600 : 400 }}>
+                        {String(day).padStart(2, "0")} {MONTHS_SHORT[periodMonth - 1].toLowerCase()}
+                      </td>
+                      {invCodes.map((c) => (
+                        <td key={c} style={{ padding: "11px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(num(d, c), 1)}</td>
+                      ))}
+                      <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmt(total, 1)}</td>
+                      <td style={{ padding: "11px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ flex: 1, background: "#EEF2F8", borderRadius: 3, height: 4, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${ratio}%`, background: color, borderRadius: 3, opacity: 0.85 }} />
+                          </div>
+                          <span style={{ color: "#64748B", fontSize: "0.75rem", minWidth: 42, textAlign: "right" }}>{fmt(pct, 0)}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Box>
+        </Card>
+      )}
+
+      {/* ── FOOTER ── */}
+      <Box sx={{ borderTop: "1px solid #E5EAF2", pt: 3, mt: 2, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
         <Box>
-          <Typography fontSize="0.8125rem" fontWeight={600} color="text.secondary">S-Invest · Dashboard del Inversor</Typography>
-          <Typography fontSize="0.75rem" color="text.secondary">Datos operacionales provistos por Delta Activos · D-Plus</Typography>
+          <Typography sx={{ fontWeight: 600, fontSize: "0.8125rem", color: "#334155", mb: 0.5 }}>S-Invest · Dashboard del Inversor</Typography>
+          <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Datos operacionales provistos por Delta Activos · D-Plus</Typography>
         </Box>
         <Box sx={{ textAlign: "right" }}>
-          <Typography fontSize="0.75rem" color="text.secondary">Reporte {plantName} · {periodLabel}</Typography>
-          {fechaCreacion && <Typography fontSize="0.75rem" color="text.secondary">Emitido el {new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" })}</Typography>}
+          {codigo && <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Reporte {plantName} · código {codigo}</Typography>}
+          {fechaCreacion && <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Emitido el {new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" })}</Typography>}
         </Box>
       </Box>
     </Box>
