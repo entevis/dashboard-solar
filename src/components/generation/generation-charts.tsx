@@ -98,7 +98,7 @@ export function GenerationCharts({ data }: Props) {
             "& .MuiChartsGrid-line": { stroke: "#eff4ff" },
             "& .MuiChartsAxis-line": { stroke: "#c3c6d7" },
             "& .MuiChartsAxis-tick": { stroke: "#c3c6d7" },
-            "& .MuiAreaElement-root": { fillOpacity: 0.15 },
+            "& .MuiAreaElement-root": { fillOpacity: 0.85 },
           }}
         />
       </Card>
