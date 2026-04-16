@@ -11,6 +11,7 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
 import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
 
 const MONTHS = [
@@ -61,6 +62,7 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
   const [localYear, setLocalYear] = useState(String(year));
   const [localStatus, setLocalStatus] = useState(status);
   const [localPlant, setLocalPlant] = useState(searchParams.get("plantNameId") ?? "all");
+  const [localInvoiceNumber, setLocalInvoiceNumber] = useState(searchParams.get("invoiceNumber") ?? "");
 
   function applyFilters() {
     const params = new URLSearchParams();
@@ -68,6 +70,7 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
     params.set("year", localYear);
     if (localStatus !== "all") params.set("status", localStatus);
     if (localPlant !== "all") params.set("plantNameId", localPlant);
+    if (localInvoiceNumber.trim()) params.set("invoiceNumber", localInvoiceNumber.trim());
     params.set("page", "1");
     startTransition(() => router.push(`?${params.toString()}`));
     setAnchorEl(null);
@@ -79,6 +82,7 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
     setLocalYear(String(now.getFullYear()));
     setLocalStatus("all");
     setLocalPlant("all");
+    setLocalInvoiceNumber("");
   }
 
   // Count active non-default filters
@@ -89,6 +93,7 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
   if (localMonth !== defaults.month) activeCount++;
   if (localStatus !== "all") activeCount++;
   if (localPlant !== "all") activeCount++;
+  if (localInvoiceNumber.trim()) activeCount++;
 
   // Chips for active filters
   const chips: { label: string; onDelete: () => void }[] = [];
@@ -100,6 +105,9 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
   if (localPlant !== "all") {
     const plantLabel = plants.find((p) => String(p.id) === localPlant)?.name ?? `Planta #${localPlant}`;
     chips.push({ label: plantLabel, onDelete: () => { setLocalPlant("all"); } });
+  }
+  if (localInvoiceNumber.trim()) {
+    chips.push({ label: `N° ${localInvoiceNumber.trim()}`, onDelete: () => { setLocalInvoiceNumber(""); } });
   }
 
   return (
@@ -189,6 +197,16 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
         <Typography fontSize="0.875rem" fontWeight={700} sx={{ mb: 2 }}>Filtros</Typography>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <TextField
+            size="small"
+            fullWidth
+            label="N° Factura"
+            placeholder="Ej: 5299"
+            value={localInvoiceNumber}
+            onChange={(e) => setLocalInvoiceNumber(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") applyFilters(); }}
+            sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "#c3c6d7" }, "&.Mui-focused fieldset": { borderColor: "#2563eb", borderWidth: 2 } } }}
+          />
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
             <FormControl size="small" fullWidth>
               <InputLabel sx={{ fontSize: "0.8125rem" }}>Mes</InputLabel>

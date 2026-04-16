@@ -31,7 +31,7 @@ function buildOrderBy(sortBy: BillingSortKey, dir: "asc" | "desc") {
 
 interface Props {
   params: Promise<{ portfolioId: string }>;
-  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; status?: string; sortBy?: string; sortDir?: string }>;
+  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; status?: string; sortBy?: string; sortDir?: string; invoiceNumber?: string }>;
 }
 
 export default async function PortfolioBillingPage({ params, searchParams }: Props) {
@@ -76,7 +76,11 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     vencida:   { statusCode: 3 },
     notaCredito: { statusCode: 4 },
   };
-  const tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
+  let tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
+  const invoiceNumber = sp.invoiceNumber?.trim();
+  if (invoiceNumber) {
+    tableWhere = { ...tableWhere, number: { contains: invoiceNumber, mode: "insensitive" as const } };
+  }
   const isMaestro = user.role === UserRole.MAESTRO;
 
   const [total, invoices, allInvoices, maestroPortfolios] = await Promise.all([

@@ -32,7 +32,7 @@ function buildOrderBy(sortBy: BillingSortKey, dir: "asc" | "desc") {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; status?: string; sortBy?: string; sortDir?: string }>;
+  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; status?: string; sortBy?: string; sortDir?: string; invoiceNumber?: string }>;
 }) {
   const user = await requireAuth();
   const params = await searchParams;
@@ -77,7 +77,11 @@ export default async function BillingPage({
     vencida:   { statusCode: 3 },
     notaCredito: { statusCode: 4 },
   };
-  const tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
+  let tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
+  const invoiceNumber = params.invoiceNumber?.trim();
+  if (invoiceNumber) {
+    tableWhere = { ...tableWhere, number: { contains: invoiceNumber, mode: "insensitive" as const } };
+  }
   const isMaestro = user.role === UserRole.MAESTRO;
 
   const [total, invoices, allInvoices, maestroPortfolios] = await Promise.all([
