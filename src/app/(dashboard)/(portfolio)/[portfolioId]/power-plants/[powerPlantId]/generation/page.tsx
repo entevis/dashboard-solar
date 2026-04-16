@@ -146,7 +146,7 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
   });
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <Box>
         <Typography variant="h5" fontWeight={700} color="text.primary">{plant.name}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
@@ -176,7 +176,7 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
 
       <GenerationCharts data={chartData} />
 
-      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {total === 0 ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 1.5, color: "text.secondary" }}>
             <ReceiptLongOutlinedIcon sx={{ fontSize: 36 }} />
