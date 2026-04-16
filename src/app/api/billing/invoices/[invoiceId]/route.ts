@@ -105,7 +105,7 @@ export async function PATCH(
 
   if (reportUrl) {
     const extractionResult = await extractDataFromReportPage(reportUrl);
-    const { kwhGenerated, co2Avoided, periodMonth, periodYear, ...debug } = extractionResult;
+    const { kwhGenerated, co2Avoided, periodMonth, periodYear, rawJson, ...debug } = extractionResult;
     reportDebug = { ...reportDebug, ...debug, kwhGenerated, co2Avoided, periodMonth, periodYear };
 
     if (periodMonth && periodYear) {
@@ -125,6 +125,7 @@ export async function PATCH(
             fileUrl: reportUrl,
             kwhGenerated: kwhGenerated ?? null,
             co2Avoided: co2Avoided ?? null,
+            rawJson: rawJson ? (rawJson as object) : undefined,
             periodMonth,
             periodYear,
           },
@@ -140,6 +141,7 @@ export async function PATCH(
             fileName: `Reporte ${customer?.name ?? "Cliente"} - ${String(periodMonth).padStart(2, "0")}/${periodYear}`,
             kwhGenerated: kwhGenerated ?? null,
             co2Avoided: co2Avoided ?? null,
+            rawJson: rawJson ? (rawJson as object) : undefined,
             source: "duemint",
             duemintId: invoice.duemintId,
           },

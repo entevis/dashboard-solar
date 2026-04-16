@@ -31,6 +31,7 @@ export interface ReportData {
   co2Avoided: number | null;
   periodMonth: number | null;
   periodYear: number | null;
+  rawJson: Record<string, unknown> | null;
   fetchStatus?: number;
   error?: string;
 }
@@ -45,7 +46,7 @@ export interface ReportData {
 export async function extractDataFromReportPage(dplusUrl: string): Promise<ReportData> {
   try {
     const code = extractReportCode(dplusUrl);
-    if (!code) return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, error: "no code found in URL" };
+    if (!code) return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, rawJson: null, error: "no code found in URL" };
 
     const apiUrl = `${REPORT_API_BASE}/${code}`;
     const res = await fetch(apiUrl, {
@@ -55,14 +56,14 @@ export async function extractDataFromReportPage(dplusUrl: string): Promise<Repor
     });
 
     if (!res.ok) {
-      return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, fetchStatus: res.status, error: `API returned ${res.status}` };
+      return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, rawJson: null, fetchStatus: res.status, error: `API returned ${res.status}` };
     }
 
     const data = await res.json();
 
     const tecnico = data?.reporte?.datos_reporte?.tecnico;
     if (!tecnico) {
-      return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, fetchStatus: res.status, error: "no tecnico data in response" };
+      return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, rawJson: data as Record<string, unknown>, fetchStatus: res.status, error: "no tecnico data in response" };
     }
 
     const kwhGenerated = typeof tecnico.produccion_total === "number" ? tecnico.produccion_total : null;
@@ -80,8 +81,8 @@ export async function extractDataFromReportPage(dplusUrl: string): Promise<Repor
       }
     }
 
-    return { kwhGenerated, co2Avoided, periodMonth, periodYear, fetchStatus: res.status };
+    return { kwhGenerated, co2Avoided, periodMonth, periodYear, rawJson: data as Record<string, unknown>, fetchStatus: res.status };
   } catch (err) {
-    return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, error: err instanceof Error ? err.message : "unknown" };
+    return { kwhGenerated: null, co2Avoided: null, periodMonth: null, periodYear: null, rawJson: null, error: err instanceof Error ? err.message : "unknown" };
   }
 }

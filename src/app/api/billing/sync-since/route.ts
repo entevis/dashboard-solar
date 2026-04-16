@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        const { kwhGenerated, co2Avoided, periodMonth, periodYear } = await extractDataFromReportPage(reportUrl);
+        const { kwhGenerated, co2Avoided, periodMonth, periodYear, rawJson } = await extractDataFromReportPage(reportUrl);
 
         if (!periodMonth || !periodYear) {
           errors.push(`Report error (${duemintId}): no fecha_reporte in API response`);
@@ -149,6 +149,7 @@ export async function POST(request: NextRequest) {
           const updateData: Record<string, unknown> = {};
           if (kwhGenerated != null && existingReport.kwhGenerated == null) updateData.kwhGenerated = kwhGenerated;
           if (co2Avoided != null && existingReport.co2Avoided == null) updateData.co2Avoided = co2Avoided;
+          if (rawJson && !existingReport.rawJson) updateData.rawJson = rawJson as object;
           if (existingReport.periodMonth !== periodMonth || existingReport.periodYear !== periodYear) {
             updateData.periodMonth = periodMonth;
             updateData.periodYear = periodYear;
@@ -169,6 +170,7 @@ export async function POST(request: NextRequest) {
               fileName: `Reporte ${customer.name} - ${String(periodMonth).padStart(2, "0")}/${periodYear}`,
               kwhGenerated: kwhGenerated ?? null,
               co2Avoided: co2Avoided ?? null,
+              rawJson: rawJson ? (rawJson as object) : undefined,
               source: "duemint",
               duemintId,
             },

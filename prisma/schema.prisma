@@ -261,6 +261,7 @@ model GenerationReport {
   kwhGenerated Float?   @map("kwh_generated")
   co2Avoided   Float?   @map("co2_avoided")
   plantName    String?  @map("plant_name")
+  rawJson      Json?    @map("raw_json")
   source       String   @default("manual")
   duemintId    String?  @unique @map("duemint_id")
   active       Int      @default(1)
