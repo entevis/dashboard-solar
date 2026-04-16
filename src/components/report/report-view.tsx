@@ -215,15 +215,15 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
             {pNom} kW nominales · {inversores.length} inversor{inversores.length !== 1 ? "es" : ""}{portafolio ? ` · Portafolio ${portafolio}` : ""}
           </Typography>
         </Box>
-        <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", p: "14px 18px", display: "flex", alignItems: "center", gap: 2.5, boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
-          <Box>
-            <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", mb: 0.25 }}>Periodo</Typography>
-            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", whiteSpace: "nowrap" }}>{periodLabel}</Typography>
+        <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", padding: "14px 20px", display: "inline-flex", alignItems: "center", gap: "20px", boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
+          <Box sx={{ whiteSpace: "nowrap" }}>
+            <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Periodo</Typography>
+            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{periodLabel}</Typography>
           </Box>
-          <Box sx={{ width: 1, height: 36, background: "#E5EAF2", flexShrink: 0 }} />
-          <Box>
-            <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", mb: 0.25 }}>Emitido</Typography>
-            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", whiteSpace: "nowrap", textTransform: "capitalize" }}>{fechaCreacion ? new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+          <Box sx={{ width: "1px", height: "36px", backgroundColor: "#E5EAF2", flexShrink: 0 }} />
+          <Box sx={{ whiteSpace: "nowrap" }}>
+            <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Emitido</Typography>
+            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", textTransform: "capitalize" }}>{fechaCreacion ? new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
           </Box>
         </Box>
       </Box>
