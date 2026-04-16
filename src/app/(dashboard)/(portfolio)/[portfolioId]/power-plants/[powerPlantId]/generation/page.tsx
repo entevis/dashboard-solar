@@ -13,7 +13,7 @@ import CardContent from "@mui/material/CardContent";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { formatCLP } from "@/lib/utils/formatters";
 
-const PAGE_SIZE = 15;
+const DEFAULT_PAGE_SIZE = 15;
 const VALID_SORT_KEYS: BillingSortKey[] = ["number", "customer", "issueDate", "dueDate", "total", "status"];
 
 function buildOrderBy(sortBy: BillingSortKey, dir: "asc" | "desc") {
@@ -30,7 +30,7 @@ function buildOrderBy(sortBy: BillingSortKey, dir: "asc" | "desc") {
 
 interface Props {
   params: Promise<{ portfolioId: string; powerPlantId: string }>;
-  searchParams: Promise<{ page?: string; sortBy?: string; sortDir?: string }>;
+  searchParams: Promise<{ page?: string; size?: string; sortBy?: string; sortDir?: string }>;
 }
 
 export default async function PortfolioPlantGenerationPage({ params, searchParams }: Props) {
@@ -44,6 +44,10 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
   if (accessibleIds !== "all" && !accessibleIds.includes(id)) notFound();
 
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const VALID_SIZES = [15, 50, 100] as const;
+  type PageSize = typeof VALID_SIZES[number];
+  const parsedSize = parseInt(sp.size ?? "");
+  const pageSize: PageSize = (VALID_SIZES as readonly number[]).includes(parsedSize) ? parsedSize as PageSize : DEFAULT_PAGE_SIZE;
   const sortBy = VALID_SORT_KEYS.includes(sp.sortBy as BillingSortKey) ? sp.sortBy as BillingSortKey : "issueDate";
   const sortDir = sp.sortDir === "asc" ? "asc" : "desc";
 
@@ -81,8 +85,8 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
       where: invoiceWhere,
       include: { customer: { select: { name: true } } },
       orderBy: buildOrderBy(sortBy, sortDir),
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     }),
   ]);
 
@@ -160,7 +164,7 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
             </Typography>
           </Box>
         ) : (
-          <BillingTable invoices={serializedInvoices} total={total} page={page} pageSize={PAGE_SIZE} />
+          <BillingTable invoices={serializedInvoices} total={total} page={page} pageSize={pageSize} />
         )}
       </Card>
     </Box>
