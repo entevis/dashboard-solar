@@ -3,13 +3,15 @@
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Popover from "@mui/material/Popover";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import Typography from "@mui/material/Typography";
+import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
 
 const MONTHS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -17,82 +19,222 @@ const MONTHS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: "all",      label: "Todos los estados" },
-  { value: "pagada",    label: "Pagadas" },
-  { value: "porVencer", label: "Por vencer" },
-  { value: "vencida",   label: "Vencidas" },
+  { value: "all",         label: "Todos" },
+  { value: "pagada",      label: "Pagadas" },
+  { value: "porVencer",   label: "Por vencer" },
+  { value: "vencida",     label: "Vencidas" },
   { value: "notaCredito", label: "Notas de crédito" },
 ];
 
 function getYears() {
   const current = new Date().getFullYear();
-  return [current - 2, current - 1, current];
+  return Array.from({ length: 4 }, (_, i) => current - i);
 }
+
+const selectSx = {
+  height: 36,
+  fontSize: "0.8125rem",
+  backgroundColor: "#eff4ff",
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c3c6d7" },
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb", borderWidth: 2 },
+};
+
+interface FilterOption { id: number; name: string }
 
 interface Props {
   month: number;
   year: number;
   status: string;
+  plants?: FilterOption[];
+  isMaestro?: boolean;
+  actions?: React.ReactNode;
 }
 
-export function BillingFilters({ month, year, status }: Props) {
+export function BillingFilters({ month, year, status, plants = [], isMaestro, actions }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const [localMonth, setLocalMonth]   = useState(String(month));
-  const [localYear, setLocalYear]     = useState(String(year));
+  const [localMonth, setLocalMonth] = useState(String(month));
+  const [localYear, setLocalYear] = useState(String(year));
   const [localStatus, setLocalStatus] = useState(status);
+  const [localPlant, setLocalPlant] = useState(searchParams.get("plantNameId") ?? "all");
 
-  function handleSearch() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("month",  localMonth);
-    params.set("year",   localYear);
-    params.set("status", localStatus);
-    params.set("page",   "1");
+  function applyFilters() {
+    const params = new URLSearchParams();
+    params.set("month", localMonth);
+    params.set("year", localYear);
+    if (localStatus !== "all") params.set("status", localStatus);
+    if (localPlant !== "all") params.set("plantNameId", localPlant);
+    params.set("page", "1");
     startTransition(() => router.push(`?${params.toString()}`));
+    setAnchorEl(null);
   }
 
-  const selectSx = { height: 32, fontSize: "0.8125rem", backgroundColor: "#eff4ff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" }, "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c3c6d7" } };
+  function clearFilters() {
+    const now = new Date();
+    setLocalMonth(String(now.getMonth() + 1));
+    setLocalYear(String(now.getFullYear()));
+    setLocalStatus("all");
+    setLocalPlant("all");
+  }
+
+  // Count active non-default filters
+  const now = new Date();
+  const defaults = { month: String(now.getMonth() + 1), year: String(now.getFullYear()), status: "all", plant: "all" };
+  let activeCount = 0;
+  if (localYear !== defaults.year) activeCount++;
+  if (localMonth !== defaults.month) activeCount++;
+  if (localStatus !== "all") activeCount++;
+  if (localPlant !== "all") activeCount++;
+
+  // Chips for active filters
+  const chips: { label: string; onDelete: () => void }[] = [];
+  chips.push({ label: `${MONTHS[parseInt(localMonth) - 1]} ${localYear}`, onDelete: () => {} }); // period always shows
+  if (localStatus !== "all") {
+    const statusLabel = STATUS_OPTIONS.find((s) => s.value === localStatus)?.label ?? localStatus;
+    chips.push({ label: statusLabel, onDelete: () => { setLocalStatus("all"); } });
+  }
+  if (localPlant !== "all") {
+    const plantLabel = plants.find((p) => String(p.id) === localPlant)?.name ?? `Planta #${localPlant}`;
+    chips.push({ label: plantLabel, onDelete: () => { setLocalPlant("all"); } });
+  }
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      <FormControl size="small" sx={{ minWidth: 120 }}>
-        <InputLabel sx={{ fontSize: "0.8125rem" }}>Mes</InputLabel>
-        <Select label="Mes" value={localMonth} onChange={(e) => setLocalMonth(String(e.target.value))} sx={selectSx}>
-          {MONTHS.map((name, i) => (
-            <MenuItem key={i + 1} value={String(i + 1)} sx={{ fontSize: "0.8125rem" }}>{name}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+    <Box sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 1.5,
+      flexWrap: "wrap",
+      px: 2,
+      py: 1.25,
+      backgroundColor: "#fff",
+      border: "1px solid",
+      borderColor: "divider",
+      borderRadius: 2,
+      opacity: isPending ? 0.6 : 1,
+      transition: "opacity 150ms",
+    }}>
+      {/* Left: filter button + chips */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+        <Button
+          size="small"
+          variant="outlined"
+          color="inherit"
+          startIcon={<FilterListOutlinedIcon />}
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{
+            borderColor: "#c3c6d7",
+            fontWeight: 600,
+            fontSize: "0.8125rem",
+            "&:hover": { borderColor: "#004ac6", color: "#004ac6" },
+          }}
+        >
+          Filtros
+          {activeCount > 0 && (
+            <Box component="span" sx={{
+              ml: 0.75,
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              backgroundColor: "#2563eb",
+              color: "#fff",
+              fontSize: "0.6875rem",
+              fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              {activeCount}
+            </Box>
+          )}
+        </Button>
 
-      <FormControl size="small" sx={{ minWidth: 80 }}>
-        <InputLabel sx={{ fontSize: "0.8125rem" }}>Año</InputLabel>
-        <Select label="Año" value={localYear} onChange={(e) => setLocalYear(String(e.target.value))} sx={selectSx}>
-          {getYears().map((y) => (
-            <MenuItem key={y} value={String(y)} sx={{ fontSize: "0.8125rem" }}>{y}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+        {/* Active filter chips */}
+        {chips.map((chip) => (
+          <Chip
+            key={chip.label}
+            label={chip.label}
+            size="small"
+            sx={{
+              backgroundColor: "#dbe1ff",
+              color: "#004ac6",
+              fontWeight: 600,
+              fontSize: "0.6875rem",
+              height: 24,
+            }}
+          />
+        ))}
+      </Box>
 
-      <FormControl size="small" sx={{ minWidth: 160 }}>
-        <InputLabel sx={{ fontSize: "0.8125rem" }}>Estado</InputLabel>
-        <Select label="Estado" value={localStatus} onChange={(e) => setLocalStatus(String(e.target.value))} sx={selectSx}>
-          {STATUS_OPTIONS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: "0.8125rem" }}>{opt.label}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {/* Right: actions */}
+      {isMaestro && actions && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {actions}
+        </Box>
+      )}
 
-      <Button
-        variant="contained"
-        size="small"
-        onClick={handleSearch}
-        disabled={isPending}
-        startIcon={isPending ? <CircularProgress size={12} color="inherit" /> : <SearchOutlinedIcon />}
+      {/* Popover */}
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ paper: { sx: { borderRadius: 3, boxShadow: "0 8px 24px rgba(13,28,46,0.14)", mt: 1, p: 2.5, minWidth: 300 } } }}
       >
-        {isPending ? "Buscando..." : "Buscar"}
-      </Button>
+        <Typography fontSize="0.875rem" fontWeight={700} sx={{ mb: 2 }}>Filtros</Typography>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel sx={{ fontSize: "0.8125rem" }}>Mes</InputLabel>
+              <Select label="Mes" value={localMonth} onChange={(e) => setLocalMonth(String(e.target.value))} sx={selectSx}>
+                {MONTHS.map((name, i) => (
+                  <MenuItem key={i + 1} value={String(i + 1)} sx={{ fontSize: "0.8125rem" }}>{name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" fullWidth>
+              <InputLabel sx={{ fontSize: "0.8125rem" }}>Año</InputLabel>
+              <Select label="Año" value={localYear} onChange={(e) => setLocalYear(String(e.target.value))} sx={selectSx}>
+                {getYears().map((y) => (
+                  <MenuItem key={y} value={String(y)} sx={{ fontSize: "0.8125rem" }}>{y}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <FormControl size="small" fullWidth>
+            <InputLabel sx={{ fontSize: "0.8125rem" }}>Estado</InputLabel>
+            <Select label="Estado" value={localStatus} onChange={(e) => setLocalStatus(String(e.target.value))} sx={selectSx}>
+              {STATUS_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: "0.8125rem" }}>{opt.label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {plants.length > 0 && (
+            <FormControl size="small" fullWidth>
+              <InputLabel sx={{ fontSize: "0.8125rem" }}>Planta</InputLabel>
+              <Select label="Planta" value={localPlant} onChange={(e) => setLocalPlant(String(e.target.value))} sx={selectSx}>
+                <MenuItem value="all" sx={{ fontSize: "0.8125rem" }}>Todas las plantas</MenuItem>
+                {plants.map((p) => (
+                  <MenuItem key={p.id} value={String(p.id)} sx={{ fontSize: "0.8125rem" }}>{p.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </Box>
+
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2, pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
+          <Button size="small" color="inherit" onClick={clearFilters} sx={{ fontSize: "0.8125rem" }}>Limpiar</Button>
+          <Button size="small" variant="contained" onClick={applyFilters} sx={{ fontSize: "0.8125rem" }}>Aplicar</Button>
+        </Box>
+      </Popover>
     </Box>
   );
 }

@@ -148,24 +148,26 @@ export default async function BillingPage({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 3 }}>
 
-      {/* Header */}
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, flexShrink: 0 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700} color="text.primary">Facturas y reportes</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            {total} {total === 1 ? "factura" : "facturas"} · {MONTHS[month - 1]} {year}
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-          <BillingFilters month={month} year={year} status={status} />
-          {isMaestro && maestroPortfolios.length > 0 && (
-            <>
-              <SyncSinceDialog />
-              <ImportInvoiceDialog portfolios={maestroPortfolios} />
-            </>
-          )}
-        </Box>
+      <Box>
+        <Typography variant="h5" fontWeight={700} color="text.primary">Facturas y reportes</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+          {total} {total === 1 ? "factura" : "facturas"} · {MONTHS[month - 1]} {year}
+        </Typography>
       </Box>
+
+      <BillingFilters
+        month={month}
+        year={year}
+        status={status}
+        plants={[]}
+        isMaestro={isMaestro}
+        actions={isMaestro && maestroPortfolios.length > 0 ? (
+          <>
+            <SyncSinceDialog />
+            <ImportInvoiceDialog portfolios={maestroPortfolios} />
+          </>
+        ) : undefined}
+      />
 
       {/* KPI Cards */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 2, flexShrink: 0 }}>
