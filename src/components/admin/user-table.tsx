@@ -126,7 +126,7 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
                   <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Cargo</TableCell>
                   <TableCell><TableSortLabel {...col("role")}>Rol</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("customer")}>Cliente / Portafolio</TableSortLabel></TableCell>
-                  <TableCell sx={{ width: 48 }} />
+                  <TableCell sx={{ width: 48, fontSize: "0.75rem", fontWeight: 600 }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

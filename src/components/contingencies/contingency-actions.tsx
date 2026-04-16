@@ -6,7 +6,7 @@ import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import CircularProgress from "@mui/material/CircularProgress";
-import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import MoreVertOutlinedIcon from "@mui/icons-material/MoreVertOutlined";
 import PlayArrowOutlinedIcon from "@mui/icons-material/PlayArrowOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { toast } from "@/lib/utils/toast";
@@ -48,7 +48,7 @@ export function ContingencyActions({ contingencyId, currentStatus }: Props) {
         size="small"
         disabled={loading}
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        endIcon={loading ? <CircularProgress size={12} color="inherit" /> : <MoreHorizOutlinedIcon />}
+        endIcon={loading ? <CircularProgress size={12} color="inherit" /> : <MoreVertOutlinedIcon />}
         color="inherit"
         sx={{ borderColor: "#c3c6d7" }}
       >

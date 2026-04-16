@@ -75,7 +75,7 @@ export function ContingencyTable({ contingencies, canWrite = false, canDelete = 
               <TableCell>Costo</TableCell>
               <TableCell>Proveedor</TableCell>
               <TableCell>Creada</TableCell>
-              <TableCell sx={{ width: 40 }} />
+              <TableCell sx={{ width: 40, fontSize: "0.75rem", fontWeight: 600 }}>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

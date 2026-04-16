@@ -7,7 +7,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
-import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import MoreVertOutlinedIcon from "@mui/icons-material/MoreVertOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
@@ -47,7 +47,7 @@ export function InvoiceRowActions({ invoiceId, isPaid, url, pdfUrl, reportUrl }:
       >
         {refreshing
           ? <CircularProgress size={14} color="inherit" />
-          : <MoreHorizOutlinedIcon sx={{ fontSize: 16 }} />
+          : <MoreVertOutlinedIcon sx={{ fontSize: 16 }} />
         }
       </IconButton>
 

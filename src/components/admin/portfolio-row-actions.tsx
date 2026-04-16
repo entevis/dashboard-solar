@@ -16,7 +16,7 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import MoreVertOutlinedIcon from "@mui/icons-material/MoreVertOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { toast } from "@/lib/utils/toast";
@@ -119,7 +119,7 @@ export function PortfolioRowActions({ portfolio }: { portfolio: Portfolio }) {
   return (
     <>
       <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)} aria-label={`Acciones para ${portfolio.name}`}>
-        <MoreHorizOutlinedIcon sx={{ fontSize: 18 }} />
+        <MoreVertOutlinedIcon sx={{ fontSize: 18 }} />
       </IconButton>
       <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
         <MenuItem dense onClick={() => { setAnchor(null); setEditOpen(true); }}>

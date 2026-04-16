@@ -12,7 +12,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import MoreHorizOutlinedIcon from "@mui/icons-material/MoreHorizOutlined";
+import MoreVertOutlinedIcon from "@mui/icons-material/MoreVertOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { toast } from "@/lib/utils/toast";
@@ -48,7 +48,7 @@ export function ContingencyRowActions({ contingencyId, description, canWrite, ca
   return (
     <>
       <IconButton size="small" aria-label="Acciones" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ width: 28, height: 28, color: "text.secondary" }}>
-        <MoreHorizOutlinedIcon sx={{ fontSize: 16 }} />
+        <MoreVertOutlinedIcon sx={{ fontSize: 16 }} />
       </IconButton>
 
       <Menu

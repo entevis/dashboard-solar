@@ -94,7 +94,7 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
                   <TableCell><TableSortLabel {...col("rut")}>RUT</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("plants")} sx={{ justifyContent: "center", width: "100%" }}>Plantas</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("users")} sx={{ justifyContent: "center", width: "100%" }}>Usuarios</TableSortLabel></TableCell>
-                  <TableCell sx={{ width: 48 }} />
+                  <TableCell sx={{ width: 48, fontSize: "0.75rem", fontWeight: 600 }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

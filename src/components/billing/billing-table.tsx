@@ -79,7 +79,7 @@ const W = {
   reportPeriod: 85,
   kwh: 110,
   co2: 110,
-  actions: 40,
+  actions: 65,
 };
 
 const truncSx = {
@@ -156,7 +156,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
               <TableCell sx={{ width: W.reportPeriod }}>Periodo reporte</TableCell>
               <TableCell sx={{ width: W.kwh }} align="right">Generación (kWh)</TableCell>
               <TableCell sx={{ width: W.co2 }} align="right">CO₂ evitado (ton)</TableCell>
-              <TableCell sx={{ width: W.actions }} />
+              <TableCell sx={{ width: W.actions }}>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
