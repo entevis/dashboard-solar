@@ -15,13 +15,14 @@ import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 
 interface Props {
   invoiceId: number;
+  duemintId: string | null;
   isPaid: boolean;
   url: string | null;
   pdfUrl: string | null;
   reportUrl: string | null;
 }
 
-export function InvoiceRowActions({ invoiceId, isPaid, url, pdfUrl, reportUrl }: Props) {
+export function InvoiceRowActions({ invoiceId, duemintId, isPaid, url, pdfUrl, reportUrl }: Props) {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -85,6 +86,12 @@ export function InvoiceRowActions({ invoiceId, isPaid, url, pdfUrl, reportUrl }:
               <AssessmentOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
               Ver reporte
             </MenuItem>
+            {duemintId && (
+              <MenuItem component="a" href={`/report/${duemintId}`} target="_blank" onClick={() => setAnchorEl(null)} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+                <AssessmentOutlinedIcon sx={{ fontSize: 15, color: "#2563eb" }} />
+                Ver nuevo reporte
+              </MenuItem>
+            )}
           </>
         )}
       </Menu>

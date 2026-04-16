@@ -205,6 +205,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                   <TableCell>
                     <InvoiceRowActions
                       invoiceId={inv.id}
+                      duemintId={inv.duemintId ?? null}
                       isPaid={inv.statusCode === 1}
                       url={inv.url ?? null}
                       pdfUrl={inv.pdfUrl ?? null}
