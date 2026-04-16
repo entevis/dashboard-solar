@@ -1,20 +1,18 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useTransition, useState } from "react";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Popover from "@mui/material/Popover";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
-import Box from "@mui/material/Box";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import Badge from "@mui/material/Badge";
-import Button from "@mui/material/Button";
-import Collapse from "@mui/material/Collapse";
-import SearchIcon from "@mui/icons-material/Search";
-import TuneIcon from "@mui/icons-material/Tune";
+import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
 
 interface Option { id: number; name: string }
 
@@ -22,139 +20,190 @@ interface Props {
   portfolios: Option[];
   customers: Option[];
   hidePortfolioFilter?: boolean;
-  hideCustomerFilter?: boolean;
+  actions?: React.ReactNode;
 }
 
-export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = false, hideCustomerFilter = false }: Props) {
+const selectSx = {
+  height: 36,
+  fontSize: "0.8125rem",
+  backgroundColor: "#eff4ff",
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: "transparent" },
+  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#c3c6d7" },
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb", borderWidth: 2 },
+};
+
+export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = false, actions }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const hasDropdownFilters = !hidePortfolioFilter || !hideCustomerFilter;
-  const activeFilterCount = [
-    !hidePortfolioFilter && searchParams.get("portfolioId"),
-    !hideCustomerFilter && searchParams.get("customerId"),
-  ].filter(Boolean).length;
+  const [localQ, setLocalQ] = useState(searchParams.get("q") ?? "");
+  const [localPortfolio, setLocalPortfolio] = useState(searchParams.get("portfolioId") ?? "all");
+  const [localCustomer, setLocalCustomer] = useState(searchParams.get("customerId") ?? "all");
 
-  function updateParam(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== "_all") {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    startTransition(() => {
-      router.push(`?${params.toString()}`);
-    });
+  function applyFilters() {
+    const params = new URLSearchParams();
+    if (localQ.trim()) params.set("q", localQ.trim());
+    if (localPortfolio !== "all") params.set("portfolioId", localPortfolio);
+    if (localCustomer !== "all") params.set("customerId", localCustomer);
+    startTransition(() => router.push(`?${params.toString()}`));
+    setAnchorEl(null);
   }
 
-  function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      updateParam("q", e.target.value);
-    }, 350);
+  function clearFilters() {
+    setLocalQ("");
+    setLocalPortfolio("all");
+    setLocalCustomer("all");
   }
 
-  const dropdownFilters = (
-    <>
-      {!hidePortfolioFilter && (
-        <FormControl size="small" sx={{ width: { xs: "100%", sm: 176 } }}>
-          <InputLabel>Portafolio</InputLabel>
-          <Select
-            label="Portafolio"
-            defaultValue={searchParams.get("portfolioId") ?? "_all"}
-            onChange={(e) => updateParam("portfolioId", String(e.target.value))}
-          >
-            <MenuItem value="_all">Todos</MenuItem>
-            {portfolios.map((p) => (
-              <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      )}
+  // Count active filters
+  let activeCount = 0;
+  if (localQ.trim()) activeCount++;
+  if (localPortfolio !== "all") activeCount++;
+  if (localCustomer !== "all") activeCount++;
 
-      {!hideCustomerFilter && (
-        <FormControl size="small" sx={{ width: { xs: "100%", sm: 200 } }}>
-          <InputLabel>Cliente</InputLabel>
-          <Select
-            label="Cliente"
-            defaultValue={searchParams.get("customerId") ?? "_all"}
-            onChange={(e) => updateParam("customerId", String(e.target.value))}
-          >
-            <MenuItem value="_all">Todos</MenuItem>
-            {customers.map((c) => (
-              <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      )}
-    </>
-  );
+  // Chips
+  const chips: { label: string; onDelete: () => void }[] = [];
+  if (localQ.trim()) {
+    chips.push({ label: `"${localQ.trim()}"`, onDelete: () => setLocalQ("") });
+  }
+  if (localPortfolio !== "all") {
+    const name = portfolios.find((p) => String(p.id) === localPortfolio)?.name ?? localPortfolio;
+    chips.push({ label: name, onDelete: () => setLocalPortfolio("all") });
+  }
+  if (localCustomer !== "all") {
+    const name = customers.find((c) => String(c.id) === localCustomer)?.name ?? localCustomer;
+    chips.push({ label: name, onDelete: () => setLocalCustomer("all") });
+  }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      {/* Row: search + filter toggle (mobile) / search + dropdowns (desktop) */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
-        <TextField
+    <Box sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 1.5,
+      flexWrap: "wrap",
+      px: 2,
+      py: 1.25,
+      backgroundColor: "#fff",
+      border: "1px solid",
+      borderColor: "divider",
+      borderRadius: 2,
+      opacity: isPending ? 0.6 : 1,
+      transition: "opacity 150ms",
+    }}>
+      {/* Left: filter button + chips */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+        <Button
           size="small"
-          placeholder="Buscar planta..."
-          defaultValue={searchParams.get("q") ?? ""}
-          onChange={handleSearch}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                </InputAdornment>
-              ),
-            },
+          variant="outlined"
+          color="inherit"
+          startIcon={<FilterListOutlinedIcon />}
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{
+            borderColor: "#c3c6d7",
+            fontWeight: 600,
+            fontSize: "0.8125rem",
+            "&:hover": { borderColor: "#004ac6", color: "#004ac6" },
           }}
-          sx={{ width: { xs: "100%", sm: 200 } }}
-        />
+        >
+          Filtros
+          {activeCount > 0 && (
+            <Box component="span" sx={{
+              ml: 0.75,
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              backgroundColor: "#2563eb",
+              color: "#fff",
+              fontSize: "0.6875rem",
+              fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              {activeCount}
+            </Box>
+          )}
+        </Button>
 
-        {/* Desktop: inline dropdowns */}
-        {hasDropdownFilters && (
-          <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 1.5, alignItems: "center" }}>
-            {dropdownFilters}
-          </Box>
-        )}
-
-        {/* Mobile: toggle button */}
-        {hasDropdownFilters && (
-          <Badge
-            badgeContent={activeFilterCount}
-            color="primary"
-            sx={{ display: { xs: "flex", sm: "none" } }}
-          >
-            <Button
-              variant={showFilters ? "contained" : "outlined"}
-              size="small"
-              startIcon={<TuneIcon />}
-              onClick={() => setShowFilters((v) => !v)}
-              sx={{ minHeight: 40, borderColor: "#c3c6d7", color: showFilters ? undefined : "text.secondary" }}
-            >
-              Filtros
-            </Button>
-          </Badge>
-        )}
-
-        {isPending && (
-          <Typography variant="caption" color="text.secondary">
-            Filtrando...
-          </Typography>
-        )}
+        {chips.map((chip) => (
+          <Chip
+            key={chip.label}
+            label={chip.label}
+            size="small"
+            sx={{
+              backgroundColor: "#dbe1ff",
+              color: "#004ac6",
+              fontWeight: 600,
+              fontSize: "0.6875rem",
+              height: 24,
+            }}
+          />
+        ))}
       </Box>
 
-      {/* Mobile: collapsible dropdowns */}
-      {hasDropdownFilters && (
-        <Collapse in={showFilters} sx={{ display: { xs: "block", sm: "none" } }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, pt: 0.5 }}>
-            {dropdownFilters}
-          </Box>
-        </Collapse>
+      {/* Right: actions */}
+      {actions && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {actions}
+        </Box>
       )}
+
+      {/* Popover */}
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ paper: { sx: { borderRadius: 3, boxShadow: "0 8px 24px rgba(13,28,46,0.14)", mt: 1, p: 2.5, minWidth: 300 } } }}
+      >
+        <Typography fontSize="0.875rem" fontWeight={700} sx={{ mb: 2 }}>Filtros</Typography>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <TextField
+            size="small"
+            fullWidth
+            label="Buscar planta"
+            placeholder="Nombre o ID Solcor"
+            value={localQ}
+            onChange={(e) => setLocalQ(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") applyFilters(); }}
+            sx={{ "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "#c3c6d7" }, "&.Mui-focused fieldset": { borderColor: "#2563eb", borderWidth: 2 } } }}
+          />
+
+          {!hidePortfolioFilter && portfolios.length > 0 && (
+            <FormControl size="small" fullWidth>
+              <InputLabel sx={{ fontSize: "0.8125rem" }}>Portafolio</InputLabel>
+              <Select label="Portafolio" value={localPortfolio} onChange={(e) => setLocalPortfolio(String(e.target.value))} sx={selectSx}>
+                <MenuItem value="all" sx={{ fontSize: "0.8125rem" }}>Todos</MenuItem>
+                {portfolios.map((p) => (
+                  <MenuItem key={p.id} value={String(p.id)} sx={{ fontSize: "0.8125rem" }}>{p.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {customers.length > 0 && (
+            <FormControl size="small" fullWidth>
+              <InputLabel sx={{ fontSize: "0.8125rem" }}>Cliente</InputLabel>
+              <Select label="Cliente" value={localCustomer} onChange={(e) => setLocalCustomer(String(e.target.value))} sx={selectSx}>
+                <MenuItem value="all" sx={{ fontSize: "0.8125rem" }}>Todos</MenuItem>
+                {customers.map((c) => (
+                  <MenuItem key={c.id} value={String(c.id)} sx={{ fontSize: "0.8125rem" }}>{c.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </Box>
+
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2, pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
+          <Button size="small" color="inherit" onClick={clearFilters} sx={{ fontSize: "0.8125rem" }}>Limpiar</Button>
+          <Button size="small" variant="contained" onClick={applyFilters} sx={{ fontSize: "0.8125rem" }}>Aplicar</Button>
+        </Box>
+      </Popover>
     </Box>
   );
 }

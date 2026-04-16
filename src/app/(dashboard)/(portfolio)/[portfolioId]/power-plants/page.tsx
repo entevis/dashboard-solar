@@ -52,18 +52,19 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "flex-end" }, justifyContent: "space-between", gap: 2, flexShrink: 0 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700} color="text.primary">Plantas Solares</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            {plants.length} {plants.length === 1 ? "planta encontrada" : "plantas encontradas"}
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <PlantFilterBar portfolios={[]} customers={customers} hidePortfolioFilter />
-          {canEdit && <ExportPlantsButton />}
-        </Box>
+      <Box>
+        <Typography variant="h5" fontWeight={700} color="text.primary">Plantas Solares</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+          {plants.length} {plants.length === 1 ? "planta encontrada" : "plantas encontradas"}
+        </Typography>
       </Box>
+
+      <PlantFilterBar
+        portfolios={[]}
+        customers={customers}
+        hidePortfolioFilter
+        actions={canEdit ? <ExportPlantsButton /> : undefined}
+      />
 
       <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
         {plants.length === 0 ? (
