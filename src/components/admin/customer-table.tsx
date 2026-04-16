@@ -25,7 +25,7 @@ interface Customer {
   _count: { powerPlants: number; users: number };
 }
 
-type SortKey = "name" | "rut" | "altName" | "plants" | "users";
+type SortKey = "name" | "rut" | "plants" | "users";
 type SortDir = "asc" | "desc";
 
 function sortCustomers(customers: Customer[], key: SortKey, dir: SortDir): Customer[] {
@@ -34,7 +34,6 @@ function sortCustomers(customers: Customer[], key: SortKey, dir: SortDir): Custo
     switch (key) {
       case "name":    cmp = a.name.localeCompare(b.name, "es");                              break;
       case "rut":     cmp = a.rut.localeCompare(b.rut, "es");                               break;
-      case "altName": cmp = (a.altName ?? "").localeCompare(b.altName ?? "", "es");          break;
       case "plants":  cmp = a._count.powerPlants - b._count.powerPlants;                    break;
       case "users":   cmp = a._count.users - b._count.users;                                break;
     }
@@ -93,7 +92,6 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
                 >
                   <TableCell><TableSortLabel {...col("name")}>Razón Social</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("rut")}>RUT</TableSortLabel></TableCell>
-                  <TableCell><TableSortLabel {...col("altName")}>Nombre alternativo</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("plants")} sx={{ justifyContent: "center", width: "100%" }}>Plantas</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("users")} sx={{ justifyContent: "center", width: "100%" }}>Usuarios</TableSortLabel></TableCell>
                   <TableCell sx={{ width: 48 }} />
@@ -103,8 +101,7 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
                 {paginated.map((c) => (
                   <TableRow key={c.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
                     <TableCell sx={{ fontWeight: 500 }}>{c.name}</TableCell>
-                    <TableCell sx={{ fontFamily: "monospace" }}>{formatRut(c.rut)}</TableCell>
-                    <TableCell sx={{ color: "text.secondary" }}>{c.altName ?? "—"}</TableCell>
+                    <TableCell>{formatRut(c.rut)}</TableCell>
                     <TableCell align="center">
                       <Chip label={c._count.powerPlants} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.6875rem", height: 20 }} />
                     </TableCell>
