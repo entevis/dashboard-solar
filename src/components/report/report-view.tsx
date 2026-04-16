@@ -218,12 +218,12 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
         <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", p: "14px 18px", display: "flex", alignItems: "center", gap: 2.5, boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
           <Box>
             <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", mb: 0.25 }}>Periodo</Typography>
-            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{periodLabel}</Typography>
+            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", whiteSpace: "nowrap" }}>{periodLabel}</Typography>
           </Box>
-          <Box sx={{ width: 1, height: 36, background: "#E5EAF2" }} />
+          <Box sx={{ width: 1, height: 36, background: "#E5EAF2", flexShrink: 0 }} />
           <Box>
             <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", mb: 0.25 }}>Emitido</Typography>
-            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{fechaCreacion ? new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", whiteSpace: "nowrap", textTransform: "capitalize" }}>{fechaCreacion ? new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
           </Box>
         </Box>
       </Box>
