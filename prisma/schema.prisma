@@ -165,6 +165,7 @@ model PowerPlant {
   portfolio         Portfolio              @relation(fields: [portfolioId], references: [id])
   customer          Customer               @relation(fields: [customerId], references: [id])
   address           Address?
+  plantNames        PlantName[]
   generationReports GenerationReport[]
   invoices          Invoice[]
   contingencies     Contingency[]
@@ -233,10 +234,26 @@ model UserPortfolioPermission {
   @@map("user_portfolio_permissions")
 }
 
+model PlantName {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  powerPlantId Int?     @map("power_plant_id")
+  active       Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  powerPlant        PowerPlant?        @relation(fields: [powerPlantId], references: [id])
+  generationReports GenerationReport[]
+
+  @@index([powerPlantId])
+  @@map("plant_names")
+}
+
 model GenerationReport {
   id           Int      @id @default(autoincrement())
   powerPlantId Int?     @map("power_plant_id")
   customerId   Int?     @map("customer_id")
+  plantNameId  Int?     @map("plant_name_id")
   periodMonth  Int      @map("period_month")
   periodYear   Int      @map("period_year")
   fileUrl      String   @map("file_url")
@@ -250,12 +267,14 @@ model GenerationReport {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  powerPlant PowerPlant? @relation(fields: [powerPlantId], references: [id])
-  customer   Customer?   @relation(fields: [customerId], references: [id])
+  powerPlant   PowerPlant? @relation(fields: [powerPlantId], references: [id])
+  customer     Customer?   @relation(fields: [customerId], references: [id])
+  plantNameRef PlantName?  @relation(fields: [plantNameId], references: [id])
 
   @@unique([powerPlantId, periodMonth, periodYear])
   @@index([powerPlantId])
   @@index([customerId])
+  @@index([plantNameId])
   @@map("generation_reports")
 }
 
