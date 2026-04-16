@@ -37,6 +37,7 @@ export interface SerializedInvoice {
   reportUrl: string | null;
   reportPeriodMonth: number | null;
   reportPeriodYear: number | null;
+  reportPlantName: string | null;
 }
 
 function formatDate(dateStr: string | null) {
@@ -71,15 +72,16 @@ const VALID_SORT_KEYS: BillingSortKey[] = ["number", "customer", "issueDate", "d
 
 const W = {
   number: 95,
-  customer: 170,
-  issueDate: 95,
-  dueDate: 95,
-  total: 105,
-  status: 125,
-  reportPeriod: 85,
-  kwh: 110,
-  co2: 110,
-  actions: 65,
+  customer: 150,
+  issueDate: 90,
+  dueDate: 90,
+  total: 100,
+  status: 115,
+  plantName: 150,
+  reportPeriod: 80,
+  kwh: 100,
+  co2: 100,
+  actions: 60,
 };
 
 const truncSx = {
@@ -145,6 +147,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
             >
               <TableCell sx={{ width: W.number }}><TableSortLabel {...col("number")}>N° Factura</TableSortLabel></TableCell>
               <TableCell sx={{ width: W.customer }}><TableSortLabel {...col("customer")}>Cliente</TableSortLabel></TableCell>
+              <TableCell sx={{ width: W.plantName }}>Planta</TableCell>
               <TableCell sx={{ width: W.issueDate }}><TableSortLabel {...col("issueDate")}>Emisión</TableSortLabel></TableCell>
               <TableCell sx={{ width: W.dueDate }}><TableSortLabel {...col("dueDate")}>Vencimiento</TableSortLabel></TableCell>
               <TableCell sx={{ width: W.total }} align="right">
@@ -178,6 +181,13 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                     <Tooltip title={`${customerName}${inv.clientTaxId ? ` · ${inv.clientTaxId}` : ""}`} placement="top" enterDelay={400}>
                       <span style={{ ...truncSx, display: "block", fontWeight: 500 }}>{customerName}</span>
                     </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ ...cellSx, color: "text.secondary" }}>
+                    {inv.reportPlantName ? (
+                      <Tooltip title={inv.reportPlantName} placement="top" enterDelay={400}>
+                        <span style={truncSx}>{inv.reportPlantName}</span>
+                      </Tooltip>
+                    ) : <span style={{ color: "#737686" }}>—</span>}
                   </TableCell>
                   <TableCell sx={{ ...cellSx, color: "text.secondary" }}>{formatDate(inv.issueDate)}</TableCell>
                   <TableCell sx={{ ...cellSx, color: "text.secondary" }}>{formatDate(inv.dueDate)}</TableCell>

@@ -121,7 +121,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const reports = invoiceDuemintIds.length > 0
     ? await prisma.generationReport.findMany({
         where: { duemintId: { in: invoiceDuemintIds }, active: 1 },
-        select: { duemintId: true, kwhGenerated: true, co2Avoided: true, fileUrl: true, periodMonth: true, periodYear: true },
+        select: { duemintId: true, kwhGenerated: true, co2Avoided: true, fileUrl: true, periodMonth: true, periodYear: true, plantName: true },
       })
     : [];
   const reportByDuemintId = new Map(reports.map((r) => [r.duemintId, r]));
@@ -137,6 +137,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       reportUrl: report?.fileUrl ?? null,
       reportPeriodMonth: report?.periodMonth ?? null,
       reportPeriodYear: report?.periodYear ?? null,
+      reportPlantName: report?.plantName ?? null,
     };
   });
 
