@@ -143,6 +143,7 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
   const [dailyView, setDailyView] = useState<"total" | "inverters">("total");
   const [histView, setHistView] = useState<"gen" | "rad">("gen");
   const [search, setSearch] = useState("");
+  const [showAllInverters, setShowAllInverters] = useState(false);
 
   // Styles
   const kpiSx = {
@@ -335,7 +336,7 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
             <Typography sx={{ fontSize: "0.8125rem", color: "#64748B" }}>Desempeño individual de cada equipo del sistema.</Typography>
           </Box>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2.5 }}>
-            {tablaRend.map((inv, idx) => {
+            {(showAllInverters ? tablaRend : tablaRend.slice(0, 2)).map((inv, idx) => {
               const code = str(inv, "inversor");
               const modelo = inversores.find((i) => str(i, "codigo") === code);
               const color = idx === 0 ? brandBlue : secondary;
@@ -379,6 +380,32 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
               );
             })}
           </Box>
+          {tablaRend.length > 2 && !showAllInverters && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                color="inherit"
+                onClick={() => setShowAllInverters(true)}
+                sx={{ borderColor: "#E5EAF2", color: "#334155", fontSize: "0.8125rem", fontWeight: 500, borderRadius: "10px", px: 3, "&:hover": { borderColor: brandBlue, color: brandBlue, background: "#EAF1FF" } }}
+              >
+                Ver {tablaRend.length - 2} inversor{tablaRend.length - 2 > 1 ? "es" : ""} más
+              </Button>
+            </Box>
+          )}
+          {tablaRend.length > 2 && showAllInverters && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                color="inherit"
+                onClick={() => setShowAllInverters(false)}
+                sx={{ borderColor: "#E5EAF2", color: "#64748B", fontSize: "0.8125rem", fontWeight: 500, borderRadius: "10px", px: 3, "&:hover": { borderColor: "#c3c6d7" } }}
+              >
+                Ver menos
+              </Button>
+            </Box>
+          )}
         </>
       )}
 
