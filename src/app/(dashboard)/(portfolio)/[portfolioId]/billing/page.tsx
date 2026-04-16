@@ -5,7 +5,6 @@ import { formatCLP } from "@/lib/utils/formatters";
 import { BillingFilters } from "@/components/billing/billing-filters";
 import { BillingTable, type BillingSortKey } from "@/components/billing/billing-table";
 import { ImportInvoiceDialog } from "@/components/billing/import-invoice-dialog";
-import { SyncSinceDialog } from "@/components/billing/sync-since-dialog";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
@@ -166,7 +165,6 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
         isMaestro={isMaestro}
         actions={isMaestro && maestroPortfolios.length > 0 ? (
           <>
-            <SyncSinceDialog portfolioId={pid} />
             <ImportInvoiceDialog portfolios={maestroPortfolios} />
           </>
         ) : undefined}

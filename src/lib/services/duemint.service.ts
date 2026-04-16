@@ -105,12 +105,12 @@ export async function fetchInvoiceById(companyId: string, invoiceId: string, por
   return res.json();
 }
 
-export async function fetchInvoicesSince(companyId: string, since: string, portfolioId?: number): Promise<DuemintInvoice[]> {
+export async function fetchInvoicesSince(companyId: string, since: string, portfolioId?: number, dateBy = 2): Promise<DuemintInvoice[]> {
   const all: DuemintInvoice[] = [];
   let page = 1;
 
   while (true) {
-    const url = `${BASE_URL}/collection-documents?since=${since}&dateBy=2&resultsPerPage=100&page=${page}`;
+    const url = `${BASE_URL}/collection-documents?since=${since}&dateBy=${dateBy}&resultsPerPage=100&page=${page}`;
     const res = await fetch(url, { headers: getHeaders(companyId, portfolioId) });
 
     if (!res.ok) {
