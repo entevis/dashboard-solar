@@ -43,11 +43,10 @@ export default async function BillingPage({
   const parsedSize = parseInt(params.size ?? "");
   const pageSize: PageSize = (VALID_SIZES as readonly number[]).includes(parsedSize) ? parsedSize as PageSize : PAGE_SIZE;
 
-  const now = new Date();
-  const month = Math.min(12, Math.max(1, parseInt(params.month ?? "") || now.getMonth() + 1));
-  const year = parseInt(params.year ?? "") || now.getFullYear();
-  const periodStart = new Date(year, month - 1, 1);
-  const periodEnd = new Date(year, month, 1);
+  const rawMonth = params.month ? parseInt(params.month) : null;
+  const rawYear = params.year ? parseInt(params.year) : null;
+  const month = rawMonth && rawMonth >= 1 && rawMonth <= 12 ? rawMonth : null;
+  const year = rawYear && rawYear >= 2020 ? rawYear : null;
 
   const VALID_STATUSES = ["pagada", "porVencer", "vencida", "notaCredito"];
   const status = VALID_STATUSES.includes(params.status ?? "") ? params.status! : "all";
@@ -56,18 +55,22 @@ export default async function BillingPage({
   const sortDir = params.sortDir === "asc" ? "asc" : "desc";
 
   const plantFilter = await buildPlantAccessFilter(user);
-  const periodFilter = { gte: periodStart, lt: periodEnd };
-  let invoiceWhere: Record<string, unknown> = { active: 1, issueDate: periodFilter };
+  let invoiceWhere: Record<string, unknown> = { active: 1 };
+  if (month && year) {
+    invoiceWhere.issueDate = { gte: new Date(year, month - 1, 1), lt: new Date(year, month, 1) };
+  } else if (year) {
+    invoiceWhere.issueDate = { gte: new Date(year, 0, 1), lt: new Date(year + 1, 0, 1) };
+  }
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
-    invoiceWhere = { active: 1, customerId: user.customerId, issueDate: periodFilter };
+    invoiceWhere.customerId = user.customerId;
   } else if (user.role === UserRole.OPERATIVO) {
     const customerIds = await prisma.powerPlant.findMany({
       where: { ...plantFilter, active: 1 },
       select: { customerId: true },
       distinct: ["customerId"],
     }).then((rows) => rows.map((r) => r.customerId));
-    invoiceWhere = { active: 1, customerId: { in: customerIds }, issueDate: periodFilter };
+    invoiceWhere = { ...invoiceWhere, customerId: { in: customerIds } };
   }
 
   // statusCode: 1=Pagada, 2=Por vencer, 3=Vencida, 4=Documento (nota de crédito)
@@ -155,7 +158,7 @@ export default async function BillingPage({
       <Box>
         <Typography variant="h5" fontWeight={700} color="text.primary">Facturas y reportes</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-          {total} {total === 1 ? "factura" : "facturas"} · {MONTHS[month - 1]} {year}
+          {total} {total === 1 ? "factura" : "facturas"}{month && year ? ` · ${MONTHS[month - 1]} ${year}` : year ? ` · ${year}` : ""}
         </Typography>
       </Box>
 
