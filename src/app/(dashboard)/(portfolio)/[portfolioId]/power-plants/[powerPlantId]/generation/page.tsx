@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { formatKwh } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { BillingTable, type BillingSortKey } from "@/components/billing/billing-table";
+import { GenerationCharts } from "@/components/generation/generation-charts";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Tabs from "@mui/material/Tabs";
@@ -100,15 +101,34 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
     : [];
   const reportByDuemintId = new Map(reports.map((r) => [r.duemintId, r]));
 
-  // KPIs from all reports for this plant
+  // KPIs + chart data from all reports for this plant
   const allReports = plantNameIds.length > 0
     ? await prisma.generationReport.findMany({
         where: { plantNameId: { in: plantNameIds }, active: 1 },
-        select: { kwhGenerated: true, co2Avoided: true },
+        select: { kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true },
       })
     : [];
   const totalKwh = allReports.reduce((sum, r) => sum + (r.kwhGenerated ?? 0), 0);
   const totalCo2 = allReports.reduce((sum, r) => sum + (r.co2Avoided ?? 0), 0);
+
+  // Aggregate by month for charts
+  const monthlyMap = new Map<string, { month: number; year: number; kwh: number; co2: number }>();
+  for (const r of allReports) {
+    const key = `${r.periodYear}-${r.periodMonth}`;
+    const existing = monthlyMap.get(key);
+    if (existing) {
+      existing.kwh += r.kwhGenerated ?? 0;
+      existing.co2 += r.co2Avoided ?? 0;
+    } else {
+      monthlyMap.set(key, {
+        month: r.periodMonth,
+        year: r.periodYear,
+        kwh: r.kwhGenerated ?? 0,
+        co2: r.co2Avoided ?? 0,
+      });
+    }
+  }
+  const chartData = Array.from(monthlyMap.values());
 
   const serializedInvoices = invoices.map((inv) => {
     const report = inv.duemintId ? reportByDuemintId.get(inv.duemintId) ?? null : null;
@@ -153,6 +173,8 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
           </Card>
         ))}
       </Box>
+
+      <GenerationCharts data={chartData} />
 
       <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {total === 0 ? (
