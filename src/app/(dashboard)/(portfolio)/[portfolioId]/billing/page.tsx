@@ -46,10 +46,10 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const parsedSize = parseInt(sp.size ?? "");
   const pageSize: PageSize = (VALID_SIZES as readonly number[]).includes(parsedSize) ? parsedSize as PageSize : PAGE_SIZE;
 
-  const rawMonth = sp.month ? parseInt(sp.month) : null;
-  const rawYear = sp.year ? parseInt(sp.year) : null;
-  const month = rawMonth && rawMonth >= 1 && rawMonth <= 12 ? rawMonth : null;
-  const year = rawYear && rawYear >= 2020 ? rawYear : null;
+  const now = new Date();
+  const invoiceNumber = sp.invoiceNumber?.trim() ?? "";
+  const month = Math.min(12, Math.max(1, parseInt(sp.month ?? "") || now.getMonth() + 1));
+  const year = parseInt(sp.year ?? "") || now.getFullYear();
 
   const VALID_STATUSES = ["pagada", "porVencer", "vencida", "notaCredito"];
   const status = VALID_STATUSES.includes(sp.status ?? "") ? sp.status! : "all";
@@ -58,14 +58,11 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const sortDir = sp.sortDir === "asc" ? "asc" : "desc";
 
   let invoiceWhere: Record<string, unknown> = { active: 1, portfolioId: pid };
-  if (month && year) {
+  // When searching by invoice number, skip date filter to search across all dates
+  if (!invoiceNumber) {
     const periodStart = new Date(year, month - 1, 1);
     const periodEnd = new Date(year, month, 1);
     invoiceWhere.issueDate = { gte: periodStart, lt: periodEnd };
-  } else if (year) {
-    const yearStart = new Date(year, 0, 1);
-    const yearEnd = new Date(year + 1, 0, 1);
-    invoiceWhere.issueDate = { gte: yearStart, lt: yearEnd };
   }
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
@@ -85,7 +82,6 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     notaCredito: { statusCode: 4 },
   };
   let tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
-  const invoiceNumber = sp.invoiceNumber?.trim();
   if (invoiceNumber) {
     tableWhere = { ...tableWhere, number: { contains: invoiceNumber, mode: "insensitive" as const } };
   }
@@ -158,7 +154,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       <Box>
         <Typography variant="h5" fontWeight={700} color="text.primary">Facturas y reportes</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-          {total} {total === 1 ? "factura" : "facturas"}{month && year ? ` · ${MONTHS[month - 1]} ${year}` : year ? ` · ${year}` : ""}
+          {total} {total === 1 ? "factura" : "facturas"}{invoiceNumber ? ` · Buscando "${invoiceNumber}"` : ` · ${MONTHS[month - 1]} ${year}`}
         </Typography>
       </Box>
 

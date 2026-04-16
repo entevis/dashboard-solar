@@ -43,10 +43,10 @@ export default async function BillingPage({
   const parsedSize = parseInt(params.size ?? "");
   const pageSize: PageSize = (VALID_SIZES as readonly number[]).includes(parsedSize) ? parsedSize as PageSize : PAGE_SIZE;
 
-  const rawMonth = params.month ? parseInt(params.month) : null;
-  const rawYear = params.year ? parseInt(params.year) : null;
-  const month = rawMonth && rawMonth >= 1 && rawMonth <= 12 ? rawMonth : null;
-  const year = rawYear && rawYear >= 2020 ? rawYear : null;
+  const now = new Date();
+  const invoiceNumber = params.invoiceNumber?.trim() ?? "";
+  const month = Math.min(12, Math.max(1, parseInt(params.month ?? "") || now.getMonth() + 1));
+  const year = parseInt(params.year ?? "") || now.getFullYear();
 
   const VALID_STATUSES = ["pagada", "porVencer", "vencida", "notaCredito"];
   const status = VALID_STATUSES.includes(params.status ?? "") ? params.status! : "all";
@@ -56,10 +56,10 @@ export default async function BillingPage({
 
   const plantFilter = await buildPlantAccessFilter(user);
   let invoiceWhere: Record<string, unknown> = { active: 1 };
-  if (month && year) {
-    invoiceWhere.issueDate = { gte: new Date(year, month - 1, 1), lt: new Date(year, month, 1) };
-  } else if (year) {
-    invoiceWhere.issueDate = { gte: new Date(year, 0, 1), lt: new Date(year + 1, 0, 1) };
+  if (!invoiceNumber) {
+    const periodStart = new Date(year, month - 1, 1);
+    const periodEnd = new Date(year, month, 1);
+    invoiceWhere.issueDate = { gte: periodStart, lt: periodEnd };
   }
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
@@ -81,7 +81,6 @@ export default async function BillingPage({
     notaCredito: { statusCode: 4 },
   };
   let tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
-  const invoiceNumber = params.invoiceNumber?.trim();
   if (invoiceNumber) {
     tableWhere = { ...tableWhere, number: { contains: invoiceNumber, mode: "insensitive" as const } };
   }
@@ -158,7 +157,7 @@ export default async function BillingPage({
       <Box>
         <Typography variant="h5" fontWeight={700} color="text.primary">Facturas y reportes</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-          {total} {total === 1 ? "factura" : "facturas"}{month && year ? ` · ${MONTHS[month - 1]} ${year}` : year ? ` · ${year}` : ""}
+          {total} {total === 1 ? "factura" : "facturas"}{invoiceNumber ? ` · Buscando "${invoiceNumber}"` : ` · ${MONTHS[month - 1]} ${year}`}
         </Typography>
       </Box>
 

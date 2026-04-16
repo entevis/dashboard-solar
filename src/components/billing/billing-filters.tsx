@@ -44,8 +44,8 @@ const selectSx = {
 interface FilterOption { id: number; name: string }
 
 interface Props {
-  month: number | null;
-  year: number | null;
+  month: number;
+  year: number;
   status: string;
   plants?: FilterOption[];
   isMaestro?: boolean;
@@ -58,27 +58,32 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
   const [isPending, startTransition] = useTransition();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const [localMonth, setLocalMonth] = useState(month ? String(month) : "all");
-  const [localYear, setLocalYear] = useState(year ? String(year) : "all");
+  const [localMonth, setLocalMonth] = useState(String(month));
+  const [localYear, setLocalYear] = useState(String(year));
   const [localStatus, setLocalStatus] = useState(status);
   const [localPlant, setLocalPlant] = useState(searchParams.get("plantNameId") ?? "all");
   const [localInvoiceNumber, setLocalInvoiceNumber] = useState(searchParams.get("invoiceNumber") ?? "");
 
   function applyFilters() {
     const params = new URLSearchParams();
-    if (localMonth !== "all") params.set("month", localMonth);
-    if (localYear !== "all") params.set("year", localYear);
+    if (localInvoiceNumber.trim()) {
+      // When searching by number, skip date filter
+      params.set("invoiceNumber", localInvoiceNumber.trim());
+    } else {
+      params.set("month", localMonth);
+      params.set("year", localYear);
+    }
     if (localStatus !== "all") params.set("status", localStatus);
     if (localPlant !== "all") params.set("plantNameId", localPlant);
-    if (localInvoiceNumber.trim()) params.set("invoiceNumber", localInvoiceNumber.trim());
     params.set("page", "1");
     startTransition(() => router.push(`?${params.toString()}`));
     setAnchorEl(null);
   }
 
   function clearFilters() {
-    setLocalMonth("all");
-    setLocalYear("all");
+    const now = new Date();
+    setLocalMonth(String(now.getMonth() + 1));
+    setLocalYear(String(now.getFullYear()));
     setLocalStatus("all");
     setLocalPlant("all");
     setLocalInvoiceNumber("");
@@ -86,20 +91,16 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
 
   // Count active non-default filters
   let activeCount = 0;
-  if (localYear !== "all") activeCount++;
-  if (localMonth !== "all") activeCount++;
   if (localStatus !== "all") activeCount++;
   if (localPlant !== "all") activeCount++;
   if (localInvoiceNumber.trim()) activeCount++;
 
   // Chips for active filters
   const chips: { label: string }[] = [];
-  if (localYear !== "all" && localMonth !== "all") {
+  if (localInvoiceNumber.trim()) {
+    chips.push({ label: `N° ${localInvoiceNumber.trim()}` });
+  } else {
     chips.push({ label: `${MONTHS[parseInt(localMonth) - 1]} ${localYear}` });
-  } else if (localYear !== "all") {
-    chips.push({ label: `Año ${localYear}` });
-  } else if (localMonth !== "all") {
-    chips.push({ label: MONTHS[parseInt(localMonth) - 1] });
   }
   if (localStatus !== "all") {
     const statusLabel = STATUS_OPTIONS.find((s) => s.value === localStatus)?.label ?? localStatus;
@@ -108,9 +109,6 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
   if (localPlant !== "all") {
     const plantLabel = plants.find((p) => String(p.id) === localPlant)?.name ?? `Planta #${localPlant}`;
     chips.push({ label: plantLabel });
-  }
-  if (localInvoiceNumber.trim()) {
-    chips.push({ label: `N° ${localInvoiceNumber.trim()}` });
   }
 
   return (
@@ -214,7 +212,6 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
             <FormControl size="small" fullWidth>
               <InputLabel sx={{ fontSize: "0.8125rem" }}>Mes</InputLabel>
               <Select label="Mes" value={localMonth} onChange={(e) => setLocalMonth(String(e.target.value))} sx={selectSx}>
-                <MenuItem value="all" sx={{ fontSize: "0.8125rem" }}>Todos</MenuItem>
                 {MONTHS.map((name, i) => (
                   <MenuItem key={i + 1} value={String(i + 1)} sx={{ fontSize: "0.8125rem" }}>{name}</MenuItem>
                 ))}
@@ -223,7 +220,6 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
             <FormControl size="small" fullWidth>
               <InputLabel sx={{ fontSize: "0.8125rem" }}>Año</InputLabel>
               <Select label="Año" value={localYear} onChange={(e) => setLocalYear(String(e.target.value))} sx={selectSx}>
-                <MenuItem value="all" sx={{ fontSize: "0.8125rem" }}>Todos</MenuItem>
                 {getYears().map((y) => (
                   <MenuItem key={y} value={String(y)} sx={{ fontSize: "0.8125rem" }}>{y}</MenuItem>
                 ))}
