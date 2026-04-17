@@ -46,16 +46,18 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
 
   const navSections: NavSection[] = [
     {
-      roles: ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"],
+      roles: ["MAESTRO"],
       items: [
-        { label: "Dashboard",  href: "/dashboard",       icon: DashboardOutlinedIcon },
-        { label: "Plantas",    href: p("/power-plants"),  icon: BoltOutlinedIcon },
+        { label: "Resumen general",        href: "/dashboard",       icon: DashboardOutlinedIcon },
+        { label: "Resumen del portafolio",  href: p("/overview"),     icon: AssessmentOutlinedIcon },
+        { label: "Plantas",                 href: p("/power-plants"), icon: BoltOutlinedIcon },
       ],
     },
     {
-      roles: ["MAESTRO"],
+      roles: ["OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
-        { label: "Resumen del portafolio", href: p("/overview"), icon: AssessmentOutlinedIcon },
+        { label: "Resumen general",  href: "/dashboard",       icon: DashboardOutlinedIcon },
+        { label: "Plantas",          href: p("/power-plants"),  icon: BoltOutlinedIcon },
       ],
     },
     {
