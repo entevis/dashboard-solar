@@ -141,6 +141,8 @@ export async function GET(request: NextRequest) {
           ? await prisma.plantName.findFirst({ where: { name: String((rawJson as Record<string, unknown>).planta && (((rawJson as Record<string, unknown>).planta) as Record<string, unknown>).nombre_visible) || "" } })
           : null;
 
+        const resolvedPowerPlantId = plantNameEntry?.powerPlantId ?? null;
+
         if (existingReport) {
           const updateData: Record<string, unknown> = {};
           if (kwhGenerated != null && existingReport.kwhGenerated == null) updateData.kwhGenerated = kwhGenerated;
@@ -149,6 +151,12 @@ export async function GET(request: NextRequest) {
           if (existingReport.periodMonth !== periodMonth || existingReport.periodYear !== periodYear) {
             updateData.periodMonth = periodMonth;
             updateData.periodYear = periodYear;
+          }
+          if (!existingReport.powerPlantId && resolvedPowerPlantId) {
+            updateData.powerPlantId = resolvedPowerPlantId;
+          }
+          if (!existingReport.plantNameId && plantNameEntry) {
+            updateData.plantNameId = plantNameEntry.id;
           }
           if (Object.keys(updateData).length > 0) {
             await prisma.generationReport.update({ where: { duemintId }, data: updateData });
@@ -164,6 +172,7 @@ export async function GET(request: NextRequest) {
           await prisma.generationReport.create({
             data: {
               customerId: customer.id,
+              powerPlantId: resolvedPowerPlantId,
               periodMonth,
               periodYear,
               fileUrl: reportUrl,
