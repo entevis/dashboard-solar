@@ -26,12 +26,14 @@ export async function GET(request: NextRequest) {
       portfolio: { select: { name: true } },
       customer: { select: { name: true } },
       address: true,
+      plantNames: { where: { active: 1 }, select: { name: true }, orderBy: { name: "asc" } },
     },
     orderBy: { name: "asc" },
   });
 
   const rows = plants.map((p) => ({
     "Nombre": p.name,
+    "Nombre Reporte": p.plantNames.map((pn) => pn.name).join(", "),
     "Portafolio": p.portfolio.name,
     "Cliente": p.customer.name,
     "Estado": p.status === "active" ? "Activa" : p.status === "maintenance" ? "En mantenimiento" : p.status,

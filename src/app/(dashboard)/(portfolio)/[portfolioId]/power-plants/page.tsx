@@ -36,6 +36,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
         portfolio: { select: { name: true } },
         customer: { select: { name: true } },
         address: true,
+        plantNames: { where: { active: 1 }, select: { name: true }, orderBy: { name: "asc" } },
       },
       orderBy: { name: "asc" },
     }),

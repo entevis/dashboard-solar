@@ -43,6 +43,7 @@ interface Plant {
   address: PlantAddress | null;
   portfolio: { name: string };
   customer: { name: string };
+  plantNames: { name: string }[];
 }
 
 interface Option { id: number; name: string }
@@ -54,7 +55,7 @@ interface PlantTableProps {
   canEdit: boolean;
 }
 
-type SortKey = "solcorId" | "name" | "city" | "distributorCompany" | "tariffId" | "startDate" | "durationYears" | "capacityKw" | "specificYield" | "status";
+type SortKey = "solcorId" | "name" | "plantNameLabel" | "city" | "distributorCompany" | "tariffId" | "startDate" | "durationYears" | "capacityKw" | "specificYield" | "status";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZES = [15, 25, 50];
@@ -81,6 +82,7 @@ function getValue(plant: Plant, key: SortKey): string | number | null {
   switch (key) {
     case "solcorId":          return plant.solcorId ?? "";
     case "name":              return plant.name;
+    case "plantNameLabel":    return plant.plantNames.map((p) => p.name).join(", ") || "";
     case "city":              return plant.city ?? plant.location ?? "";
     case "distributorCompany": return plant.distributorCompany ?? "";
     case "tariffId":          return plant.tariffId ?? "";
@@ -134,7 +136,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
   }
 
   // Fixed column widths (px) — keeps layout stable across sort changes
-  const W = { solcorId: 100, name: 200, city: 130, dist: 140, tariff: 110, date: 120, dur: 100, kw: 110, yield: 130, status: 100, actions: 40 };
+  const W = { solcorId: 100, name: 200, plantName: 180, city: 130, dist: 140, tariff: 110, date: 120, dur: 100, kw: 110, yield: 130, status: 100, actions: 40 };
 
   const headSx = (w: number, align?: "right" | "center") => ({
     width: w, maxWidth: w, minWidth: w,
@@ -240,6 +242,9 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
               <TableCell sx={headSx(W.name)}>
                 <TableSortLabel {...col("name")}>Nombre Planta</TableSortLabel>
               </TableCell>
+              <TableCell sx={headSx(W.plantName)}>
+                <TableSortLabel {...col("plantNameLabel")}>Nombre Reporte</TableSortLabel>
+              </TableCell>
               <TableCell sx={headSx(W.city)}>
                 <TableSortLabel {...col("city")}>Comuna</TableSortLabel>
               </TableCell>
@@ -290,6 +295,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
                     </Link>
                   </Tooltip>
                 </TableCell>
+                <TruncCell value={plant.plantNames.map((p) => p.name).join(", ") || null} width={W.plantName} />
                 <TruncCell value={plant.city ?? plant.location} width={W.city} />
                 <TruncCell value={plant.distributorCompany} width={W.dist} />
                 <TruncCell value={plant.tariffId} width={W.tariff} />
