@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -32,6 +32,31 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    // Detect errors from query params (?error=session)
+    const url = new URL(window.location.href);
+    const qError = url.searchParams.get("error");
+    if (qError === "session") {
+      setError("Tu sesión ha expirado o el enlace ya no es válido. Solicita uno nuevo.");
+      window.history.replaceState(null, "", "/login");
+      return;
+    }
+
+    // Detect errors from hash fragment (#error=access_denied&error_code=otp_expired...)
+    if (window.location.hash) {
+      const hash = new URLSearchParams(window.location.hash.substring(1));
+      const errorCode = hash.get("error_code");
+      if (errorCode === "otp_expired") {
+        setError("El enlace ha expirado o ya fue utilizado. Solicita uno nuevo desde \"¿Olvidaste tu contraseña?\".");
+      } else if (hash.get("error")) {
+        setError("El enlace no es válido. Solicita uno nuevo desde \"¿Olvidaste tu contraseña?\".");
+      }
+      if (hash.get("error")) {
+        window.history.replaceState(null, "", "/login");
+      }
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
