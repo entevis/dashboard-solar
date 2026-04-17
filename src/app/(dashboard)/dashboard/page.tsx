@@ -129,7 +129,7 @@ async function getClienteDashboardData(customerId: number, customerName: string)
       where: { ...reportWhere, periodYear: currentYear.year },
       select: {
         kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true,
-        powerPlantId: true,
+        powerPlantId: true, duemintId: true,
         plantNameRef: { select: { powerPlantId: true } },
       },
     }),
@@ -221,17 +221,18 @@ async function getClienteDashboardData(customerId: number, customerName: string)
     .sort((a, b) => a.month - b.month);
 
   // Per-plant stats — resolve powerPlantId through plantNameRef when direct FK is null
-  const plantStatsMap = new Map<number, { kwh: number; co2: number; lastMonth: number; lastYear: number }>();
+  const plantStatsMap = new Map<number, { kwh: number; co2: number; lastMonth: number; lastYear: number; lastDuemintId: string | null }>();
   for (const r of reportsYear) {
     const resolvedPlantId = r.powerPlantId ?? r.plantNameRef?.powerPlantId;
     if (!resolvedPlantId) continue;
-    const entry = plantStatsMap.get(resolvedPlantId) ?? { kwh: 0, co2: 0, lastMonth: 0, lastYear: 0 };
+    const entry = plantStatsMap.get(resolvedPlantId) ?? { kwh: 0, co2: 0, lastMonth: 0, lastYear: 0, lastDuemintId: null };
     entry.kwh += r.kwhGenerated ?? 0;
     entry.co2 += r.co2Avoided ?? 0;
     const period = r.periodYear * 12 + r.periodMonth;
     if (period > entry.lastYear * 12 + entry.lastMonth) {
       entry.lastMonth = r.periodMonth;
       entry.lastYear = r.periodYear;
+      entry.lastDuemintId = r.duemintId;
     }
     plantStatsMap.set(resolvedPlantId, entry);
   }
@@ -247,6 +248,7 @@ async function getClienteDashboardData(customerId: number, customerName: string)
       co2Year: stats?.co2 ?? 0,
       lastReportMonth: stats?.lastMonth || null,
       lastReportYear: stats?.lastYear || null,
+      lastReportDuemintId: stats?.lastDuemintId ?? null,
     };
   });
 

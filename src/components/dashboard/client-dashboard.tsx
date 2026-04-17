@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -43,6 +45,7 @@ interface PlantRow {
   co2Year: number;
   lastReportMonth: number | null;
   lastReportYear: number | null;
+  lastReportDuemintId: string | null;
 }
 
 interface BillingSummary {
@@ -211,9 +214,16 @@ export function ClientDashboard(props: ClientDashboardProps) {
                   <td style={{ padding: "12px 14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>{p.kwhYear > 0 ? formatNumber(p.kwhYear) : "—"}</td>
                   <td style={{ padding: "12px 14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>{p.co2Year > 0 ? p.co2Year.toFixed(1).replace(".", ",") : "—"}</td>
                   <td style={{ padding: "12px 14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>
-                    {p.lastReportMonth && p.lastReportYear
-                      ? `${MONTH_SHORT[p.lastReportMonth - 1]} ${p.lastReportYear}`
-                      : "—"}
+                    {p.lastReportMonth && p.lastReportYear ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        {MONTH_SHORT[p.lastReportMonth - 1]} {p.lastReportYear}
+                        {p.lastReportDuemintId && (
+                          <Link href={`/report/${p.lastReportDuemintId}`} title="Ver reporte" style={{ display: "inline-flex", color: "#004ac6" }}>
+                            <DescriptionOutlinedIcon sx={{ fontSize: 16 }} />
+                          </Link>
+                        )}
+                      </span>
+                    ) : "—"}
                   </td>
                 </tr>
               ))}
