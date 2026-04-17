@@ -4,18 +4,16 @@ import { cookies } from "next/headers";
 
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
-import { KpiCard } from "@/components/dashboard/kpi-card";
 import { PortfolioVerticalCard } from "@/components/dashboard/portfolio-vertical-card";
-import { EnvironmentalImpact } from "@/components/dashboard/environmental-impact";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
 import { getPortfolioLogo } from "@/lib/portfolio-logos";
+import { ClientDashboard } from "@/components/dashboard/client-dashboard";
 import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
-import EnergySavingsLeafOutlinedIcon from "@mui/icons-material/EnergySavingsLeafOutlined";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 
 function getLastMonthPeriod() {
@@ -112,10 +110,9 @@ async function getMaestroDashboardData() {
   return { portfolios, co2LastMonth, co2Year, lastMonth };
 }
 
-async function getClienteDashboardData(customerId: number) {
-  const lastMonth = getLastMonthPeriod();
+async function getClienteDashboardData(customerId: number, customerName: string) {
   const currentYear = getCurrentYearRange();
-  const customerReportWhere = {
+  const reportWhere = {
     active: 1,
     OR: [
       { powerPlant: { customerId, active: 1 } },
@@ -123,35 +120,149 @@ async function getClienteDashboardData(customerId: number) {
     ],
   };
 
-  const [plants, co2LastMonth, co2Year] = await Promise.all([
+  const [plants, reportsYear, invoicesYear] = await Promise.all([
     prisma.powerPlant.findMany({
       where: { customerId, active: 1 },
-      select: { id: true, name: true, status: true, capacityKw: true, location: true },
-    }),
-    prisma.generationReport.aggregate({
-      where: {
-        ...customerReportWhere,
-        periodMonth: lastMonth.month,
-        periodYear: lastMonth.year,
+      select: {
+        id: true, name: true, status: true, capacityKw: true, city: true,
+        generationReports: {
+          where: { active: 1, periodYear: currentYear.year },
+          select: { kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true },
+        },
       },
-      _sum: { kwhGenerated: true, co2Avoided: true },
     }),
-    prisma.generationReport.aggregate({
+    prisma.generationReport.findMany({
+      where: { ...reportWhere, periodYear: currentYear.year },
+      select: { kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true, powerPlantId: true },
+    }),
+    prisma.invoice.findMany({
       where: {
-        ...customerReportWhere,
-        periodYear: currentYear.year,
+        customerId,
+        active: 1,
+        issueDate: {
+          gte: new Date(currentYear.year, 0, 1),
+          lt: new Date(currentYear.year + 1, 0, 1),
+        },
       },
-      _sum: { kwhGenerated: true, co2Avoided: true },
+      select: { total: true, statusCode: true, issueDate: true },
     }),
   ]);
 
+  // Monthly generation aggregation
+  const monthlyMap = new Map<number, { kwh: number; co2: number }>();
+  for (const r of reportsYear) {
+    const m = r.periodMonth;
+    const entry = monthlyMap.get(m) ?? { kwh: 0, co2: 0 };
+    entry.kwh += r.kwhGenerated ?? 0;
+    entry.co2 += r.co2Avoided ?? 0;
+    monthlyMap.set(m, entry);
+  }
+  const monthlyGeneration = [...monthlyMap.entries()]
+    .map(([month, d]) => ({ month, kwh: d.kwh, co2: d.co2 }))
+    .sort((a, b) => a.month - b.month);
+
+  const totalKwhYear = reportsYear.reduce((s, r) => s + (r.kwhGenerated ?? 0), 0);
+  const totalCo2Year = reportsYear.reduce((s, r) => s + (r.co2Avoided ?? 0), 0);
+
+  // Billing summary by status
+  const billingSummary = {
+    pagadas: { total: 0, count: 0 },
+    porVencer: { total: 0, count: 0 },
+    vencidas: { total: 0, count: 0 },
+    notasCredito: { total: 0, count: 0 },
+  };
+  let totalBillingYear = 0;
+
+  // Monthly billing aggregation
+  const billingMonthlyMap = new Map<number, { pagadas: number; porVencer: number; vencidas: number }>();
+
+  for (const inv of invoicesYear) {
+    const t = inv.total ?? 0;
+    const m = inv.issueDate ? inv.issueDate.getMonth() + 1 : null;
+
+    switch (inv.statusCode) {
+      case 1: // Pagada
+        billingSummary.pagadas.total += t;
+        billingSummary.pagadas.count++;
+        totalBillingYear += t;
+        if (m) {
+          const entry = billingMonthlyMap.get(m) ?? { pagadas: 0, porVencer: 0, vencidas: 0 };
+          entry.pagadas += t;
+          billingMonthlyMap.set(m, entry);
+        }
+        break;
+      case 2: // Por vencer
+        billingSummary.porVencer.total += t;
+        billingSummary.porVencer.count++;
+        totalBillingYear += t;
+        if (m) {
+          const entry = billingMonthlyMap.get(m) ?? { pagadas: 0, porVencer: 0, vencidas: 0 };
+          entry.porVencer += t;
+          billingMonthlyMap.set(m, entry);
+        }
+        break;
+      case 3: // Vencida
+        billingSummary.vencidas.total += t;
+        billingSummary.vencidas.count++;
+        totalBillingYear += t;
+        if (m) {
+          const entry = billingMonthlyMap.get(m) ?? { pagadas: 0, porVencer: 0, vencidas: 0 };
+          entry.vencidas += t;
+          billingMonthlyMap.set(m, entry);
+        }
+        break;
+      case 4: // Nota de crédito
+        billingSummary.notasCredito.total += t;
+        billingSummary.notasCredito.count++;
+        break;
+    }
+  }
+
+  const monthlyBilling = [...billingMonthlyMap.entries()]
+    .map(([month, d]) => ({ month, ...d }))
+    .sort((a, b) => a.month - b.month);
+
+  // Per-plant stats
+  const plantRows = plants.map((p) => {
+    const pKwh = p.generationReports.reduce((s, r) => s + (r.kwhGenerated ?? 0), 0);
+    const pCo2 = p.generationReports.reduce((s, r) => s + (r.co2Avoided ?? 0), 0);
+    const lastReport = p.generationReports.length > 0
+      ? p.generationReports.reduce((latest, r) => (r.periodYear * 12 + r.periodMonth > latest.periodYear * 12 + latest.periodMonth ? r : latest))
+      : null;
+    return {
+      name: p.name,
+      city: p.city,
+      status: p.status,
+      capacityKw: p.capacityKw,
+      kwhYear: pKwh,
+      co2Year: pCo2,
+      lastReportMonth: lastReport?.periodMonth ?? null,
+      lastReportYear: lastReport?.periodYear ?? null,
+    };
+  });
+
+  // Top 5 plants by kWh
+  const topPlants = [...plantRows]
+    .sort((a, b) => b.kwhYear - a.kwhYear)
+    .slice(0, 5)
+    .map((p) => ({ name: p.name, kwh: p.kwhYear }));
+
   return {
-    plants,
-    co2LastMonth: co2LastMonth._sum.co2Avoided ?? 0,
-    kwhLastMonth: co2LastMonth._sum.kwhGenerated ?? 0,
-    co2Year: co2Year._sum.co2Avoided ?? 0,
-    kwhYear: co2Year._sum.kwhGenerated ?? 0,
-    lastMonth,
+    customerName,
+    year: currentYear.year,
+    plants: plantRows,
+    plantsCount: plants.filter((p) => p.status === "active").length,
+    plantsTotal: plants.length,
+    kwhYear: totalKwhYear,
+    co2Year: totalCo2Year,
+    equivalentTrees: calculateEquivalentTrees(totalCo2Year),
+    equivalentCars: calculateEquivalentCars(totalCo2Year),
+    totalBillingYear,
+    invoicesPorVencerCount: billingSummary.porVencer.count,
+    monthlyGeneration,
+    monthlyBilling,
+    billingSummary,
+    topPlants,
   };
 }
 
@@ -202,32 +313,9 @@ export default async function DashboardPage() {
 
   // CLIENTE / CLIENTE_PERFILADO
   if ((user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) && user.customerId) {
-    const data = await getClienteDashboardData(user.customerId);
-    const monthLabel = `${MONTH_NAMES[data.lastMonth.month - 1]} ${data.lastMonth.year}`;
-
-    return (
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700} color="text.primary">Mis Plantas</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            Resumen de tus activos solares
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
-          <KpiCard label="Plantas" value={String(data.plants.length)} icon={<BoltOutlinedIcon sx={{ fontSize: 20 }} />} />
-          <KpiCard label={`CO₂ evitado · ${monthLabel}`} value={`${data.co2LastMonth.toFixed(1)} ton`} icon={<EnergySavingsLeafOutlinedIcon sx={{ fontSize: 20 }} />} />
-          <KpiCard label={`CO₂ evitado · ${data.lastMonth.year}`} value={`${data.co2Year.toFixed(1)} ton`} icon={<EnergySavingsLeafOutlinedIcon sx={{ fontSize: 20 }} />} />
-        </Box>
-
-        <EnvironmentalImpact
-          co2Tonnes={data.co2Year}
-          equivalentTrees={calculateEquivalentTrees(data.co2Year)}
-          equivalentCars={calculateEquivalentCars(data.co2Year)}
-          yearLabel={String(data.lastMonth.year)}
-        />
-      </Box>
-    );
+    const customer = await prisma.customer.findUnique({ where: { id: user.customerId }, select: { name: true } });
+    const data = await getClienteDashboardData(user.customerId, customer?.name ?? "");
+    return <ClientDashboard {...data} />;
   }
 
   // OPERATIVO
