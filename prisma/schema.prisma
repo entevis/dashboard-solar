@@ -141,6 +141,7 @@ model Address {
 model Epc {
   id        Int      @id @default(autoincrement())
   name      String   @unique
+  logoUrl   String?  @map("logo_url")
   active    Int      @default(1)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

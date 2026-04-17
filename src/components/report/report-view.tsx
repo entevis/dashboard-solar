@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
@@ -39,6 +40,8 @@ interface Props {
   customerName: string | null;
   periodMonth: number;
   periodYear: number;
+  epcLogoUrl?: string | null;
+  epcName?: string | null;
 }
 
 function get(obj: unknown, path: string): unknown {
@@ -80,7 +83,7 @@ const tooltipStyle = {
 
 const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 12 };
 
-export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Props) {
+export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLogoUrl, epcName }: Props) {
   const planta = rawJson.planta as Record<string, unknown> | undefined;
   const reporte = rawJson.reporte as Record<string, unknown> | undefined;
   const datos = get(reporte, "datos_reporte") as Record<string, unknown> | undefined;
@@ -203,7 +206,12 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 6 }}>
 
       {/* ── HERO ── */}
-      <Box sx={{ pt: 2, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 3 }}>
+      {epcLogoUrl && (
+        <Box sx={{ pt: 2 }}>
+          <Image src={epcLogoUrl} alt={epcName ?? "EPC"} width={160} height={48} style={{ objectFit: "contain", objectPosition: "left" }} />
+        </Box>
+      )}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 3 }}>
         <Box>
           <Typography fontSize="0.75rem" color={brandBlue} fontWeight={500} letterSpacing="0.05em" textTransform="uppercase" sx={{ mb: 1 }}>
             Planta Solar Fotovoltaica
@@ -569,7 +577,7 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
       <Box sx={{ borderTop: "1px solid #E5EAF2", pt: 3, mt: 2, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
         <Box>
           <Typography sx={{ fontWeight: 600, fontSize: "0.8125rem", color: "#334155", mb: 0.5 }}>S-Invest · Dashboard del Inversor</Typography>
-          <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Datos operacionales provistos por Delta Activos · D-Plus</Typography>
+          <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Datos operacionales provistos por {epcName === "Rising Sun" ? "Rising Sun Energía Solar" : "Delta Activos · D-Plus"}</Typography>
         </Box>
         <Box sx={{ textAlign: "right" }}>
           {codigo && <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Reporte {plantName} · código {codigo}</Typography>}

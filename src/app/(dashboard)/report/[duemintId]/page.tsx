@@ -21,11 +21,24 @@ export default async function ReportPage({ params }: Props) {
       co2Avoided: true,
       plantName: true,
       rawJson: true,
+      plantNameId: true,
       customer: { select: { name: true } },
     },
   });
 
   if (!report || !report.rawJson) notFound();
+
+  // Resolve EPC logo via PlantName → PowerPlant → Epc
+  let epcLogoUrl: string | null = null;
+  let epcName: string | null = null;
+  if (report.plantNameId) {
+    const plantNameEntry = await prisma.plantName.findUnique({
+      where: { id: report.plantNameId },
+      select: { powerPlant: { select: { epc: { select: { name: true, logoUrl: true } } } } },
+    });
+    epcLogoUrl = plantNameEntry?.powerPlant?.epc?.logoUrl ?? null;
+    epcName = plantNameEntry?.powerPlant?.epc?.name ?? null;
+  }
 
   return (
     <ReportView
@@ -34,6 +47,8 @@ export default async function ReportPage({ params }: Props) {
       customerName={report.customer?.name ?? null}
       periodMonth={report.periodMonth}
       periodYear={report.periodYear}
+      epcLogoUrl={epcLogoUrl}
+      epcName={epcName}
     />
   );
 }
