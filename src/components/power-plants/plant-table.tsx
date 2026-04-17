@@ -58,7 +58,7 @@ interface PlantTableProps {
 type SortKey = "solcorId" | "name" | "plantNameLabel" | "city" | "distributorCompany" | "tariffId" | "startDate" | "durationYears" | "capacityKw" | "specificYield" | "status";
 type SortDir = "asc" | "desc";
 
-const PAGE_SIZES = [15, 25, 50];
+const PAGE_SIZES = [15, 25, 50, 100];
 
 const truncSx = {
   overflow: "hidden",
@@ -343,9 +343,11 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
         labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
         sx={{
           display: { xs: "none", md: "flex" },
+          justifyContent: "flex-end",
           borderTop: "none",
           flexShrink: 0,
           "& .MuiTablePagination-toolbar": { minHeight: 44, px: 1.5 },
+          "& .MuiTablePagination-spacer": { display: "none" },
           "& .MuiTablePagination-actions button": { minWidth: 44, minHeight: 44 },
           "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
             fontSize: "0.75rem",
