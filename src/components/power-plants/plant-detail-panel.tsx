@@ -47,6 +47,7 @@ export interface SerializedPlant {
   portfolio: { id: number; name: string };
   customer: { name: string; rut: string };
   address: PlantAddress | null;
+  plantNames: { name: string }[];
 }
 
 export type FormState = {
@@ -159,6 +160,9 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                       <TextField fullWidth size="small" label="Nombre de planta" value={form.name} onChange={ef("name")} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
+                      <ReadonlyField label="Nombre reporte" value={plant.plantNames.map((p) => p.name).join(", ")} />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField fullWidth size="small" label="ID Solcor" value={form.solcorId} onChange={ef("solcorId")} placeholder="Ej: SOL-001" />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
@@ -171,6 +175,7 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                 ) : (
                   <>
                     <Grid size={{ xs: 12, sm: 6 }}><Field label="Nombre de planta" value={plant.name} /></Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}><Field label="Nombre reporte" value={plant.plantNames.map((p) => p.name).join(", ") || null} tip="Nombre con el que aparece esta planta en los reportes de generación de Delta Activos." /></Grid>
                     <Grid size={{ xs: 12, sm: 6 }}><Field label="ID Solcor" value={plant.solcorId} tip="Identificador interno de la planta en el sistema de monitoreo Solcor." /></Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Box>

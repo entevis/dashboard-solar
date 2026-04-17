@@ -29,6 +29,7 @@ export default async function PortfolioPlantDetailPage({ params }: Props) {
       portfolio: { select: { id: true, name: true } },
       customer: { select: { name: true, rut: true } },
       address: true,
+      plantNames: { where: { active: 1 }, select: { name: true }, orderBy: { name: "asc" } },
     },
   });
 
