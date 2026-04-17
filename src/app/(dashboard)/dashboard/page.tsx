@@ -1,12 +1,10 @@
 import { requireAuth } from "@/lib/auth/guards";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
-import { PortfolioVerticalCard } from "@/components/dashboard/portfolio-vertical-card";
 import { calculateEquivalentTrees, calculateEquivalentCars } from "@/lib/utils/co2";
-import { getPortfolioLogo } from "@/lib/portfolio-logos";
+import { MaestroDashboard } from "@/components/dashboard/maestro-dashboard";
 import { ClientDashboard } from "@/components/dashboard/client-dashboard";
 import Link from "next/link";
 import Box from "@mui/material/Box";
@@ -16,22 +14,15 @@ import CardContent from "@mui/material/CardContent";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 
-function getLastMonthPeriod() {
-  const now = new Date();
-  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  return { month: prev.getMonth() + 1, year: prev.getFullYear() };
-}
-
 function getCurrentYearRange() {
   const now = new Date();
   return { year: now.getFullYear() };
 }
 
 async function getMaestroDashboardData() {
-  const lastMonth = getLastMonthPeriod();
   const currentYear = getCurrentYearRange();
 
-  const [portfolios, reportsLastMonth, reportsYear] = await Promise.all([
+  const [portfolios, reportsYear, invoicesYear] = await Promise.all([
     prisma.portfolio.findMany({
       where: { active: 1 },
       include: {
@@ -42,72 +33,133 @@ async function getMaestroDashboardData() {
       },
       orderBy: { id: "asc" },
     }),
-    // Last month CO2 — from GenerationReport (both plant-level and customer-level)
     prisma.generationReport.findMany({
-      where: {
-        active: 1,
-        periodMonth: lastMonth.month,
-        periodYear: lastMonth.year,
-      },
+      where: { active: 1, periodYear: currentYear.year },
       select: {
-        co2Avoided: true,
-        customerId: true,
+        kwhGenerated: true, co2Avoided: true, periodMonth: true,
+        powerPlantId: true,
         powerPlant: { select: { portfolioId: true } },
+        plantNameRef: { select: { powerPlant: { select: { portfolioId: true } } } },
       },
     }),
-    // Current year CO2
-    prisma.generationReport.findMany({
+    prisma.invoice.findMany({
       where: {
         active: 1,
-        periodYear: currentYear.year,
+        issueDate: { gte: new Date(currentYear.year, 0, 1), lt: new Date(currentYear.year + 1, 0, 1) },
       },
-      select: {
-        co2Avoided: true,
-        customerId: true,
-        powerPlant: { select: { portfolioId: true } },
-      },
+      select: { total: true, statusCode: true, issueDate: true, portfolioId: true },
     }),
   ]);
 
-  // Build a map of customerId → portfolioIds for customer-level reports
-  const customerPortfolioMap = new Map<number, Set<number>>();
-  for (const p of portfolios) {
-    for (const plant of p.powerPlants) {
-      if (!customerPortfolioMap.has(plant.customerId)) {
-        customerPortfolioMap.set(plant.customerId, new Set());
-      }
-      customerPortfolioMap.get(plant.customerId)!.add(p.id);
-    }
+  const totalPlants = portfolios.reduce((s, p) => s + p.powerPlants.length, 0);
+  const totalCapacityKw = portfolios.reduce((s, p) => s + p.powerPlants.reduce((ss, pp) => ss + pp.capacityKw, 0), 0);
+  const allCustomerIds = new Set<number>();
+  portfolios.forEach((p) => p.powerPlants.forEach((pp) => allCustomerIds.add(pp.customerId)));
+
+  // Monthly generation by portfolio
+  type MKey = string;
+  const monthlyMap = new Map<MKey, { kwh: number; co2: number }>();
+  let totalKwh = 0;
+  let totalCo2 = 0;
+
+  for (const r of reportsYear) {
+    const pid = r.powerPlant?.portfolioId ?? r.plantNameRef?.powerPlant?.portfolioId;
+    if (!pid) continue;
+    const key: MKey = `${r.periodMonth}-${pid}`;
+    const entry = monthlyMap.get(key) ?? { kwh: 0, co2: 0 };
+    entry.kwh += r.kwhGenerated ?? 0;
+    entry.co2 += r.co2Avoided ?? 0;
+    monthlyMap.set(key, entry);
+    totalKwh += r.kwhGenerated ?? 0;
+    totalCo2 += r.co2Avoided ?? 0;
   }
 
-  function aggregateCo2ByPortfolio(reports: typeof reportsLastMonth) {
-    const co2Map = new Map<number, number>();
-    for (const r of reports) {
-      if (r.co2Avoided == null) continue;
+  const monthlyByPortfolio = [...monthlyMap.entries()].map(([key, d]) => {
+    const [month, portfolioId] = key.split("-").map(Number);
+    return { month, portfolioId, kwh: d.kwh, co2: d.co2 };
+  });
 
-      if (r.powerPlant) {
-        // Plant-level report → direct portfolio
-        const pid = r.powerPlant.portfolioId;
-        co2Map.set(pid, (co2Map.get(pid) ?? 0) + r.co2Avoided);
-      } else if (r.customerId) {
-        // Customer-level report → distribute to all portfolios where this customer has plants
-        const pids = customerPortfolioMap.get(r.customerId);
-        if (pids) {
-          // If customer has plants in multiple portfolios, assign to each
-          // (the CO2 is per-customer, but we show it in each portfolio they belong to)
-          for (const pid of pids) {
-            co2Map.set(pid, (co2Map.get(pid) ?? 0) + r.co2Avoided);
-          }
+  // Per-portfolio generation totals
+  const portfolioKwh = new Map<number, number>();
+  const portfolioCo2 = new Map<number, number>();
+  for (const m of monthlyByPortfolio) {
+    portfolioKwh.set(m.portfolioId, (portfolioKwh.get(m.portfolioId) ?? 0) + m.kwh);
+    portfolioCo2.set(m.portfolioId, (portfolioCo2.get(m.portfolioId) ?? 0) + m.co2);
+  }
+
+  // Billing
+  const billingSummary = { pagadas: { total: 0, count: 0 }, porVencer: { total: 0, count: 0 }, vencidas: { total: 0, count: 0 }, notasCredito: { total: 0, count: 0 } };
+  const portfolioBilling = new Map<number, number>();
+  const portfolioPending = new Map<number, { count: number; overdue: boolean }>();
+  const billingMonthlyMap = new Map<number, { pagadas: number; porVencer: number; vencidas: number }>();
+
+  for (const inv of invoicesYear) {
+    const t = inv.total ?? 0;
+    const m = inv.issueDate ? inv.issueDate.getMonth() + 1 : null;
+    const pid = inv.portfolioId;
+
+    switch (inv.statusCode) {
+      case 1:
+        billingSummary.pagadas.total += t; billingSummary.pagadas.count++;
+        if (pid) portfolioBilling.set(pid, (portfolioBilling.get(pid) ?? 0) + t);
+        if (m) { const e = billingMonthlyMap.get(m) ?? { pagadas: 0, porVencer: 0, vencidas: 0 }; e.pagadas += t; billingMonthlyMap.set(m, e); }
+        break;
+      case 2:
+        billingSummary.porVencer.total += t; billingSummary.porVencer.count++;
+        if (pid) {
+          portfolioBilling.set(pid, (portfolioBilling.get(pid) ?? 0) + t);
+          const pe = portfolioPending.get(pid) ?? { count: 0, overdue: false }; pe.count++; portfolioPending.set(pid, pe);
         }
-      }
+        if (m) { const e = billingMonthlyMap.get(m) ?? { pagadas: 0, porVencer: 0, vencidas: 0 }; e.porVencer += t; billingMonthlyMap.set(m, e); }
+        break;
+      case 3:
+        billingSummary.vencidas.total += t; billingSummary.vencidas.count++;
+        if (pid) {
+          portfolioBilling.set(pid, (portfolioBilling.get(pid) ?? 0) + t);
+          const pe = portfolioPending.get(pid) ?? { count: 0, overdue: false }; pe.count++; pe.overdue = true; portfolioPending.set(pid, pe);
+        }
+        if (m) { const e = billingMonthlyMap.get(m) ?? { pagadas: 0, porVencer: 0, vencidas: 0 }; e.vencidas += t; billingMonthlyMap.set(m, e); }
+        break;
+      case 4:
+        billingSummary.notasCredito.total += t; billingSummary.notasCredito.count++;
+        break;
     }
-    return co2Map;
   }
 
-  const co2LastMonth = aggregateCo2ByPortfolio(reportsLastMonth);
-  const co2Year = aggregateCo2ByPortfolio(reportsYear);
+  const monthlyBilling = [...billingMonthlyMap.entries()].map(([month, d]) => ({ month, ...d })).sort((a, b) => a.month - b.month);
 
-  return { portfolios, co2LastMonth, co2Year, lastMonth };
+  const portfolioRows = portfolios.map((p) => {
+    const pending = portfolioPending.get(p.id);
+    return {
+      id: p.id,
+      name: p.name,
+      plantsCount: p.powerPlants.length,
+      capacityKw: p.powerPlants.reduce((s, pp) => s + pp.capacityKw, 0),
+      kwhYear: portfolioKwh.get(p.id) ?? 0,
+      co2Year: portfolioCo2.get(p.id) ?? 0,
+      billingYear: portfolioBilling.get(p.id) ?? 0,
+      pendingCount: pending?.count ?? 0,
+      pendingLabel: pending?.overdue ? "vencidas" : "por vencer",
+    };
+  });
+
+  const portfolioDistribution = portfolioRows.map((p) => ({ name: p.name, total: p.billingYear }));
+
+  return {
+    year: currentYear.year,
+    totalPlants,
+    totalCapacityKw,
+    totalKwhYear: totalKwh,
+    totalCo2Year: totalCo2,
+    totalClients: allCustomerIds.size,
+    equivalentTrees: calculateEquivalentTrees(totalCo2),
+    equivalentCars: calculateEquivalentCars(totalCo2),
+    portfolios: portfolioRows,
+    monthlyByPortfolio,
+    billingSummary,
+    monthlyBilling,
+    portfolioDistribution,
+  };
 }
 
 async function getClienteDashboardData(customerId: number, customerName: string) {
@@ -277,8 +329,6 @@ async function getClienteDashboardData(customerId: number, customerName: string)
   };
 }
 
-const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-
 export default async function DashboardPage() {
   const user = await requireAuth();
 
@@ -287,39 +337,7 @@ export default async function DashboardPage() {
   // MAESTRO
   if (user.role === UserRole.MAESTRO) {
     const data = await getMaestroDashboardData();
-    const cookieStore = await cookies();
-    const selectedPortfolioId = parseInt(cookieStore.get("portfolio_id")?.value ?? "") || null;
-
-    return (
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <Box>
-          <Typography variant="h5" fontWeight={700} color="text.primary">Dashboard</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-            Vista consolidada de los portafolios
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }, gap: 3, alignItems: "start" }}>
-          {data.portfolios.map((portfolio) => (
-            <PortfolioVerticalCard
-              key={portfolio.id}
-              portfolioId={portfolio.id}
-              isSelected={portfolio.id === selectedPortfolioId}
-              name={portfolio.name}
-              description={portfolio.description}
-              logoUrl={getPortfolioLogo(portfolio.id)}
-              customerCount={new Set(portfolio.powerPlants.map((p) => p.customerId)).size}
-              activePlants={portfolio.powerPlants.filter((p) => p.status === "active").length}
-              totalCapacityKw={portfolio.powerPlants.reduce((sum, p) => sum + p.capacityKw, 0)}
-              co2LastMonth={data.co2LastMonth.get(portfolio.id) ?? 0}
-              co2Year={data.co2Year.get(portfolio.id) ?? 0}
-              lastMonthLabel={`${MONTH_NAMES[data.lastMonth.month - 1]} ${data.lastMonth.year}`}
-              href={`/${portfolio.id}/power-plants`}
-            />
-          ))}
-        </Box>
-      </Box>
-    );
+    return <MaestroDashboard {...data} />;
   }
 
   // CLIENTE / CLIENTE_PERFILADO

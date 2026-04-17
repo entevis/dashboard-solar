@@ -14,7 +14,7 @@ import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
-import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
@@ -50,6 +50,12 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
       items: [
         { label: "Dashboard",  href: "/dashboard",       icon: DashboardOutlinedIcon },
         { label: "Plantas",    href: p("/power-plants"),  icon: BoltOutlinedIcon },
+      ],
+    },
+    {
+      roles: ["MAESTRO"],
+      items: [
+        { label: "Resumen del portafolio", href: p("/overview"), icon: AssessmentOutlinedIcon },
       ],
     },
     {
