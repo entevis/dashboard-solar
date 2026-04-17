@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import MuiTable from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -10,7 +10,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
 import TablePagination from "@mui/material/TablePagination";
-import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -55,7 +54,7 @@ interface PlantTableProps {
   canEdit: boolean;
 }
 
-type SortKey = "solcorId" | "name" | "plantNameLabel" | "city" | "distributorCompany" | "tariffId" | "startDate" | "durationYears" | "capacityKw" | "specificYield" | "status";
+type SortKey = "solcorId" | "name" | "plantNameLabel" | "city" | "distributorCompany" | "tariffId" | "startDate" | "durationYears" | "capacityKw" | "specificYield";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZES = [15, 25, 50, 100];
@@ -69,10 +68,20 @@ const truncSx = {
 
 function TruncCell({ value, width }: { value: string | null; width: number }) {
   const text = value ?? "—";
+  const ref = useRef<HTMLSpanElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  const checkTruncation = useCallback(() => {
+    const el = ref.current;
+    if (el) setIsTruncated(el.scrollWidth > el.clientWidth);
+  }, []);
+
+  useEffect(() => { checkTruncation(); }, [checkTruncation, value]);
+
   return (
     <TableCell sx={{ width, maxWidth: width, p: "6px 12px" }}>
-      <Tooltip title={value ?? ""} placement="top" disableHoverListener={!value} enterDelay={400}>
-        <Box component="span" sx={{ ...truncSx, width: "100%" }}>{text}</Box>
+      <Tooltip title={isTruncated ? text : ""} placement="top" disableHoverListener={!isTruncated} enterDelay={400}>
+        <Box component="span" ref={ref} onMouseEnter={checkTruncation} sx={{ ...truncSx, width: "100%" }}>{text}</Box>
       </Tooltip>
     </TableCell>
   );
@@ -90,7 +99,6 @@ function getValue(plant: Plant, key: SortKey): string | number | null {
     case "durationYears":     return plant.durationYears ?? -Infinity;
     case "capacityKw":        return plant.capacityKw;
     case "specificYield":     return plant.specificYield ?? -Infinity;
-    case "status":            return plant.status;
   }
 }
 
@@ -135,8 +143,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
     };
   }
 
-  // Fixed column widths (px) — keeps layout stable across sort changes
-  const W = { solcorId: 100, name: 200, plantName: 180, city: 130, dist: 140, tariff: 110, date: 120, dur: 100, kw: 110, yield: 130, status: 100, actions: 40 };
+  const W = { solcorId: 100, name: 200, plantName: 180, city: 130, dist: 140, tariff: 110, date: 120, dur: 100, kw: 110, yield: 160, actions: 40 };
 
   const headSx = (w: number, align?: "right" | "center") => ({
     width: w, maxWidth: w, minWidth: w,
@@ -187,16 +194,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
                 <Typography variant="caption" color="text.secondary">{plant.capacityKw} kWp</Typography>
               </Box>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-              <Chip
-                label={plant.status === "active" ? "Activa" : "En mantenimiento"}
-                size="small"
-                sx={plant.status === "active"
-                  ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
-                  : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }}
-              />
-              <ChevronRightIcon sx={{ fontSize: 18, color: "text.disabled" }} />
-            </Box>
+            <ChevronRightIcon sx={{ fontSize: 18, color: "text.disabled", flexShrink: 0 }} />
           </Box>
         ))}
       </Box>
@@ -269,12 +267,8 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
               </TableCell>
               <TableCell sx={headSx(W.yield, "right")}>
                 <TableSortLabel {...col("specificYield")} sx={{ justifyContent: "flex-end", width: "100%", flexDirection: "row-reverse" }}>
-                  Rendimiento<br />
-                  <Box component="span" sx={{ fontWeight: 400, textTransform: "none", fontSize: "0.7rem" }}>(kWh/kWp)</Box>
+                  Rendimiento (kWh/kWp)
                 </TableSortLabel>
-              </TableCell>
-              <TableCell sx={headSx(W.status)}>
-                <TableSortLabel {...col("status")}>Estado</TableSortLabel>
               </TableCell>
               {canEdit && <TableCell sx={{ width: W.actions, minWidth: W.actions }} />}
             </TableRow>
@@ -284,16 +278,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
               <TableRow key={plant.id} hover>
                 <TruncCell value={plant.solcorId} width={W.solcorId} />
                 <TableCell sx={{ width: W.name, maxWidth: W.name, p: "6px 12px" }}>
-                  <Tooltip title={plant.name} placement="top" enterDelay={400}>
-                    <Link
-                      href={`/${plant.portfolioId}/power-plants/${plant.id}`}
-                      style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none", ...truncSx, display: "block" }}
-                      onMouseOver={e => (e.currentTarget.style.textDecoration = "underline")}
-                      onMouseOut={e => (e.currentTarget.style.textDecoration = "none")}
-                    >
-                      {plant.name}
-                    </Link>
-                  </Tooltip>
+                  <TruncLink href={`/${plant.portfolioId}/power-plants/${plant.id}`} text={plant.name} width={W.name} />
                 </TableCell>
                 <TruncCell value={plant.plantNames.map((p) => p.name).join(", ") || null} width={W.plantName} />
                 <TruncCell value={plant.city ?? plant.location} width={W.city} />
@@ -310,15 +295,6 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
                 </TableCell>
                 <TableCell align="right" sx={{ width: W.yield, maxWidth: W.yield, fontVariantNumeric: "tabular-nums", p: "6px 12px" }}>
                   {plant.specificYield != null ? plant.specificYield.toLocaleString("es-CL") : "—"}
-                </TableCell>
-                <TableCell sx={{ width: W.status, maxWidth: W.status, p: "6px 12px" }}>
-                  <Chip
-                    label={plant.status === "active" ? "Activa" : "En mantenimiento"}
-                    size="small"
-                    sx={plant.status === "active"
-                      ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
-                      : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }}
-                  />
                 </TableCell>
                 {canEdit && (
                   <TableCell sx={{ width: W.actions, p: "6px 4px" }}>
@@ -355,5 +331,32 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
         }}
       />
     </Box>
+  );
+}
+
+function TruncLink({ href, text, width }: { href: string; text: string; width: number }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  const check = useCallback(() => {
+    const el = ref.current;
+    if (el) setIsTruncated(el.scrollWidth > el.clientWidth);
+  }, []);
+
+  useEffect(() => { check(); }, [check, text]);
+
+  return (
+    <Tooltip title={isTruncated ? text : ""} placement="top" disableHoverListener={!isTruncated} enterDelay={400}>
+      <Link
+        ref={ref}
+        href={href}
+        onMouseEnter={check}
+        style={{ color: "#004ac6", fontWeight: 500, textDecoration: "none", ...truncSx, display: "block", maxWidth: width - 24 }}
+        onMouseOver={e => (e.currentTarget.style.textDecoration = "underline")}
+        onMouseOut={e => (e.currentTarget.style.textDecoration = "none")}
+      >
+        {text}
+      </Link>
+    </Tooltip>
   );
 }
