@@ -24,7 +24,7 @@ const inputSx = {
   },
 };
 
-const MIN_LENGTH = 10;
+const MIN_LENGTH = 8;
 
 function validatePassword(pw: string): string | null {
   if (pw.length < MIN_LENGTH) return `Debe tener al menos ${MIN_LENGTH} caracteres.`;

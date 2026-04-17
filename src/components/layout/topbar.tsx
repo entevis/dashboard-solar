@@ -18,7 +18,9 @@ import { PortfolioSelector } from "./portfolio-selector";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import type { UserRole } from "@prisma/client";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import LockResetOutlinedIcon from "@mui/icons-material/LockResetOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import { ChangePasswordDialog } from "./change-password-dialog";
 
 interface TopbarProps {
   userName: string;
@@ -31,6 +33,7 @@ interface TopbarProps {
 export function Topbar({ userName, userEmail, userRole, portfolios = [], selectedPortfolioId }: TopbarProps) {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -159,13 +162,22 @@ export function Topbar({ userName, userEmail, userRole, portfolios = [], selecte
           </Box>
           <Divider />
           <MenuItem
-            onClick={() => { setAnchorEl(null); handleLogout(); }}
+            onClick={() => { setAnchorEl(null); setChangePasswordOpen(true); }}
             sx={{ fontSize: "0.8125rem", gap: 1.5, color: "#0d1c2e", mt: 0.5 }}
+          >
+            <LockResetOutlinedIcon sx={{ fontSize: 16, color: "#434655" }} />
+            Cambiar contraseña
+          </MenuItem>
+          <MenuItem
+            onClick={() => { setAnchorEl(null); handleLogout(); }}
+            sx={{ fontSize: "0.8125rem", gap: 1.5, color: "#0d1c2e" }}
           >
             <LogoutOutlinedIcon sx={{ fontSize: 16, color: "#434655" }} />
             Cerrar sesión
           </MenuItem>
         </Menu>
+
+        <ChangePasswordDialog open={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
       </Toolbar>
     </AppBar>
   );

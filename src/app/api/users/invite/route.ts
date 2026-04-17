@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAction } from "@/lib/services/audit.service";
+import { sendInviteEmail } from "@/lib/services/email.service";
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
 
@@ -69,41 +70,21 @@ export async function POST(request: NextRequest) {
 
   const supabaseAdmin = createAdminClient();
   const appUrl = getAppUrl(request);
-  const emailMode = process.env.AUTH_EMAIL_MODE ?? "manual";
 
-  // Generate invite link. In "manual" mode we NEVER send an email — we return
-  // the link to the MAESTRO so they can share it out of band. In "smtp" mode
-  // Supabase sends the email automatically.
-  let supabaseUserId: string;
-  let inviteLink: string | null = null;
-
-  if (emailMode === "smtp") {
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      email,
-      { redirectTo: `${appUrl}/set-password` }
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: { redirectTo: `${appUrl}/set-password` },
+  });
+  if (error || !data.user) {
+    return NextResponse.json(
+      { error: "Error al generar invitación: " + error?.message },
+      { status: 500 }
     );
-    if (error || !data.user) {
-      return NextResponse.json(
-        { error: "Error al enviar invitación: " + error?.message },
-        { status: 500 }
-      );
-    }
-    supabaseUserId = data.user.id;
-  } else {
-    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: { redirectTo: `${appUrl}/set-password` },
-    });
-    if (error || !data.user) {
-      return NextResponse.json(
-        { error: "Error al generar link de invitación: " + error?.message },
-        { status: 500 }
-      );
-    }
-    supabaseUserId = data.user.id;
-    inviteLink = data.properties?.action_link ?? null;
   }
+
+  const supabaseUserId = data.user.id;
+  const inviteLink = data.properties?.action_link ?? null;
 
   const newUser = await prisma.user.create({
     data: {
@@ -122,11 +103,39 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  // Resolve portfolio name for email
+  let portfolioName = "S-Invest";
+  if (assignedPortfolioId) {
+    const p = await prisma.portfolio.findUnique({ where: { id: assignedPortfolioId }, select: { name: true } });
+    if (p) portfolioName = p.name;
+  } else if (customerId) {
+    const plant = await prisma.powerPlant.findFirst({ where: { customerId, active: 1 }, select: { portfolio: { select: { id: true, name: true } } } });
+    if (plant) portfolioName = plant.portfolio.name;
+  }
+
+  // Send invite email
+  let emailSent = false;
+  if (inviteLink) {
+    try {
+      const portfolioId = assignedPortfolioId ?? undefined;
+      await sendInviteEmail({
+        to: email,
+        userName: name,
+        portfolioName,
+        portfolioId,
+        inviteLink,
+      });
+      emailSent = true;
+    } catch (err) {
+      console.error("[invite] Email send failed:", err);
+    }
+  }
+
   await logAction(currentUser.id, "CREATE_USER", "user", newUser.id, {
     email,
     role,
-    emailMode,
+    emailSent,
   });
 
-  return NextResponse.json({ user: newUser, inviteLink }, { status: 201 });
+  return NextResponse.json({ user: newUser, emailSent }, { status: 201 });
 }

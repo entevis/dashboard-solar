@@ -16,10 +16,8 @@ import Checkbox from "@mui/material/Checkbox";
 import ListItemText from "@mui/material/ListItemText";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import { toast } from "@/lib/utils/toast";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
@@ -38,10 +36,7 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("");
   const [form, setForm] = useState({ name: "", email: "", customerId: "", assignedPortfolioId: "" });
-
   const [portfolioIds, setPortfolioIds] = useState<string[]>([]);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [inviteEmail, setInviteEmail] = useState<string>("");
 
   const showCustomer = role === "CLIENTE" || role === "CLIENTE_PERFILADO";
   const showPortfolio = role === "OPERATIVO";
@@ -76,23 +71,14 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
       return;
     }
     const data = await res.json();
-    toast.success("Usuario creado correctamente");
+    if (data.emailSent) {
+      toast.success(`Invitación enviada a ${form.email}`);
+    } else {
+      toast.success("Usuario creado. No se pudo enviar el correo de invitación.");
+    }
     setLoading(false);
     router.refresh();
-
-    if (data.inviteLink) {
-      setInviteEmail(form.email);
-      setInviteLink(data.inviteLink);
-      handleClose();
-    } else {
-      handleClose();
-    }
-  }
-
-  async function copyLink() {
-    if (!inviteLink) return;
-    await navigator.clipboard.writeText(inviteLink);
-    toast.success("Link copiado al portapapeles");
+    handleClose();
   }
 
   return (
@@ -106,7 +92,7 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
         <Box component="form" onSubmit={handleSubmit}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <Alert severity="info" sx={{ fontSize: "0.75rem", py: 0.5 }}>
-              Se generará un link de invitación para que el usuario defina su propia contraseña.
+              Se enviará un correo de invitación para que el usuario active su cuenta y defina su contraseña.
             </Alert>
             <TextField label="Nombre" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo" sx={inputSx} />
             <TextField label="Correo electrónico" type="email" size="small" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@empresa.cl" sx={inputSx} />
@@ -162,26 +148,6 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
             <Button type="submit" variant="contained" size="small" disabled={loading || !role}>{loading ? "Creando..." : "Crear usuario"}</Button>
           </DialogActions>
         </Box>
-      </Dialog>
-
-      {/* Invite link modal (manual mode) */}
-      <Dialog open={Boolean(inviteLink)} onClose={() => setInviteLink(null)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontSize: "0.9375rem", fontWeight: 700, pb: 1 }}>Link de invitación</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <Alert severity="warning" sx={{ fontSize: "0.75rem" }}>
-            Este link es de un solo uso y expira pronto. Compártelo con <strong>{inviteEmail}</strong> por un canal seguro.
-            El usuario lo usará una única vez para definir su contraseña.
-          </Alert>
-          <Box sx={{ backgroundColor: "#eff4ff", borderRadius: 1, p: 1.5, wordBreak: "break-all" }}>
-            <Typography fontSize="0.75rem" fontFamily="monospace" color="text.primary">
-              {inviteLink}
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="outlined" color="inherit" size="small" onClick={() => setInviteLink(null)} sx={{ borderColor: "#c3c6d7" }}>Cerrar</Button>
-          <Button variant="contained" size="small" startIcon={<ContentCopyOutlinedIcon />} onClick={copyLink}>Copiar link</Button>
-        </DialogActions>
       </Dialog>
     </>
   );
