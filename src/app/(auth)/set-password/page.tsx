@@ -78,13 +78,31 @@ export default function SetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUserEmail(session.user.email ?? null);
-        setChecking(false);
-      }
-    });
+    // @supabase/ssr forces PKCE flow, but generateLink produces implicit
+    // grant tokens in the hash fragment. Manually parse and call setSession.
+    const hash = window.location.hash;
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
 
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(({ data, error: err }) => {
+            if (data.session?.user) {
+              setUserEmail(data.session.user.email ?? null);
+              setChecking(false);
+              window.history.replaceState(null, "", window.location.pathname);
+            } else {
+              console.error("[set-password] setSession error:", err?.message);
+              router.replace("/login?error=session");
+            }
+          });
+        return;
+      }
+    }
+
+    // Fallback: check existing session (page refresh after setting session)
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setUserEmail(data.user.email ?? null);
@@ -99,10 +117,7 @@ export default function SetPasswordPage() {
       });
     }, 5000);
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+    return () => { clearTimeout(timeout); };
   }, [router]);
 
   const valid = isPasswordValid(password);
