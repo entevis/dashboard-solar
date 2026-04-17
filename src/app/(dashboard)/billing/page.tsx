@@ -94,7 +94,7 @@ export default async function BillingPage({
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true } }),
+    prisma.invoice.findMany({ where: tableWhere, select: { total: true, statusCode: true } }),
     isMaestro
       ? prisma.portfolio.findMany({ where: { active: 1, duemintCompanyId: { not: null } }, select: { id: true, name: true } })
       : Promise.resolve([]),
