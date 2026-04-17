@@ -14,6 +14,8 @@ import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import { toast } from "@/lib/utils/toast";
 
 const inputSx = {
@@ -25,14 +27,36 @@ const inputSx = {
   },
 };
 
-const MIN_LENGTH = 8;
+const rules = [
+  { key: "length", label: "Mínimo 8 caracteres", test: (pw: string) => pw.length >= 8 },
+  { key: "lower", label: "Al menos una letra minúscula", test: (pw: string) => /[a-z]/.test(pw) },
+  { key: "upper", label: "Al menos una letra mayúscula", test: (pw: string) => /[A-Z]/.test(pw) },
+  { key: "number", label: "Al menos un número", test: (pw: string) => /[0-9]/.test(pw) },
+];
 
-function validatePassword(pw: string): string | null {
-  if (pw.length < MIN_LENGTH) return `Debe tener al menos ${MIN_LENGTH} caracteres.`;
-  if (!/[a-z]/.test(pw)) return "Debe incluir al menos una letra minúscula.";
-  if (!/[A-Z]/.test(pw)) return "Debe incluir al menos una letra mayúscula.";
-  if (!/[0-9]/.test(pw)) return "Debe incluir al menos un número.";
-  return null;
+function PasswordChecklist({ password }: { password: string }) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+      {rules.map((rule) => {
+        const passed = password.length > 0 && rule.test(password);
+        return (
+          <Box key={rule.key} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            {passed
+              ? <CheckCircleIcon sx={{ fontSize: 16, color: "#16a34a" }} />
+              : <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: "#c3c6d7" }} />
+            }
+            <Typography sx={{ fontSize: "0.75rem", color: passed ? "#16a34a" : "#737686", fontWeight: passed ? 500 : 400, transition: "color 0.15s" }}>
+              {rule.label}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+function isPasswordValid(pw: string): boolean {
+  return rules.every((r) => r.test(pw));
 }
 
 interface Props {
@@ -59,22 +83,17 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
     onClose();
   }
 
+  const valid = isPasswordValid(newPassword);
+  const matching = newPassword === confirmPassword;
+  const canSubmit = currentPassword.length > 0 && valid && matching && confirmPassword.length > 0 && currentPassword !== newPassword;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    const validation = validatePassword(newPassword);
-    if (validation) { setError(validation); return; }
-
-    if (newPassword !== confirmPassword) {
-      setError("Las contraseñas nuevas no coinciden.");
-      return;
-    }
-
-    if (currentPassword === newPassword) {
-      setError("La nueva contraseña debe ser diferente a la actual.");
-      return;
-    }
+    if (!valid) { setError("La nueva contraseña no cumple con los requisitos."); return; }
+    if (!matching) { setError("Las contraseñas nuevas no coinciden."); return; }
+    if (currentPassword === newPassword) { setError("La nueva contraseña debe ser diferente a la actual."); return; }
 
     setLoading(true);
     const res = await fetch("/api/auth/change-password", {
@@ -143,6 +162,8 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
             }}
           />
 
+          <PasswordChecklist password={newPassword} />
+
           <TextField
             label="Confirmar nueva contraseña"
             type={showNew ? "text" : "password"}
@@ -152,17 +173,15 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
             onChange={(e) => setConfirmPassword(e.target.value)}
             autoComplete="new-password"
             sx={inputSx}
+            error={confirmPassword.length > 0 && !matching}
+            helperText={confirmPassword.length > 0 && !matching ? "Las contraseñas no coinciden" : ""}
           />
-
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-            Mínimo {MIN_LENGTH} caracteres. Debe incluir minúsculas, mayúsculas y al menos un número.
-          </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
           <Button variant="outlined" color="inherit" size="small" onClick={handleClose} sx={{ borderColor: "#c3c6d7" }}>
             Cancelar
           </Button>
-          <Button type="submit" variant="contained" size="small" disabled={loading}>
+          <Button type="submit" variant="contained" size="small" disabled={loading || !canSubmit}>
             {loading ? "Guardando..." : "Cambiar contraseña"}
           </Button>
         </DialogActions>

@@ -14,6 +14,8 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Image from "next/image";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
@@ -24,14 +26,43 @@ const inputSx = {
   },
 };
 
-const MIN_LENGTH = 8;
+const rules = [
+  { key: "length", label: "Mínimo 8 caracteres", test: (pw: string) => pw.length >= 8 },
+  { key: "lower", label: "Al menos una letra minúscula", test: (pw: string) => /[a-z]/.test(pw) },
+  { key: "upper", label: "Al menos una letra mayúscula", test: (pw: string) => /[A-Z]/.test(pw) },
+  { key: "number", label: "Al menos un número", test: (pw: string) => /[0-9]/.test(pw) },
+];
 
-function validatePassword(pw: string): string | null {
-  if (pw.length < MIN_LENGTH) return `Debe tener al menos ${MIN_LENGTH} caracteres.`;
-  if (!/[a-z]/.test(pw)) return "Debe incluir al menos una letra minúscula.";
-  if (!/[A-Z]/.test(pw)) return "Debe incluir al menos una letra mayúscula.";
-  if (!/[0-9]/.test(pw)) return "Debe incluir al menos un número.";
-  return null;
+function PasswordChecklist({ password }: { password: string }) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+      {rules.map((rule) => {
+        const passed = password.length > 0 && rule.test(password);
+        return (
+          <Box key={rule.key} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            {passed
+              ? <CheckCircleIcon sx={{ fontSize: 16, color: "#16a34a" }} />
+              : <RadioButtonUncheckedIcon sx={{ fontSize: 16, color: "#c3c6d7" }} />
+            }
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                color: passed ? "#16a34a" : "#737686",
+                fontWeight: passed ? 500 : 400,
+                transition: "color 0.15s",
+              }}
+            >
+              {rule.label}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+function isPasswordValid(pw: string): boolean {
+  return rules.every((r) => r.test(pw));
 }
 
 export default function SetPasswordPage() {
@@ -47,8 +78,6 @@ export default function SetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
 
-    // Listen for auth state changes — Supabase JS auto-detects
-    // hash fragment tokens (#access_token=...) from invite/recovery links
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUserEmail(session.user.email ?? null);
@@ -56,7 +85,6 @@ export default function SetPasswordPage() {
       }
     });
 
-    // Also check if already logged in
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setUserEmail(data.user.email ?? null);
@@ -64,7 +92,6 @@ export default function SetPasswordPage() {
       }
     });
 
-    // If no session after 5 seconds, redirect to login
     const timeout = setTimeout(() => {
       setChecking((current) => {
         if (current) router.replace("/login?error=session");
@@ -78,26 +105,23 @@ export default function SetPasswordPage() {
     };
   }, [router]);
 
+  const valid = isPasswordValid(password);
+  const matching = password === confirm;
+  const canSubmit = valid && matching && confirm.length > 0;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    const validation = validatePassword(password);
-    if (validation) {
-      setError(validation);
-      return;
-    }
-    if (password !== confirm) {
-      setError("Las contraseñas no coinciden.");
-      return;
-    }
+    if (!valid) { setError("La contraseña no cumple con los requisitos."); return; }
+    if (!matching) { setError("Las contraseñas no coinciden."); return; }
 
     setLoading(true);
     const supabase = createClient();
     const { error: updateError } = await supabase.auth.updateUser({ password });
 
     if (updateError) {
-      setError("No se pudo actualizar la contraseña. El link puede haber expirado.");
+      setError("No se pudo actualizar la contraseña. El enlace puede haber expirado.");
       setLoading(false);
       return;
     }
@@ -119,7 +143,7 @@ export default function SetPasswordPage() {
       <Box sx={{ width: "100%", maxWidth: 420 }}>
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 4 }}>
           <Box sx={{ mb: 2, borderRadius: 2, overflow: "hidden", width: 64, height: 64 }}>
-            <Image src="/logo.jpg" alt="Dashboard Solar" width={64} height={64} priority />
+            <Image src="/logo.jpg" alt="S-Invest" width={64} height={64} priority />
           </Box>
           <Typography fontSize="1.125rem" fontWeight={700} color="text.primary">
             Define tu contraseña
@@ -158,6 +182,9 @@ export default function SetPasswordPage() {
                 ),
               }}
             />
+
+            <PasswordChecklist password={password} />
+
             <TextField
               label="Confirmar contraseña"
               type={show ? "text" : "password"}
@@ -167,13 +194,11 @@ export default function SetPasswordPage() {
               onChange={(e) => setConfirm(e.target.value)}
               autoComplete="new-password"
               sx={inputSx}
+              error={confirm.length > 0 && !matching}
+              helperText={confirm.length > 0 && !matching ? "Las contraseñas no coinciden" : ""}
             />
 
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-              Mínimo {MIN_LENGTH} caracteres. Debe incluir minúsculas, mayúsculas y al menos un número.
-            </Typography>
-
-            <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ mt: 0.5, height: 40 }}>
+            <Button type="submit" variant="contained" fullWidth disabled={loading || !canSubmit} sx={{ mt: 0.5, height: 40 }}>
               {loading ? "Guardando..." : "Guardar contraseña"}
             </Button>
           </Box>
