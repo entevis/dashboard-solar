@@ -13,6 +13,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const MONTHS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -237,15 +238,13 @@ export function BillingFilters({ month, year, status, plants = [], isMaestro, ac
           </FormControl>
 
           {plants.length > 0 && (
-            <FormControl size="small" fullWidth>
-              <InputLabel sx={{ fontSize: "0.8125rem" }}>Planta</InputLabel>
-              <Select label="Planta" value={localPlant} onChange={(e) => setLocalPlant(String(e.target.value))} sx={selectSx}>
-                <MenuItem value="all" sx={{ fontSize: "0.8125rem" }}>Todas las plantas</MenuItem>
-                {plants.map((p) => (
-                  <MenuItem key={p.id} value={String(p.id)} sx={{ fontSize: "0.8125rem" }}>{p.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SearchableSelect
+              label="Planta"
+              allOption="Todas las plantas"
+              options={plants.map((p) => ({ id: p.id, name: p.name }))}
+              value={localPlant}
+              onChange={(v) => setLocalPlant(v)}
+            />
           )}
         </Box>
 

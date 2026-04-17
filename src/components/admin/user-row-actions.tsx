@@ -30,6 +30,7 @@ import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { toast } from "@/lib/utils/toast";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import type { UserRole } from "@prisma/client";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
@@ -153,20 +154,20 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
               </Select>
             </FormControl>
             {(form.role === "CLIENTE" || form.role === "CLIENTE_PERFILADO") && (
-              <FormControl size="small" sx={inputSx}>
-                <InputLabel>Cliente</InputLabel>
-                <Select label="Cliente" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })}>
-                  {customers.map((c) => <MuiMenuItem key={c.id} value={String(c.id)}>{c.name}</MuiMenuItem>)}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Cliente"
+                options={customers.map((c) => ({ id: c.id, name: c.name }))}
+                value={form.customerId}
+                onChange={(v) => setForm({ ...form, customerId: v })}
+              />
             )}
             {form.role === "OPERATIVO" && (
-              <FormControl size="small" sx={inputSx}>
-                <InputLabel>Portafolio asignado</InputLabel>
-                <Select label="Portafolio asignado" value={form.assignedPortfolioId} onChange={(e) => setForm({ ...form, assignedPortfolioId: e.target.value })}>
-                  {portfolios.map((p) => <MuiMenuItem key={p.id} value={String(p.id)}>{p.name}</MuiMenuItem>)}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Portafolio asignado"
+                options={portfolios.map((p) => ({ id: p.id, name: p.name }))}
+                value={form.assignedPortfolioId}
+                onChange={(v) => setForm({ ...form, assignedPortfolioId: v })}
+              />
             )}
             {form.role === "TECNICO" && (
               <FormControl size="small" sx={inputSx}>

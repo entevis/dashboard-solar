@@ -13,6 +13,7 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface Option { id: number; name: string }
 
@@ -175,27 +176,23 @@ export function PlantFilterBar({ portfolios, customers, hidePortfolioFilter = fa
           />
 
           {!hidePortfolioFilter && portfolios.length > 0 && (
-            <FormControl size="small" fullWidth>
-              <InputLabel sx={{ fontSize: "0.8125rem" }}>Portafolio</InputLabel>
-              <Select label="Portafolio" value={localPortfolio} onChange={(e) => setLocalPortfolio(String(e.target.value))} sx={selectSx}>
-                <MenuItem value="all" sx={{ fontSize: "0.8125rem" }}>Todos</MenuItem>
-                {portfolios.map((p) => (
-                  <MenuItem key={p.id} value={String(p.id)} sx={{ fontSize: "0.8125rem" }}>{p.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SearchableSelect
+              label="Portafolio"
+              allOption="Todos"
+              options={portfolios.map((p) => ({ id: p.id, name: p.name }))}
+              value={localPortfolio}
+              onChange={(v) => setLocalPortfolio(v)}
+            />
           )}
 
           {customers.length > 0 && (
-            <FormControl size="small" fullWidth>
-              <InputLabel sx={{ fontSize: "0.8125rem" }}>Cliente</InputLabel>
-              <Select label="Cliente" value={localCustomer} onChange={(e) => setLocalCustomer(String(e.target.value))} sx={selectSx}>
-                <MenuItem value="all" sx={{ fontSize: "0.8125rem" }}>Todos</MenuItem>
-                {customers.map((c) => (
-                  <MenuItem key={c.id} value={String(c.id)} sx={{ fontSize: "0.8125rem" }}>{c.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SearchableSelect
+              label="Cliente"
+              allOption="Todos"
+              options={customers.map((c) => ({ id: c.id, name: c.name }))}
+              value={localCustomer}
+              onChange={(v) => setLocalCustomer(v)}
+            />
           )}
         </Box>
 

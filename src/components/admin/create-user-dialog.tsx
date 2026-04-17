@@ -19,6 +19,7 @@ import Box from "@mui/material/Box";
 import Alert from "@mui/material/Alert";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import { toast } from "@/lib/utils/toast";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
@@ -107,20 +108,22 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
               </Select>
             </FormControl>
             {showCustomer && (
-              <FormControl size="small" required sx={inputSx}>
-                <InputLabel>Cliente</InputLabel>
-                <Select label="Cliente" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })}>
-                  {customers.map((c) => <MenuItem key={c.id} value={String(c.id)}>{c.name} ({c.rut})</MenuItem>)}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Cliente"
+                required
+                options={customers.map((c) => ({ id: c.id, name: c.name, secondary: c.rut }))}
+                value={form.customerId}
+                onChange={(v) => setForm({ ...form, customerId: v })}
+              />
             )}
             {showPortfolio && (
-              <FormControl size="small" required sx={inputSx}>
-                <InputLabel>Portafolio asignado</InputLabel>
-                <Select label="Portafolio asignado" value={form.assignedPortfolioId} onChange={(e) => setForm({ ...form, assignedPortfolioId: e.target.value })}>
-                  {portfolios.map((p) => <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>)}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Portafolio asignado"
+                required
+                options={portfolios.map((p) => ({ id: p.id, name: p.name }))}
+                value={form.assignedPortfolioId}
+                onChange={(v) => setForm({ ...form, assignedPortfolioId: v })}
+              />
             )}
             {showPortfolioMulti && (
               <FormControl size="small" required sx={inputSx}>
