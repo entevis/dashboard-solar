@@ -22,11 +22,29 @@ export default async function DashboardLayout({
   // Read persisted portfolio selection from cookie (MAESTRO only)
   const cookieStore = await cookies();
   const rawCookie = cookieStore.get("portfolio_id")?.value;
-  const selectedPortfolioId = rawCookie ? parseInt(rawCookie) : null;
+  let selectedPortfolioId = rawCookie ? parseInt(rawCookie) : null;
 
   // MAESTRO without a portfolio selected → force selection page
   if (user.role === UserRole.MAESTRO && !selectedPortfolioId) {
     redirect("/select-portfolio");
+  }
+
+  // CLIENTE/CLIENTE_PERFILADO → resolve portfolio from their plants
+  if (
+    (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) &&
+    user.customerId &&
+    !selectedPortfolioId
+  ) {
+    const firstPlant = await prisma.powerPlant.findFirst({
+      where: { customerId: user.customerId, active: 1 },
+      select: { portfolioId: true },
+    });
+    if (firstPlant) selectedPortfolioId = firstPlant.portfolioId;
+  }
+
+  // OPERATIVO → use assigned portfolio
+  if (user.role === UserRole.OPERATIVO && user.assignedPortfolioId && !selectedPortfolioId) {
+    selectedPortfolioId = user.assignedPortfolioId;
   }
 
   const portfolios =
