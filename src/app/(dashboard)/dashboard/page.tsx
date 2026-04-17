@@ -123,17 +123,15 @@ async function getClienteDashboardData(customerId: number, customerName: string)
   const [plants, reportsYear, invoicesYear] = await Promise.all([
     prisma.powerPlant.findMany({
       where: { customerId, active: 1 },
-      select: {
-        id: true, name: true, status: true, capacityKw: true, city: true,
-        generationReports: {
-          where: { active: 1, periodYear: currentYear.year },
-          select: { kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true },
-        },
-      },
+      select: { id: true, name: true, status: true, capacityKw: true, city: true },
     }),
     prisma.generationReport.findMany({
       where: { ...reportWhere, periodYear: currentYear.year },
-      select: { kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true, powerPlantId: true },
+      select: {
+        kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true,
+        powerPlantId: true,
+        plantNameRef: { select: { powerPlantId: true } },
+      },
     }),
     prisma.invoice.findMany({
       where: {
@@ -222,22 +220,33 @@ async function getClienteDashboardData(customerId: number, customerName: string)
     .map(([month, d]) => ({ month, ...d }))
     .sort((a, b) => a.month - b.month);
 
-  // Per-plant stats
+  // Per-plant stats — resolve powerPlantId through plantNameRef when direct FK is null
+  const plantStatsMap = new Map<number, { kwh: number; co2: number; lastMonth: number; lastYear: number }>();
+  for (const r of reportsYear) {
+    const resolvedPlantId = r.powerPlantId ?? r.plantNameRef?.powerPlantId;
+    if (!resolvedPlantId) continue;
+    const entry = plantStatsMap.get(resolvedPlantId) ?? { kwh: 0, co2: 0, lastMonth: 0, lastYear: 0 };
+    entry.kwh += r.kwhGenerated ?? 0;
+    entry.co2 += r.co2Avoided ?? 0;
+    const period = r.periodYear * 12 + r.periodMonth;
+    if (period > entry.lastYear * 12 + entry.lastMonth) {
+      entry.lastMonth = r.periodMonth;
+      entry.lastYear = r.periodYear;
+    }
+    plantStatsMap.set(resolvedPlantId, entry);
+  }
+
   const plantRows = plants.map((p) => {
-    const pKwh = p.generationReports.reduce((s, r) => s + (r.kwhGenerated ?? 0), 0);
-    const pCo2 = p.generationReports.reduce((s, r) => s + (r.co2Avoided ?? 0), 0);
-    const lastReport = p.generationReports.length > 0
-      ? p.generationReports.reduce((latest, r) => (r.periodYear * 12 + r.periodMonth > latest.periodYear * 12 + latest.periodMonth ? r : latest))
-      : null;
+    const stats = plantStatsMap.get(p.id);
     return {
       name: p.name,
       city: p.city,
       status: p.status,
       capacityKw: p.capacityKw,
-      kwhYear: pKwh,
-      co2Year: pCo2,
-      lastReportMonth: lastReport?.periodMonth ?? null,
-      lastReportYear: lastReport?.periodYear ?? null,
+      kwhYear: stats?.kwh ?? 0,
+      co2Year: stats?.co2 ?? 0,
+      lastReportMonth: stats?.lastMonth || null,
+      lastReportYear: stats?.lastYear || null,
     };
   });
 
