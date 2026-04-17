@@ -3,7 +3,7 @@ import { getPortfolioLogo, PORTFOLIO_LOGOS } from "@/lib/portfolio-logos";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
+const FROM = process.env.RESEND_FROM_EMAIL ?? "S-Invest <no-reply@sinvest.cl>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.sinvest.cl";
 
 function baseLayout(content: string) {
