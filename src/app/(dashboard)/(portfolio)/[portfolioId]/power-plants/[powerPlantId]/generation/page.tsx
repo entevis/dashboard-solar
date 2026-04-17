@@ -1,7 +1,6 @@
 import { requireAuth, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { formatKwh } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { BillingTable, type BillingSortKey } from "@/components/billing/billing-table";
 import { GenerationCharts } from "@/components/generation/generation-charts";
@@ -10,7 +9,6 @@ import Typography from "@mui/material/Typography";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { formatCLP } from "@/lib/utils/formatters";
 
@@ -108,9 +106,6 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
         select: { kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true },
       })
     : [];
-  const totalKwh = allReports.reduce((sum, r) => sum + (r.kwhGenerated ?? 0), 0);
-  const totalCo2 = allReports.reduce((sum, r) => sum + (r.co2Avoided ?? 0), 0);
-
   // Aggregate by month for charts
   const monthlyMap = new Map<string, { month: number; year: number; kwh: number; co2: number }>();
   for (const r of allReports) {
@@ -150,7 +145,7 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
       <Box>
         <Typography variant="h5" fontWeight={700} color="text.primary">{plant.name}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-          Facturas y reportes de generación
+          {total} {total === 1 ? "factura" : "facturas"} y reportes de generación
         </Typography>
       </Box>
 
@@ -158,21 +153,6 @@ export default async function PortfolioPlantGenerationPage({ params, searchParam
         <Tab label="General" value="overview" component={Link} href={base} />
         <Tab label="Facturas y reportes" value="generation" component={Link} href={`${base}/generation`} />
       </Tabs>
-
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2, flexShrink: 0 }}>
-        {[
-          { label: "Total generado", value: formatKwh(totalKwh), color: "text.primary" },
-          { label: "CO₂ evitado", value: `${totalCo2.toFixed(2)} ton`, color: "#16a34a" },
-          { label: "Facturas", value: String(total), color: "text.primary" },
-        ].map((kpi) => (
-          <Card key={kpi.label} elevation={0} sx={{ border: "1px solid", borderColor: "divider" }}>
-            <CardContent>
-              <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>{kpi.label}</Typography>
-              <Typography variant="h6" fontWeight={700} sx={{ color: kpi.color }}>{kpi.value}</Typography>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
 
       <GenerationCharts data={chartData} />
 
