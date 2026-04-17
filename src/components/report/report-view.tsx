@@ -206,11 +206,6 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 6 }}>
 
       {/* ── HERO ── */}
-      {epcLogoUrl && (
-        <Box sx={{ pt: 2 }}>
-          <Image src={epcLogoUrl} alt={epcName ?? "EPC"} width={160} height={48} style={{ objectFit: "contain", objectPosition: "left" }} />
-        </Box>
-      )}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 3 }}>
         <Box>
           <Typography fontSize="0.75rem" color={brandBlue} fontWeight={500} letterSpacing="0.05em" textTransform="uppercase" sx={{ mb: 1 }}>
@@ -574,10 +569,13 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
       )}
 
       {/* ── FOOTER ── */}
-      <Box sx={{ borderTop: "1px solid #E5EAF2", pt: 3, mt: 2, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+      <Box sx={{ borderTop: "1px solid #E5EAF2", pt: 3, mt: 2, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, alignItems: "flex-end" }}>
         <Box>
           <Typography sx={{ fontWeight: 600, fontSize: "0.8125rem", color: "#334155", mb: 0.5 }}>S-Invest · Dashboard del Inversor</Typography>
-          <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Datos operacionales provistos por {epcName === "Rising Sun" ? "Rising Sun Energía Solar" : "Delta Activos · D-Plus"}</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Datos operacionales provistos por</Typography>
+            <Image src="/logos/epc/delta-activos.png" alt="Delta Activos" width={100} height={28} style={{ objectFit: "contain" }} />
+          </Box>
         </Box>
         <Box sx={{ textAlign: "right" }}>
           {codigo && <Typography sx={{ fontSize: "0.75rem", color: "#64748B" }}>Reporte {plantName} · código {codigo}</Typography>}
