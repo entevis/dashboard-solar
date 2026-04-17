@@ -45,6 +45,11 @@ function buttonRow(label: string, url: string) {
 </td></tr>`;
 }
 
+function activateUrl(link: string, type: "invite" | "recovery") {
+  const encoded = Buffer.from(link).toString("base64");
+  return `${APP_URL}/activate?link=${encodeURIComponent(encoded)}&type=${type}`;
+}
+
 export async function sendInviteEmail(params: {
   to: string;
   userName: string;
@@ -54,6 +59,7 @@ export async function sendInviteEmail(params: {
 }) {
   const logoUrl = params.portfolioId ? getPortfolioLogo(params.portfolioId) : null;
   const firstName = params.userName.split(" ")[0];
+  const safeLink = activateUrl(params.inviteLink, "invite");
 
   const html = baseLayout(`
     ${headerRow(logoUrl)}
@@ -68,9 +74,9 @@ export async function sendInviteEmail(params: {
         Para activar tu cuenta, haz clic en el botón de abajo y define tu contraseña.
       </p>
     </td></tr>
-    ${buttonRow("Activar mi cuenta", params.inviteLink)}
+    ${buttonRow("Activar mi cuenta", safeLink)}
     <tr><td style="padding:0 32px 24px">
-      <p style="margin:0;font-size:12px;color:#737686;line-height:1.5">Este enlace es de un solo uso y expira en 24 horas. Si no solicitaste esta invitación, puedes ignorar este correo.</p>
+      <p style="margin:0;font-size:12px;color:#737686;line-height:1.5">Este enlace es de un solo uso y expira en 1 hora. Si no solicitaste esta invitación, puedes ignorar este correo.</p>
     </td></tr>
   `);
 
@@ -90,6 +96,7 @@ export async function sendRecoveryEmail(params: {
   recoveryLink: string;
 }) {
   const firstName = params.userName.split(" ")[0];
+  const safeLink = activateUrl(params.recoveryLink, "recovery");
 
   const html = baseLayout(`
     ${headerRow()}
@@ -104,9 +111,9 @@ export async function sendRecoveryEmail(params: {
         Haz clic en el botón de abajo para elegir una nueva contraseña.
       </p>
     </td></tr>
-    ${buttonRow("Restablecer contraseña", params.recoveryLink)}
+    ${buttonRow("Restablecer contraseña", safeLink)}
     <tr><td style="padding:0 32px 24px">
-      <p style="margin:0;font-size:12px;color:#737686;line-height:1.5">Este enlace es de un solo uso y expira en 24 horas. Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
+      <p style="margin:0;font-size:12px;color:#737686;line-height:1.5">Este enlace es de un solo uso y expira en 1 hora. Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
     </td></tr>
   `);
 
