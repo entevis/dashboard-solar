@@ -138,11 +138,24 @@ model Address {
   @@map("addresses")
 }
 
+model Epc {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  active    Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  powerPlants PowerPlant[]
+
+  @@map("epcs")
+}
+
 model PowerPlant {
   id                 Int       @id @default(autoincrement())
   name               String
   portfolioId        Int       @map("portfolio_id")
   customerId         Int       @map("customer_id")
+  epcId              Int?      @map("epc_id")
   status             String    @default("active")
   city               String?
   location           String?
@@ -164,6 +177,7 @@ model PowerPlant {
 
   portfolio         Portfolio              @relation(fields: [portfolioId], references: [id])
   customer          Customer               @relation(fields: [customerId], references: [id])
+  epc               Epc?                   @relation(fields: [epcId], references: [id])
   address           Address?
   plantNames        PlantName[]
   generationReports GenerationReport[]
@@ -173,6 +187,7 @@ model PowerPlant {
 
   @@index([portfolioId])
   @@index([customerId])
+  @@index([epcId])
   @@map("power_plants")
 }
 
