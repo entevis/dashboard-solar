@@ -200,7 +200,7 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear }: Prop
   });
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 6, maxWidth: 960, mx: "auto", width: "100%" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 6 }}>
 
       {/* ── HERO ── */}
       <Box sx={{ pt: 2, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 3 }}>
