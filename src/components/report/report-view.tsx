@@ -177,13 +177,11 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
   // Build daily chart
   function getDailyDatasets() {
     if (dailyView === "total") {
-      return [{
-        type: "bar" as const,
-        label: "Generación (kWh)",
-        data: dailyTotals,
-        backgroundColor: dailyTotals.map((v) => v === maxDay ? greenColor : v === minDay ? dangerColor : brandBlueSoft),
-        borderRadius: 4, borderSkipped: false as const, yAxisID: "y", order: 2,
-      }];
+      return [
+        { type: "bar" as const, label: "Producción diaria", data: dailyTotals, backgroundColor: dailyTotals.map((v) => v === maxDay ? greenColor : v === minDay ? dangerColor : brandBlueSoft), borderRadius: 4, borderSkipped: false as const, yAxisID: "y", order: 2 },
+        { type: "bar" as const, label: "Mayor producción", data: [], backgroundColor: greenColor, borderRadius: 4, borderSkipped: false as const },
+        { type: "bar" as const, label: "Menor producción", data: [], backgroundColor: dangerColor, borderRadius: 4, borderSkipped: false as const },
+      ];
     }
     const colors = [brandBlue, secondary, "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899"];
     return invCodes.map((code, i) => ({
@@ -291,7 +289,7 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: "index" as const, intersect: false },
                 plugins: {
-                  legend: { display: dailyView === "inverters", position: "bottom" as const, labels: { usePointStyle: true, boxWidth: 8, padding: 16, font: FONT } },
+                  legend: { display: true, position: "bottom" as const, labels: { usePointStyle: true, boxWidth: 8, padding: 16, font: FONT } },
                   tooltip: { ...tooltipStyle, callbacks: {
                     title: (items) => `Día ${items[0].label} de ${MONTHS[periodMonth - 1].toLowerCase()}`,
                     label: (ctx) => `  ${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toLocaleString("es-CL", { maximumFractionDigits: 1 })} kWh`,
