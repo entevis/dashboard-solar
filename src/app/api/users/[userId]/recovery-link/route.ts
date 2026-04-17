@@ -25,7 +25,7 @@ export async function POST(
 
   if (emailMode === "smtp") {
     const { error } = await supabaseAdmin.auth.resetPasswordForEmail(target.email, {
-      redirectTo: `${appUrl}/set-password`,
+      redirectTo: `${appUrl}/api/auth/callback?next=/set-password`,
     });
     if (error) {
       return NextResponse.json(
@@ -40,7 +40,7 @@ export async function POST(
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: "recovery",
     email: target.email,
-    options: { redirectTo: `${appUrl}/set-password` },
+    options: { redirectTo: `${appUrl}/api/auth/callback?next=/set-password` },
   });
 
   if (error || !data.properties?.action_link) {
