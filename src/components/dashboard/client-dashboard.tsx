@@ -4,7 +4,9 @@ import { useRef, useEffect } from "react";
 import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import MuiTooltip from "@mui/material/Tooltip";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -143,8 +145,18 @@ export function ClientDashboard(props: ClientDashboardProps) {
       {/* Impact */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
         <ImpactCard icon="🌱" iconBg="#dcfce7" value={co2Year.toFixed(1).replace(".", ",")} label={`ton CO₂ evitadas en ${year}`} />
-        <ImpactCard icon="🌳" iconBg="#dcfce7" value={formatNumber(equivalentTrees)} label="árboles equivalentes" />
-        <ImpactCard icon="🚗" iconBg="#eff4ff" value={String(equivalentCars)} label="autos retirados de circulación" />
+        <ImpactCard
+          icon="🌳" iconBg="#dcfce7"
+          value={formatNumber(equivalentTrees)}
+          label="árboles equivalentes"
+          tooltip="Un árbol absorbe en promedio 22 kg de CO₂ al año (EPA). Árboles equivalentes = (CO₂ evitado en kg) ÷ 22"
+        />
+        <ImpactCard
+          icon="🚗" iconBg="#eff4ff"
+          value={String(equivalentCars)}
+          label="autos retirados de circulación"
+          tooltip="Un auto promedio emite 4,6 toneladas de CO₂ al año (EPA). Autos equivalentes = CO₂ evitado (ton) ÷ 4,6"
+        />
       </Box>
 
       {/* Billing Summary */}
@@ -279,7 +291,7 @@ function ChartCard({ title, subtitle, children }: { title: string; subtitle: str
   );
 }
 
-function ImpactCard({ icon, iconBg, value, label }: { icon: string; iconBg: string; value: string; label: string }) {
+function ImpactCard({ icon, iconBg, value, label, tooltip }: { icon: string; iconBg: string; value: string; label: string; tooltip?: string }) {
   return (
     <Box sx={{
       backgroundColor: "#ffffff",
@@ -287,9 +299,20 @@ function ImpactCard({ icon, iconBg, value, label }: { icon: string; iconBg: stri
       borderRadius: "12px",
       padding: 3,
       textAlign: "center",
+      position: "relative",
       transition: "transform 0.15s",
       "&:hover": { transform: "translateY(-2px)", boxShadow: "0 4px 16px rgba(13,28,46,0.10)" },
     }}>
+      {tooltip && (
+        <MuiTooltip
+          title={tooltip}
+          placement="top"
+          arrow
+          slotProps={{ tooltip: { sx: { fontSize: "12px", maxWidth: 260, lineHeight: 1.5, p: 1.5 } } }}
+        >
+          <InfoOutlinedIcon sx={{ position: "absolute", top: 12, right: 12, fontSize: 16, color: "#b4c5ff", cursor: "help", "&:hover": { color: "#004ac6" } }} />
+        </MuiTooltip>
+      )}
       <Box sx={{
         width: 48, height: 48, borderRadius: "14px", display: "inline-flex",
         alignItems: "center", justifyContent: "center", mb: 1.5, fontSize: "22px",
