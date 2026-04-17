@@ -1,16 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -19,8 +15,6 @@ import Alert from "@mui/material/Alert";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { formatCLP } from "@/lib/utils/formatters";
-
-interface Portfolio { id: number; name: string }
 
 interface InvoicePreview {
   duemintId: string;
@@ -63,16 +57,17 @@ function PreviewRow({ label, value }: { label: string; value: React.ReactNode })
   );
 }
 
-export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] }) {
+export function ImportInvoiceDialog() {
   const router = useRouter();
+  const pathname = usePathname();
+  const portfolioId = pathname.match(/^\/(\d+)\//)?.[1] ?? "";
+
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("form");
-
-  const [portfolioId, setPortfolioId] = useState<string>(portfolios[0] ? String(portfolios[0].id) : "");
-  const [duemintId, setDuemintId]     = useState("");
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState<string | null>(null);
-  const [result, setResult]           = useState<PreviewResult | null>(null);
+  const [duemintId, setDuemintId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<PreviewResult | null>(null);
 
   function reset() {
     setStep("form");
@@ -140,34 +135,22 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
         </DialogTitle>
 
         <DialogContent sx={{ pt: "8px !important" }}>
-
-          {/* FORM */}
           {step === "form" && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Portafolio</InputLabel>
-                <Select label="Portafolio" value={portfolioId} onChange={(e) => setPortfolioId(String(e.target.value))}>
-                  {portfolios.map((p) => (
-                    <MenuItem key={p.id} value={String(p.id)} sx={{ fontSize: "0.8125rem" }}>{p.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
               <TextField
                 size="small"
                 label="ID de factura en Duemint"
                 placeholder="ej. 43533878"
+                autoFocus
                 value={duemintId}
                 onChange={(e) => setDuemintId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleFetch()}
                 inputProps={{ style: { fontFamily: "monospace", fontSize: "0.8125rem" } }}
               />
-
               {error && <Alert severity="error" sx={{ fontSize: "0.8125rem" }}>{error}</Alert>}
             </Box>
           )}
 
-          {/* PREVIEW */}
           {step === "preview" && result && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, backgroundColor: "#eff4ff", borderRadius: 1.5, p: 2 }}>
@@ -194,7 +177,6 @@ export function ImportInvoiceDialog({ portfolios }: { portfolios: Portfolio[] })
             </Box>
           )}
 
-          {/* SUCCESS */}
           {step === "success" && (
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 3 }}>
               <Box sx={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: "#dbe1ff", display: "flex", alignItems: "center", justifyContent: "center" }}>

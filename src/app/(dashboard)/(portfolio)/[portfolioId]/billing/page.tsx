@@ -163,11 +163,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
         status={status}
         plants={[]}
         isMaestro={isMaestro}
-        actions={isMaestro && maestroPortfolios.length > 0 ? (
-          <>
-            <ImportInvoiceDialog portfolios={maestroPortfolios} />
-          </>
-        ) : undefined}
+        actions={isMaestro ? <ImportInvoiceDialog /> : undefined}
       />
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 2, flexShrink: 0 }}>

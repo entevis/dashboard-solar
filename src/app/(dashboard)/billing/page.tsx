@@ -95,9 +95,7 @@ export default async function BillingPage({
       take: pageSize,
     }),
     prisma.invoice.findMany({ where: tableWhere, select: { total: true, statusCode: true } }),
-    isMaestro
-      ? prisma.portfolio.findMany({ where: { active: 1, duemintCompanyId: { not: null } }, select: { id: true, name: true } })
-      : Promise.resolve([]),
+    Promise.resolve([]),
   ]);
 
   function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | "notaCredito" {
@@ -166,11 +164,7 @@ export default async function BillingPage({
         status={status}
         plants={[]}
         isMaestro={isMaestro}
-        actions={isMaestro && maestroPortfolios.length > 0 ? (
-          <>
-            <ImportInvoiceDialog portfolios={maestroPortfolios} />
-          </>
-        ) : undefined}
+        actions={isMaestro ? <ImportInvoiceDialog /> : undefined}
       />
 
       {/* KPI Cards */}
