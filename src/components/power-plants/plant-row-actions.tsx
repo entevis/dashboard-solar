@@ -146,6 +146,8 @@ export function PlantRowActions({ plant, portfolios, customers }: Props) {
       <IconButton
         size="small"
         aria-label={`Acciones para ${plant.name}`}
+        aria-expanded={Boolean(anchorEl)}
+        aria-haspopup="true"
         onClick={(e) => setAnchorEl(e.currentTarget)}
         sx={{ color: "text.secondary" }}
       >

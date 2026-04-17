@@ -111,6 +111,7 @@ export function Topbar({ userName, userEmail, userRole, portfolios = [], selecte
             px: 1,
             py: 0.5,
             "&:hover": { backgroundColor: "#eff4ff" },
+            "&:focus-visible": { outline: "2px solid #004ac6", outlineOffset: 2 },
             transition: "background-color 150ms",
           }}
         >

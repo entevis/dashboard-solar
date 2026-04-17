@@ -194,7 +194,7 @@ export function ClientDashboard(props: ClientDashboardProps) {
           <Typography variant="caption" color="text.secondary">Detalle de cada planta solar asociada a tu cuenta</Typography>
         </Box>
         <Box sx={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }} aria-label="Detalle de plantas solares">
             <thead>
               <tr>
                 {["Planta", "Comuna", "Estado", "Potencia (kWp)", "Generación " + year + " (kWh)", "CO₂ evitado (ton)", "Último reporte"].map((h, i) => (
@@ -317,7 +317,7 @@ function ImpactCard({ icon, iconBg, value, label, tooltip }: { icon: string; ico
         width: 48, height: 48, borderRadius: "14px", display: "inline-flex",
         alignItems: "center", justifyContent: "center", mb: 1.5, fontSize: "22px",
         backgroundColor: iconBg,
-      }}>{icon}</Box>
+      }}><span aria-hidden="true">{icon}</span></Box>
       <Typography sx={{ fontSize: "32px", fontWeight: 700, letterSpacing: "-0.02em", mb: 0.5 }}>{value}</Typography>
       <Typography sx={{ fontSize: "13px", color: "#737686" }}>{label}</Typography>
     </Box>

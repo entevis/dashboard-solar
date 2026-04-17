@@ -156,7 +156,7 @@ export function PortfolioOverview(props: PortfolioOverviewProps) {
 
       {/* Top clients table */}
       <TableCard title="Top 10 clientes por generación" subtitle={`Clientes con mayor generación acumulada en ${year}`}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }} aria-label="Top 10 clientes por generación">
           <thead>
             <tr>
               {["Cliente", "Plantas", "Capacidad (kWp)", `Generación ${year} (kWh)`, "CO₂ evitado (ton)", `Facturación ${year}`, "Estado"].map((h, i) => (
@@ -206,7 +206,7 @@ export function PortfolioOverview(props: PortfolioOverviewProps) {
 
       {/* Top plants */}
       <TableCard title="Top 10 plantas por generación" subtitle={`Plantas con mayor producción acumulada en ${year}`}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }} aria-label="Top 10 plantas por generación">
           <thead>
             <tr>
               {["Planta", "Cliente", "Comuna", "Potencia (kWp)", `Generación ${year} (kWh)`, "CO₂ evitado (ton)", "Último reporte"].map((h, i) => (
@@ -309,7 +309,7 @@ function ImpactCard({ icon, iconBg, value, label, tooltip }: { icon: string; ico
           <InfoOutlinedIcon sx={{ position: "absolute", top: 12, right: 12, fontSize: 16, color: "#b4c5ff", cursor: "help", "&:hover": { color: "#004ac6" } }} />
         </MuiTooltip>
       )}
-      <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "inline-flex", alignItems: "center", justifyContent: "center", mb: 1.5, fontSize: "22px", backgroundColor: iconBg }}>{icon}</Box>
+      <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "inline-flex", alignItems: "center", justifyContent: "center", mb: 1.5, fontSize: "22px", backgroundColor: iconBg }}><span aria-hidden="true">{icon}</span></Box>
       <Typography sx={{ fontSize: "32px", fontWeight: 700, letterSpacing: "-0.02em", mb: 0.5 }}>{value}</Typography>
       <Typography sx={{ fontSize: "13px", color: "#737686" }}>{label}</Typography>
     </Box>

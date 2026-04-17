@@ -42,7 +42,9 @@ export function InvoiceRowActions({ invoiceId, duemintId, isPaid, url, pdfUrl, r
     <>
       <IconButton
         size="small"
-        aria-label="Acciones"
+        aria-label="Acciones de factura"
+        aria-expanded={Boolean(anchorEl)}
+        aria-haspopup="true"
         onClick={(e) => setAnchorEl(e.currentTarget)}
         sx={{ width: 28, height: 28, color: "text.secondary" }}
       >

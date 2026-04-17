@@ -120,7 +120,7 @@ export function MaestroDashboard(props: MaestroDashboardProps) {
           <Typography variant="caption" color="text.secondary">Comparativa de rendimiento y facturación por portafolio</Typography>
         </Box>
         <Box sx={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }} aria-label="Comparativa de portafolios">
             <thead>
               <tr>
                 {["Portafolio", "Plantas", "Capacidad (kWp)", `Generación ${year} (kWh)`, "CO₂ evitado (ton)", `Facturación ${year}`, "Pendientes"].map((h, i) => (
@@ -253,7 +253,7 @@ function ImpactCard({ icon, iconBg, value, label, tooltip }: { icon: string; ico
           <InfoOutlinedIcon sx={{ position: "absolute", top: 12, right: 12, fontSize: 16, color: "#b4c5ff", cursor: "help", "&:hover": { color: "#004ac6" } }} />
         </MuiTooltip>
       )}
-      <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "inline-flex", alignItems: "center", justifyContent: "center", mb: 1.5, fontSize: "22px", backgroundColor: iconBg }}>{icon}</Box>
+      <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "inline-flex", alignItems: "center", justifyContent: "center", mb: 1.5, fontSize: "22px", backgroundColor: iconBg }}><span aria-hidden="true">{icon}</span></Box>
       <Typography sx={{ fontSize: "32px", fontWeight: 700, letterSpacing: "-0.02em", mb: 0.5 }}>{value}</Typography>
       <Typography sx={{ fontSize: "13px", color: "#737686" }}>{label}</Typography>
     </Box>
