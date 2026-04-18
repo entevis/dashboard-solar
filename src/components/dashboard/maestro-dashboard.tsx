@@ -123,7 +123,7 @@ export function MaestroDashboard(props: MaestroDashboardProps) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }} aria-label="Comparativa de portafolios">
             <thead>
               <tr>
-                {["Portafolio", "Plantas", "Capacidad (kWp)", `Generación ${year} (kWh)`, "CO₂ evitado (ton)", `Facturación ${year}`, "Pendientes"].map((h, i) => (
+                {["Portafolio", "Plantas", "Capacidad (kWp)", `Generación ${year} (kWh)`, "CO₂ evitado (ton)", `Facturación ${year}`, "Por vencer", "Vencidas"].map((h, i) => (
                   <th key={h} style={{
                     textAlign: i >= 1 ? "right" : "left", padding: "10px 14px",
                     fontSize: "11px", fontWeight: 600, color: "#737686", textTransform: "uppercase",
@@ -145,7 +145,14 @@ export function MaestroDashboard(props: MaestroDashboardProps) {
                   <td style={{ padding: "14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>{p.co2Year.toFixed(1).replace(".", ",")}</td>
                   <td style={{ padding: "14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>{formatCLPFull(p.billingYear)}</td>
                   <td style={{ padding: "14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>
-                    <PendingPills porVencer={p.porVencerCount} vencidas={p.vencidasCount} />
+                    {p.porVencerCount > 0
+                      ? <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#fef9c3", color: "#a16207" }}>{p.porVencerCount}</span>
+                      : <span style={{ color: "#737686" }}>0</span>}
+                  </td>
+                  <td style={{ padding: "14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>
+                    {p.vencidasCount > 0
+                      ? <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#fee2e2", color: "#dc2626" }}>{p.vencidasCount}</span>
+                      : <span style={{ color: "#737686" }}>0</span>}
                   </td>
                 </tr>
               ))}
@@ -257,16 +264,6 @@ function ImpactCard({ icon, iconBg, value, label, tooltip }: { icon: string; ico
       <Typography sx={{ fontSize: "32px", fontWeight: 700, letterSpacing: "-0.02em", mb: 0.5 }}>{value}</Typography>
       <Typography sx={{ fontSize: "13px", color: "#737686" }}>{label}</Typography>
     </Box>
-  );
-}
-
-function PendingPills({ porVencer, vencidas }: { porVencer: number; vencidas: number }) {
-  if (porVencer === 0 && vencidas === 0) return <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#dcfce7", color: "#16a34a" }}>Al día</span>;
-  return (
-    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-      {vencidas > 0 && <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#fee2e2", color: "#dc2626" }}>{vencidas} vencidas</span>}
-      {porVencer > 0 && <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#fef9c3", color: "#a16207" }}>{porVencer} por vencer</span>}
-    </span>
   );
 }
 
