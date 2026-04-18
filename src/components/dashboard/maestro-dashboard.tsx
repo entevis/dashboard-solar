@@ -32,8 +32,8 @@ interface PortfolioRow {
   kwhYear: number;
   co2Year: number;
   billingYear: number;
-  pendingCount: number;
-  pendingLabel: string;
+  porVencerCount: number;
+  vencidasCount: number;
 }
 
 interface MonthlyByPortfolio {
@@ -145,7 +145,7 @@ export function MaestroDashboard(props: MaestroDashboardProps) {
                   <td style={{ padding: "14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>{p.co2Year.toFixed(1).replace(".", ",")}</td>
                   <td style={{ padding: "14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>{formatCLPFull(p.billingYear)}</td>
                   <td style={{ padding: "14px", borderBottom: "1px solid #e6eeff", textAlign: "right" }}>
-                    <PendingPill count={p.pendingCount} label={p.pendingLabel} />
+                    <PendingPills porVencer={p.porVencerCount} vencidas={p.vencidasCount} />
                   </td>
                 </tr>
               ))}
@@ -260,12 +260,14 @@ function ImpactCard({ icon, iconBg, value, label, tooltip }: { icon: string; ico
   );
 }
 
-function PendingPill({ count, label }: { count: number; label: string }) {
-  if (count === 0) return <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#dcfce7", color: "#16a34a" }}>Al día</span>;
-  const isOverdue = label.includes("vencida");
-  const bg = isOverdue ? "#fee2e2" : "#fef9c3";
-  const color = isOverdue ? "#dc2626" : "#a16207";
-  return <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: bg, color }}>{count} {label}</span>;
+function PendingPills({ porVencer, vencidas }: { porVencer: number; vencidas: number }) {
+  if (porVencer === 0 && vencidas === 0) return <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#dcfce7", color: "#16a34a" }}>Al día</span>;
+  return (
+    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+      {vencidas > 0 && <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#fee2e2", color: "#dc2626" }}>{vencidas} vencidas</span>}
+      {porVencer > 0 && <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#fef9c3", color: "#a16207" }}>{porVencer} por vencer</span>}
+    </span>
+  );
 }
 
 /* ─── Charts ─── */

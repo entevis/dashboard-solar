@@ -90,7 +90,8 @@ async function getMaestroDashboardData() {
   // Billing
   const billingSummary = { pagadas: { total: 0, count: 0 }, porVencer: { total: 0, count: 0 }, vencidas: { total: 0, count: 0 }, notasCredito: { total: 0, count: 0 } };
   const portfolioBilling = new Map<number, number>();
-  const portfolioPending = new Map<number, { count: number; overdue: boolean }>();
+  const portfolioPorVencer = new Map<number, number>();
+  const portfolioVencidas = new Map<number, number>();
   const billingMonthlyMap = new Map<number, { pagadas: number; porVencer: number; vencidas: number }>();
 
   for (const inv of invoicesYear) {
@@ -108,7 +109,7 @@ async function getMaestroDashboardData() {
         billingSummary.porVencer.total += t; billingSummary.porVencer.count++;
         if (pid) {
           portfolioBilling.set(pid, (portfolioBilling.get(pid) ?? 0) + t);
-          const pe = portfolioPending.get(pid) ?? { count: 0, overdue: false }; pe.count++; portfolioPending.set(pid, pe);
+          portfolioPorVencer.set(pid, (portfolioPorVencer.get(pid) ?? 0) + 1);
         }
         if (m) { const e = billingMonthlyMap.get(m) ?? { pagadas: 0, porVencer: 0, vencidas: 0 }; e.porVencer += t; billingMonthlyMap.set(m, e); }
         break;
@@ -116,7 +117,7 @@ async function getMaestroDashboardData() {
         billingSummary.vencidas.total += t; billingSummary.vencidas.count++;
         if (pid) {
           portfolioBilling.set(pid, (portfolioBilling.get(pid) ?? 0) + t);
-          const pe = portfolioPending.get(pid) ?? { count: 0, overdue: false }; pe.count++; pe.overdue = true; portfolioPending.set(pid, pe);
+          portfolioVencidas.set(pid, (portfolioVencidas.get(pid) ?? 0) + 1);
         }
         if (m) { const e = billingMonthlyMap.get(m) ?? { pagadas: 0, porVencer: 0, vencidas: 0 }; e.vencidas += t; billingMonthlyMap.set(m, e); }
         break;
@@ -129,7 +130,6 @@ async function getMaestroDashboardData() {
   const monthlyBilling = [...billingMonthlyMap.entries()].map(([month, d]) => ({ month, ...d })).sort((a, b) => a.month - b.month);
 
   const portfolioRows = portfolios.map((p) => {
-    const pending = portfolioPending.get(p.id);
     return {
       id: p.id,
       name: p.name,
@@ -138,8 +138,8 @@ async function getMaestroDashboardData() {
       kwhYear: portfolioKwh.get(p.id) ?? 0,
       co2Year: portfolioCo2.get(p.id) ?? 0,
       billingYear: portfolioBilling.get(p.id) ?? 0,
-      pendingCount: pending?.count ?? 0,
-      pendingLabel: pending?.overdue ? "vencidas" : "por vencer",
+      porVencerCount: portfolioPorVencer.get(p.id) ?? 0,
+      vencidasCount: portfolioVencidas.get(p.id) ?? 0,
     };
   });
 
