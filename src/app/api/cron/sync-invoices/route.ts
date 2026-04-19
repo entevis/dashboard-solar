@@ -62,7 +62,26 @@ export async function GET(request: NextRequest) {
   let reportsSkipped = 0;
   const errors: string[] = [];
 
+  // Per-portfolio stats for Google Sheet logging
+  const portfolioStats: {
+    name: string;
+    invCreated: number;
+    invUpdated: number;
+    invSkipped: number;
+    repCreated: number;
+    repUpdated: number;
+    repSkipped: number;
+    errors: string[];
+  }[] = [];
+
   for (const portfolio of portfolios) {
+    const pStats = {
+      name: portfolio.name,
+      invCreated: 0, invUpdated: 0, invSkipped: 0,
+      repCreated: 0, repUpdated: 0, repSkipped: 0,
+      errors: [] as string[],
+    };
+
     let invoices;
     try {
       // dateBy=3: filter by update date (not creation date)
@@ -70,19 +89,21 @@ export async function GET(request: NextRequest) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error desconocido";
       errors.push(`${portfolio.name}: ${msg}`);
+      pStats.errors.push(msg);
       console.error(`[cron/sync-invoices] ${portfolio.name}: ${msg}`);
+      portfolioStats.push(pStats);
       continue;
     }
 
     console.log(`[cron/sync-invoices] ${portfolio.name}: ${invoices.length} invoices updated since ${since}`);
 
     for (const inv of invoices) {
-      if (!inv.id) { totalSkipped++; continue; }
+      if (!inv.id) { totalSkipped++; pStats.invSkipped++; continue; }
 
       const duemintId = String(inv.id);
       const rawTaxId = inv.clientTaxId ?? inv.client?.taxId ?? null;
       const customer = rawTaxId ? customerByRut.get(normalizeRut(rawTaxId)) ?? null : null;
-      if (!customer) { totalSkipped++; continue; }
+      if (!customer) { totalSkipped++; pStats.invSkipped++; continue; }
 
       const creditNote = inv.creditNote?.[0] ?? null;
       const data = {
@@ -117,24 +138,24 @@ export async function GET(request: NextRequest) {
       const existing = await prisma.invoice.findUnique({ where: { duemintId } });
       if (existing) {
         await prisma.invoice.update({ where: { duemintId }, data });
-        totalUpdated++;
+        totalUpdated++; pStats.invUpdated++;
       } else {
         await prisma.invoice.create({ data: { ...data, duemintId } });
-        totalCreated++;
+        totalCreated++; pStats.invCreated++;
       }
 
       // --- Report extraction ---
-      if (inv.status === 4) { reportsSkipped++; continue; } // Skip "Documento" status
+      if (inv.status === 4) { reportsSkipped++; pStats.repSkipped++; continue; } // Skip "Documento" status
 
       const reportUrl = extractReportUrl(inv.gloss);
-      if (!reportUrl) { reportsSkipped++; continue; }
+      if (!reportUrl) { reportsSkipped++; pStats.repSkipped++; continue; }
 
       const existingReport = await prisma.generationReport.findUnique({ where: { duemintId } });
 
       try {
         const { kwhGenerated, co2Avoided, periodMonth, periodYear, rawJson } = await extractDataFromReportPage(reportUrl);
 
-        if (!periodMonth || !periodYear) { reportsSkipped++; continue; }
+        if (!periodMonth || !periodYear) { reportsSkipped++; pStats.repSkipped++; continue; }
 
         // Auto-link plantName if it exists
         const plantNameEntry = rawJson
@@ -160,9 +181,9 @@ export async function GET(request: NextRequest) {
           }
           if (Object.keys(updateData).length > 0) {
             await prisma.generationReport.update({ where: { duemintId }, data: updateData });
-            reportsUpdated++;
+            reportsUpdated++; pStats.repUpdated++;
           } else {
-            reportsSkipped++;
+            reportsSkipped++; pStats.repSkipped++;
           }
         } else {
           const plantName = rawJson
@@ -186,13 +207,44 @@ export async function GET(request: NextRequest) {
               duemintId,
             },
           });
-          reportsCreated++;
+          reportsCreated++; pStats.repCreated++;
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error desconocido";
         errors.push(`Report ${duemintId}: ${msg}`);
-        reportsSkipped++;
+        pStats.errors.push(`Report ${duemintId}: ${msg}`);
+        reportsSkipped++; pStats.repSkipped++;
       }
+    }
+
+    portfolioStats.push(pStats);
+  }
+
+  // --- Log to Google Sheet via Apps Script webhook ---
+  const sheetWebhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+  if (sheetWebhookUrl) {
+    const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+    const rows = portfolioStats.map((p) => ({
+      fecha: now,
+      portafolio: p.name,
+      facturasCreadas: p.invCreated,
+      facturasActualizadas: p.invUpdated,
+      facturasOmitidas: p.invSkipped,
+      reportesCreados: p.repCreated,
+      reportesActualizados: p.repUpdated,
+      reportesOmitidos: p.repSkipped,
+      errores: p.errors.join("; "),
+    }));
+
+    try {
+      await fetch(sheetWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      console.log(`[cron/sync-invoices] Logged ${rows.length} rows to Google Sheet`);
+    } catch (err) {
+      console.error(`[cron/sync-invoices] Failed to log to Google Sheet:`, err);
     }
   }
 
