@@ -56,7 +56,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const VALID_STATUSES = ["pagada", "porVencer", "vencida", "notaCredito"];
   const status = VALID_STATUSES.includes(sp.status ?? "") ? sp.status! : "all";
 
-  const plantNameId = sp.plantNameId ? parseInt(sp.plantNameId) : undefined;
+  const plantId = sp.plantNameId ? parseInt(sp.plantNameId) : undefined;
 
   const sortBy = VALID_SORT_KEYS.includes(sp.sortBy as BillingSortKey) ? sp.sortBy as BillingSortKey : "issueDate";
   const sortDir = sp.sortDir === "asc" ? "asc" : "desc";
@@ -69,12 +69,14 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     invoiceWhere.issueDate = { gte: periodStart, lt: periodEnd };
   }
 
-  // Filter by plant via plantName association
-  if (plantNameId) {
-    const plantNameEntry = await prisma.plantName.findUnique({ where: { id: plantNameId }, select: { powerPlantId: true } });
-    if (plantNameEntry?.powerPlantId) {
-      invoiceWhere.powerPlantId = plantNameEntry.powerPlantId;
-    }
+  // Filter by power plant — find invoices via their linked generation reports
+  if (plantId) {
+    const matchingReports = await prisma.generationReport.findMany({
+      where: { powerPlantId: plantId, duemintId: { not: null } },
+      select: { duemintId: true },
+    });
+    const duemintIds = matchingReports.map((r) => r.duemintId).filter(Boolean) as string[];
+    invoiceWhere.duemintId = { in: duemintIds };
   }
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
@@ -109,8 +111,8 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       take: pageSize,
     }),
     prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true } }),
-    prisma.plantName.findMany({
-      where: { powerPlant: { portfolioId: pid, active: 1 } },
+    prisma.powerPlant.findMany({
+      where: { portfolioId: pid, active: 1 },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
