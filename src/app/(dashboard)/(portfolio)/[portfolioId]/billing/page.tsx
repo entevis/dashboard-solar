@@ -30,7 +30,7 @@ function buildOrderBy(sortBy: BillingSortKey, dir: "asc" | "desc") {
 
 interface Props {
   params: Promise<{ portfolioId: string }>;
-  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; status?: string; sortBy?: string; sortDir?: string; invoiceNumber?: string }>;
+  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; monthTo?: string; yearTo?: string; status?: string; sortBy?: string; sortDir?: string; invoiceNumber?: string; plantNameId?: string }>;
 }
 
 export default async function PortfolioBillingPage({ params, searchParams }: Props) {
@@ -49,9 +49,14 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const invoiceNumber = sp.invoiceNumber?.trim() ?? "";
   const month = Math.min(12, Math.max(1, parseInt(sp.month ?? "") || now.getMonth() + 1));
   const year = parseInt(sp.year ?? "") || now.getFullYear();
+  const monthTo = sp.monthTo ? Math.min(12, Math.max(1, parseInt(sp.monthTo))) : undefined;
+  const yearTo = sp.yearTo ? parseInt(sp.yearTo) : undefined;
+  const isRange = monthTo !== undefined && yearTo !== undefined;
 
   const VALID_STATUSES = ["pagada", "porVencer", "vencida", "notaCredito"];
   const status = VALID_STATUSES.includes(sp.status ?? "") ? sp.status! : "all";
+
+  const plantNameId = sp.plantNameId ? parseInt(sp.plantNameId) : undefined;
 
   const sortBy = VALID_SORT_KEYS.includes(sp.sortBy as BillingSortKey) ? sp.sortBy as BillingSortKey : "issueDate";
   const sortDir = sp.sortDir === "asc" ? "asc" : "desc";
@@ -60,8 +65,16 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   // When searching by invoice number, skip date filter to search across all dates
   if (!invoiceNumber) {
     const periodStart = new Date(year, month - 1, 1);
-    const periodEnd = new Date(year, month, 1);
+    const periodEnd = isRange ? new Date(yearTo, monthTo, 1) : new Date(year, month, 1);
     invoiceWhere.issueDate = { gte: periodStart, lt: periodEnd };
+  }
+
+  // Filter by plant via plantName association
+  if (plantNameId) {
+    const plantNameEntry = await prisma.plantName.findUnique({ where: { id: plantNameId }, select: { powerPlantId: true } });
+    if (plantNameEntry?.powerPlantId) {
+      invoiceWhere.powerPlantId = plantNameEntry.powerPlantId;
+    }
   }
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
@@ -86,7 +99,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   }
   const isMaestro = user.role === UserRole.MAESTRO;
 
-  const [total, invoices, allInvoices, maestroPortfolios] = await Promise.all([
+  const [total, invoices, allInvoices, plantNames] = await Promise.all([
     prisma.invoice.count({ where: tableWhere }),
     prisma.invoice.findMany({
       where: tableWhere,
@@ -96,7 +109,11 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       take: pageSize,
     }),
     prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true } }),
-    isMaestro ? prisma.portfolio.findMany({ where: { active: 1, duemintCompanyId: { not: null } }, select: { id: true, name: true } }) : Promise.resolve([]),
+    prisma.plantName.findMany({
+      where: { powerPlant: { portfolioId: pid, active: 1 } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | "notaCredito" {
@@ -153,15 +170,17 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       <Box>
         <Typography variant="h5" fontWeight={700} color="text.primary">Facturas y reportes</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-          {total} {total === 1 ? "factura" : "facturas"}{invoiceNumber ? ` · Buscando "${invoiceNumber}"` : ` · ${MONTHS[month - 1]} ${year}`}
+          {total} {total === 1 ? "factura" : "facturas"}{invoiceNumber ? ` · Buscando "${invoiceNumber}"` : isRange ? ` · ${MONTHS[month - 1]} ${year} → ${MONTHS[monthTo - 1]} ${yearTo}` : ` · ${MONTHS[month - 1]} ${year}`}
         </Typography>
       </Box>
 
       <BillingFilters
         month={month}
         year={year}
+        monthTo={monthTo}
+        yearTo={yearTo}
         status={status}
-        plants={[]}
+        plants={plantNames}
         isMaestro={isMaestro}
         actions={isMaestro ? <ImportInvoiceDialog /> : undefined}
       />
