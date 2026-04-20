@@ -30,7 +30,7 @@ function buildOrderBy(sortBy: BillingSortKey, dir: "asc" | "desc") {
 
 interface Props {
   params: Promise<{ portfolioId: string }>;
-  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; monthTo?: string; yearTo?: string; status?: string; sortBy?: string; sortDir?: string; invoiceNumber?: string; plantNameId?: string }>;
+  searchParams: Promise<{ page?: string; size?: string; month?: string; year?: string; monthTo?: string; yearTo?: string; status?: string; sortBy?: string; sortDir?: string; invoiceNumber?: string; plantNameId?: string; customerId?: string }>;
 }
 
 export default async function PortfolioBillingPage({ params, searchParams }: Props) {
@@ -57,6 +57,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const status = VALID_STATUSES.includes(sp.status ?? "") ? sp.status! : "all";
 
   const plantId = sp.plantNameId ? parseInt(sp.plantNameId) : undefined;
+  const customerId = sp.customerId ? parseInt(sp.customerId) : undefined;
 
   const sortBy = VALID_SORT_KEYS.includes(sp.sortBy as BillingSortKey) ? sp.sortBy as BillingSortKey : "issueDate";
   const sortDir = sp.sortDir === "asc" ? "asc" : "desc";
@@ -77,6 +78,11 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     });
     const duemintIds = matchingReports.map((r) => r.duemintId).filter(Boolean) as string[];
     invoiceWhere.duemintId = { in: duemintIds };
+  }
+
+  // Filter by customer
+  if (customerId) {
+    invoiceWhere.customerId = customerId;
   }
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
@@ -101,7 +107,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   }
   const isMaestro = user.role === UserRole.MAESTRO;
 
-  const [total, invoices, allInvoices, plantNames] = await Promise.all([
+  const [total, invoices, allInvoices, plantNames, customers] = await Promise.all([
     prisma.invoice.count({ where: tableWhere }),
     prisma.invoice.findMany({
       where: tableWhere,
@@ -113,6 +119,11 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true } }),
     prisma.powerPlant.findMany({
       where: { portfolioId: pid, active: 1 },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.customer.findMany({
+      where: { active: 1, powerPlants: { some: { portfolioId: pid, active: 1 } } },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
@@ -183,6 +194,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
         yearTo={yearTo}
         status={status}
         plants={plantNames}
+        customers={customers}
         isMaestro={isMaestro}
         actions={isMaestro ? <ImportInvoiceDialog /> : undefined}
       />

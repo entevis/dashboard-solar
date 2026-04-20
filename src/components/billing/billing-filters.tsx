@@ -59,11 +59,12 @@ interface Props {
   yearTo?: number;
   status: string;
   plants?: FilterOption[];
+  customers?: FilterOption[];
   isMaestro?: boolean;
   actions?: React.ReactNode;
 }
 
-export function BillingFilters({ month, year, monthTo, yearTo, status, plants = [], isMaestro, actions }: Props) {
+export function BillingFilters({ month, year, monthTo, yearTo, status, plants = [], customers = [], isMaestro, actions }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -77,6 +78,7 @@ export function BillingFilters({ month, year, monthTo, yearTo, status, plants = 
   const [localYearTo, setLocalYearTo] = useState(String(yearTo ?? year));
   const [localStatus, setLocalStatus] = useState(status);
   const [localPlant, setLocalPlant] = useState(searchParams.get("plantNameId") ?? "all");
+  const [localCustomer, setLocalCustomer] = useState(searchParams.get("customerId") ?? "all");
   const [localInvoiceNumber, setLocalInvoiceNumber] = useState(searchParams.get("invoiceNumber") ?? "");
 
   function applyFilters() {
@@ -93,6 +95,7 @@ export function BillingFilters({ month, year, monthTo, yearTo, status, plants = 
     }
     if (localStatus !== "all") params.set("status", localStatus);
     if (localPlant !== "all") params.set("plantNameId", localPlant);
+    if (localCustomer !== "all") params.set("customerId", localCustomer);
     params.set("page", "1");
     startTransition(() => router.push(`?${params.toString()}`));
     setAnchorEl(null);
@@ -107,6 +110,7 @@ export function BillingFilters({ month, year, monthTo, yearTo, status, plants = 
     setLocalYearTo(String(now.getFullYear()));
     setLocalStatus("all");
     setLocalPlant("all");
+    setLocalCustomer("all");
     setLocalInvoiceNumber("");
   }
 
@@ -114,6 +118,7 @@ export function BillingFilters({ month, year, monthTo, yearTo, status, plants = 
   let activeCount = 0;
   if (localStatus !== "all") activeCount++;
   if (localPlant !== "all") activeCount++;
+  if (localCustomer !== "all") activeCount++;
   if (localInvoiceNumber.trim()) activeCount++;
 
   // Chips for active filters
@@ -132,6 +137,10 @@ export function BillingFilters({ month, year, monthTo, yearTo, status, plants = 
   if (localPlant !== "all") {
     const plantLabel = plants.find((p) => String(p.id) === localPlant)?.name ?? `Planta #${localPlant}`;
     chips.push({ label: plantLabel });
+  }
+  if (localCustomer !== "all") {
+    const customerLabel = customers.find((c) => String(c.id) === localCustomer)?.name ?? `Cliente #${localCustomer}`;
+    chips.push({ label: customerLabel });
   }
 
   return (
@@ -349,6 +358,16 @@ export function BillingFilters({ month, year, monthTo, yearTo, status, plants = 
               options={plants.map((p) => ({ id: p.id, name: p.name }))}
               value={localPlant}
               onChange={(v) => setLocalPlant(v)}
+            />
+          )}
+
+          {customers.length > 0 && (
+            <SearchableSelect
+              label="Cliente"
+              allOption="Todos los clientes"
+              options={customers.map((c) => ({ id: c.id, name: c.name }))}
+              value={localCustomer}
+              onChange={(v) => setLocalCustomer(v)}
             />
           )}
         </Box>
