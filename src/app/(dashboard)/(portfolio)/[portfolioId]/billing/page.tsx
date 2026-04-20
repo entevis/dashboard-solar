@@ -123,7 +123,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       orderBy: { name: "asc" },
     }),
     prisma.customer.findMany({
-      where: { active: 1, powerPlants: { some: { portfolioId: pid, active: 1 } } },
+      where: { active: 1, invoices: { some: { portfolioId: pid, active: 1 } } },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
