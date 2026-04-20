@@ -106,6 +106,12 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     tableWhere = { ...tableWhere, number: { contains: invoiceNumber, mode: "insensitive" as const } };
   }
   const isMaestro = user.role === UserRole.MAESTRO;
+  const isCliente = user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO;
+
+  // Plants: for clients, only show their own plants; otherwise all portfolio plants
+  const plantWhere = isCliente && user.customerId
+    ? { portfolioId: pid, active: 1, customerId: user.customerId }
+    : { portfolioId: pid, active: 1 };
 
   const [total, invoices, allInvoices, plantNames, customers] = await Promise.all([
     prisma.invoice.count({ where: tableWhere }),
@@ -118,15 +124,18 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     }),
     prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true } }),
     prisma.powerPlant.findMany({
-      where: { portfolioId: pid, active: 1 },
+      where: plantWhere,
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-    prisma.customer.findMany({
-      where: { active: 1, invoices: { some: { portfolioId: pid, active: 1 } } },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
+    // Only load customers for non-client roles
+    isCliente
+      ? Promise.resolve([])
+      : prisma.customer.findMany({
+          where: { active: 1, invoices: { some: { portfolioId: pid, active: 1 } } },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
   ]);
 
   function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | "notaCredito" {
