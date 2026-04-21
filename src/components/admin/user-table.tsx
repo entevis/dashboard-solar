@@ -123,8 +123,8 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
                 >
                   <TableCell><TableSortLabel {...col("name")}>Nombre</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("email")}>Email</TableSortLabel></TableCell>
-                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Teléfono</TableCell>
-                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Cargo</TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Teléfono</TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Cargo</TableCell>
                   <TableCell><TableSortLabel {...col("role")}>Rol</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("customer")}>Cliente / Portafolio</TableSortLabel></TableCell>
                   <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Último acceso</TableCell>
