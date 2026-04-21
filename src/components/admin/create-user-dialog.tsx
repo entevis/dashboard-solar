@@ -101,10 +101,8 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
               <InputLabel>Rol</InputLabel>
               <Select label="Rol" value={role} onChange={(e) => { setRole(e.target.value); setPortfolioIds([]); setForm((f) => ({ ...f, customerId: "", assignedPortfolioId: "" })); }}>
                 <MenuItem value="MAESTRO">Maestro</MenuItem>
-                <MenuItem value="OPERATIVO">Operativo</MenuItem>
                 <MenuItem value="CLIENTE">Cliente</MenuItem>
                 <MenuItem value="CLIENTE_PERFILADO">Cliente Perfilado</MenuItem>
-                <MenuItem value="TECNICO">Técnico</MenuItem>
               </Select>
             </FormControl>
             {showCustomer && (

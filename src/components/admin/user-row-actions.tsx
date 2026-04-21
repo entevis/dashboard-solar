@@ -39,7 +39,7 @@ interface User { id: number; name: string; email: string; role: UserRole; custom
 interface Option { id: number; name: string }
 interface Props { user: User; customers: Option[]; portfolios: Option[]; currentUserId: number }
 
-const ROLES: UserRole[] = ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO", "TECNICO"];
+const ROLES: UserRole[] = ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"];
 
 export function UserRowActions({ user, customers, portfolios, currentUserId }: Props) {
   const router = useRouter();

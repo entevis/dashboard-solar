@@ -14,7 +14,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import type { UserRole } from "@prisma/client";
 
-const ROLES: UserRole[] = ["MAESTRO", "OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"];
+const ROLES: UserRole[] = ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"];
 
 export function UserFilterBar() {
   const router = useRouter();
