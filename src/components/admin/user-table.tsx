@@ -115,7 +115,7 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
               <TableHead>
                 <TableRow
                   sx={{
-                    "& .MuiTableCell-head": { backgroundColor: "#eff4ff" },
+                    "& .MuiTableCell-head": { backgroundColor: "#eff4ff", fontSize: "0.75rem", fontWeight: 600 },
                     "& .MuiTableSortLabel-root": { fontSize: "0.75rem", fontWeight: 600 },
                     "& .MuiTableSortLabel-root.Mui-active": { color: "#004ac6" },
                     "& .MuiTableSortLabel-icon": { fontSize: "0.9rem !important" },
@@ -123,13 +123,13 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
                 >
                   <TableCell><TableSortLabel {...col("name")}>Nombre</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("email")}>Email</TableSortLabel></TableCell>
-                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Teléfono</TableCell>
-                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Cargo</TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Teléfono</TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Cargo</TableCell>
                   <TableCell><TableSortLabel {...col("role")}>Rol</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("customer")}>Cliente / Portafolio</TableSortLabel></TableCell>
-                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Último acceso</TableCell>
-                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Creado</TableCell>
-                  <TableCell sx={{ width: 48, fontSize: "0.75rem", fontWeight: 600 }}>Acciones</TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Último acceso</TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Creado</TableCell>
+                  <TableCell sx={{ width: 48 }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
