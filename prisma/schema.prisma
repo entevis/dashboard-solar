@@ -201,10 +201,11 @@ model User {
   customerId          Int?     @map("customer_id")
   assignedPortfolioId Int?     @map("assigned_portfolio_id")
   phone               String?
-  jobTitle            String?  @map("job_title")
-  active              Int      @default(1)
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  jobTitle            String?   @map("job_title")
+  lastLoginAt         DateTime? @map("last_login_at")
+  active              Int       @default(1)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
   customer                Customer?               @relation(fields: [customerId], references: [id])
   assignedPortfolio       Portfolio?              @relation("AssignedPortfolio", fields: [assignedPortfolioId], references: [id])

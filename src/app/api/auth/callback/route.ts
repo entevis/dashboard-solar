@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -8,8 +9,13 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.user) {
+      // Track login timestamp
+      await prisma.user.updateMany({
+        where: { supabaseId: data.user.id },
+        data: { lastLoginAt: new Date() },
+      }).catch(() => {});
       // Prevent open redirect: only allow internal paths
       let safePath = "/dashboard";
       try {

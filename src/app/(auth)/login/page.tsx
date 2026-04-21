@@ -86,6 +86,7 @@ export default function LoginPage() {
       return;
     }
 
+    fetch("/api/auth/track-login", { method: "POST" }).catch(() => {});
     router.push("/dashboard");
     router.refresh();
   }

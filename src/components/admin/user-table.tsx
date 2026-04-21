@@ -37,6 +37,7 @@ export interface UserWithRelations {
   customer: { id: number; name: string; rut: string } | null;
   assignedPortfolio: { id: number; name: string } | null;
   portfolioPermissions: { portfolioId: number }[];
+  lastLoginAt: Date | null;
   createdAt: Date;
 }
 
@@ -126,6 +127,8 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
                   <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>Cargo</TableCell>
                   <TableCell><TableSortLabel {...col("role")}>Rol</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("customer")}>Cliente / Portafolio</TableSortLabel></TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Último acceso</TableCell>
+                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" }, fontSize: "0.75rem", fontWeight: 600 }}>Creado</TableCell>
                   <TableCell sx={{ width: 48, fontSize: "0.75rem", fontWeight: 600 }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -141,6 +144,12 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
                     </TableCell>
                     <TableCell sx={{ color: "text.secondary" }}>
                       {user.customer ? user.customer.name : user.assignedPortfolio ? user.assignedPortfolio.name : "—"}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary", display: { xs: "none", lg: "table-cell" }, whiteSpace: "nowrap" }}>
+                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "Nunca"}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary", display: { xs: "none", lg: "table-cell" }, whiteSpace: "nowrap" }}>
+                      {new Date(user.createdAt).toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric" })}
                     </TableCell>
                     <TableCell>
                       <UserRowActions user={user} customers={customers} portfolios={portfolios} currentUserId={currentUserId} />
