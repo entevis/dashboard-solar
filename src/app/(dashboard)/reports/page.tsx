@@ -1,5 +1,6 @@
 import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
+import { UserRole } from "@prisma/client";
 import { formatKwh, formatPeriod } from "@/lib/utils/formatters";
 import Link from "next/link";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
@@ -22,29 +23,31 @@ export default async function ReportsPage({ searchParams }: Props) {
 
   const plantFilter = await buildPlantAccessFilter(user);
 
-  const customerIdsAccessible = await prisma.powerPlant.findMany({
-    where: plantFilter,
-    select: { customerId: true },
-    distinct: ["customerId"],
-  }).then((rows) => rows.map((r) => r.customerId));
+  // For CLIENTE_PERFILADO drop the "reports without powerPlant FK matched by customerId"
+  // fallback — it would leak reports from non-permitted plants of the same customer.
+  const isPerfilado = user.role === UserRole.CLIENTE_PERFILADO;
+  const customerIdsAccessible = isPerfilado
+    ? []
+    : await prisma.powerPlant.findMany({
+        where: plantFilter,
+        select: { customerId: true },
+        distinct: ["customerId"],
+      }).then((rows) => rows.map((r) => r.customerId));
 
-  const where: Record<string, unknown> = {
-    active: 1,
-    OR: [
-      { powerPlant: plantFilter },
-      { powerPlantId: null, customerId: { in: customerIdsAccessible } },
-    ],
-  };
+  const accessClause = isPerfilado
+    ? { powerPlant: plantFilter }
+    : {
+        OR: [
+          { powerPlant: plantFilter },
+          { powerPlantId: null, customerId: { in: customerIdsAccessible } },
+        ],
+      };
+
+  const where: Record<string, unknown> = { active: 1, ...accessClause };
   if (params.year)         where.periodYear    = parseInt(params.year);
   if (params.powerPlantId) where.powerPlantId  = parseInt(params.powerPlantId);
 
-  const baseWhere = {
-    active: 1,
-    OR: [
-      { powerPlant: plantFilter },
-      { powerPlantId: null, customerId: { in: customerIdsAccessible } },
-    ],
-  };
+  const baseWhere = { active: 1, ...accessClause };
 
   const [reports, totalKwh, totalCo2] = await Promise.all([
     prisma.generationReport.findMany({

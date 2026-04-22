@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth/guards";
+import { requireAuth, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
@@ -162,19 +162,36 @@ async function getMaestroDashboardData() {
   };
 }
 
-async function getClienteDashboardData(customerId: number, customerName: string) {
+async function getClienteDashboardData(customerId: number, customerName: string, plantIds?: number[]) {
   const currentYear = getCurrentYearRange();
-  const reportWhere = {
+  // When plantIds is set (CLIENTE_PERFILADO), restrict to those plants only and drop
+  // the "reports without FK, matched by customerId" fallback so we never leak data
+  // for non-permitted plants of the same customer.
+  const reportWhere = plantIds
+    ? { active: 1, powerPlantId: { in: plantIds } }
+    : {
+        active: 1,
+        OR: [
+          { powerPlant: { customerId, active: 1 } },
+          { powerPlantId: null, customerId },
+        ],
+      };
+  const plantsWhere = plantIds
+    ? { id: { in: plantIds }, customerId, active: 1 }
+    : { customerId, active: 1 };
+  const invoiceWhere: Record<string, unknown> = {
+    customerId,
     active: 1,
-    OR: [
-      { powerPlant: { customerId, active: 1 } },
-      { powerPlantId: null, customerId },
-    ],
+    issueDate: {
+      gte: new Date(currentYear.year, 0, 1),
+      lt: new Date(currentYear.year + 1, 0, 1),
+    },
   };
+  if (plantIds) invoiceWhere.powerPlantId = { in: plantIds };
 
   const [plants, reportsYear, invoicesYear] = await Promise.all([
     prisma.powerPlant.findMany({
-      where: { customerId, active: 1 },
+      where: plantsWhere,
       select: { id: true, name: true, status: true, capacityKw: true, city: true },
     }),
     prisma.generationReport.findMany({
@@ -186,14 +203,7 @@ async function getClienteDashboardData(customerId: number, customerName: string)
       },
     }),
     prisma.invoice.findMany({
-      where: {
-        customerId,
-        active: 1,
-        issueDate: {
-          gte: new Date(currentYear.year, 0, 1),
-          lt: new Date(currentYear.year + 1, 0, 1),
-        },
-      },
+      where: invoiceWhere,
       select: { total: true, statusCode: true, issueDate: true },
     }),
   ]);
@@ -343,7 +353,12 @@ export default async function DashboardPage() {
   // CLIENTE / CLIENTE_PERFILADO
   if ((user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) && user.customerId) {
     const customer = await prisma.customer.findUnique({ where: { id: user.customerId }, select: { name: true } });
-    const data = await getClienteDashboardData(user.customerId, customer?.name ?? "");
+    let plantIds: number[] | undefined;
+    if (user.role === UserRole.CLIENTE_PERFILADO) {
+      const accessible = await getAccessiblePowerPlantIds(user);
+      plantIds = accessible === "all" ? undefined : accessible;
+    }
+    const data = await getClienteDashboardData(user.customerId, customer?.name ?? "", plantIds);
     return <ClientDashboard {...data} />;
   }
 

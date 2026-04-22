@@ -1,4 +1,4 @@
-import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
+import { requireAuth, buildPlantAccessFilter, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { formatCLP } from "@/lib/utils/formatters";
@@ -63,6 +63,11 @@ export default async function BillingPage({
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
     invoiceWhere.customerId = user.customerId;
+    if (user.role === UserRole.CLIENTE_PERFILADO) {
+      const accessible = await getAccessiblePowerPlantIds(user);
+      const ids = accessible === "all" ? [] : accessible;
+      invoiceWhere.powerPlantId = { in: ids };
+    }
   } else if (user.role === UserRole.OPERATIVO) {
     const customerIds = await prisma.powerPlant.findMany({
       where: { ...plantFilter, active: 1 },
