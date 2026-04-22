@@ -35,13 +35,14 @@ import type { UserRole } from "@prisma/client";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
 
-interface User { id: number; name: string; email: string; role: UserRole; customerId: number | null; assignedPortfolioId: number | null; phone: string | null; jobTitle: string | null; portfolioPermissions: { portfolioId: number }[] }
+interface User { id: number; name: string; email: string; role: UserRole; customerId: number | null; assignedPortfolioId: number | null; phone: string | null; jobTitle: string | null; portfolioPermissions: { portfolioId: number }[]; plantPermissions: { powerPlantId: number }[] }
 interface Option { id: number; name: string }
-interface Props { user: User; customers: Option[]; portfolios: Option[]; currentUserId: number }
+interface Plant { id: number; name: string; customerId: number }
+interface Props { user: User; customers: Option[]; portfolios: Option[]; plants: Plant[]; currentUserId: number }
 
 const ROLES: UserRole[] = ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"];
 
-export function UserRowActions({ user, customers, portfolios, currentUserId }: Props) {
+export function UserRowActions({ user, customers, portfolios, plants, currentUserId }: Props) {
   const router = useRouter();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -57,7 +58,12 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
     phone: user.phone ?? "",
     jobTitle: user.jobTitle ?? "",
     portfolioIds: user.portfolioPermissions.map((p) => String(p.portfolioId)),
+    plantIds: user.plantPermissions.map((p) => String(p.powerPlantId)),
   });
+
+  const customerPlants = form.customerId
+    ? plants.filter((p) => p.customerId === Number(form.customerId))
+    : [];
 
   const isSelf = user.id === currentUserId;
 
@@ -68,7 +74,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
       const res = await fetch(`/api/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, role: form.role, customerId: form.customerId || null, assignedPortfolioId: form.assignedPortfolioId || null, phone: form.phone || null, jobTitle: form.jobTitle || null, portfolioIds: form.role === "TECNICO" ? form.portfolioIds.map(Number) : undefined }),
+        body: JSON.stringify({ name: form.name, role: form.role, customerId: form.customerId || null, assignedPortfolioId: form.assignedPortfolioId || null, phone: form.phone || null, jobTitle: form.jobTitle || null, portfolioIds: form.role === "TECNICO" ? form.portfolioIds.map(Number) : undefined, plantIds: form.role === "CLIENTE_PERFILADO" ? form.plantIds.map(Number) : undefined }),
       });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Error al actualizar usuario"); }
       toast.success("Usuario actualizado");
@@ -149,7 +155,7 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
             <TextField label="Cargo" size="small" value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} sx={inputSx} />
             <FormControl size="small" required sx={inputSx}>
               <InputLabel>Rol</InputLabel>
-              <Select label="Rol" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, customerId: "", assignedPortfolioId: "", portfolioIds: [] })}>
+              <Select label="Rol" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, customerId: "", assignedPortfolioId: "", portfolioIds: [], plantIds: [] })}>
                 {ROLES.map((r) => <MuiMenuItem key={r} value={r}>{ROLE_LABELS[r]}</MuiMenuItem>)}
               </Select>
             </FormControl>
@@ -158,8 +164,34 @@ export function UserRowActions({ user, customers, portfolios, currentUserId }: P
                 label="Cliente"
                 options={customers.map((c) => ({ id: c.id, name: c.name }))}
                 value={form.customerId}
-                onChange={(v) => setForm({ ...form, customerId: v })}
+                onChange={(v) => setForm({ ...form, customerId: v, plantIds: v === form.customerId ? form.plantIds : [] })}
               />
+            )}
+            {form.role === "CLIENTE_PERFILADO" && form.customerId && (
+              <FormControl size="small" sx={inputSx}>
+                <InputLabel>Plantas visibles</InputLabel>
+                <Select
+                  multiple
+                  label="Plantas visibles"
+                  value={form.plantIds}
+                  onChange={(e) => setForm({ ...form, plantIds: typeof e.target.value === "string" ? e.target.value.split(",") : e.target.value as string[] })}
+                  input={<OutlinedInput label="Plantas visibles" />}
+                  renderValue={(selected) => customerPlants.filter((p) => (selected as string[]).includes(String(p.id))).map((p) => p.name).join(", ")}
+                >
+                  {customerPlants.length === 0 ? (
+                    <MuiMenuItem disabled dense>
+                      <ListItemText primary="Este cliente no tiene plantas" primaryTypographyProps={{ fontSize: "0.8125rem", color: "text.secondary" }} />
+                    </MuiMenuItem>
+                  ) : (
+                    customerPlants.map((p) => (
+                      <MuiMenuItem key={p.id} value={String(p.id)} dense>
+                        <Checkbox checked={form.plantIds.includes(String(p.id))} size="small" sx={{ py: 0 }} />
+                        <ListItemText primary={p.name} primaryTypographyProps={{ fontSize: "0.8125rem" }} />
+                      </MuiMenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
             )}
             {form.role === "OPERATIVO" && (
               <SearchableSelect

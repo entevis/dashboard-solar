@@ -37,16 +37,19 @@ export interface UserWithRelations {
   customer: { id: number; name: string; rut: string } | null;
   assignedPortfolio: { id: number; name: string } | null;
   portfolioPermissions: { portfolioId: number }[];
+  plantPermissions: { powerPlantId: number }[];
   lastLoginAt: Date | null;
   createdAt: Date;
 }
 
 interface Option { id: number; name: string }
+interface Plant { id: number; name: string; customerId: number }
 
 interface Props {
   users: UserWithRelations[];
   customers: Option[];
   portfolios: Option[];
+  plants: Plant[];
   currentUserId: number;
 }
 
@@ -72,7 +75,7 @@ function sortUsers(users: UserWithRelations[], key: SortKey, dir: SortDir): User
   });
 }
 
-export function UserTable({ users, customers, portfolios, currentUserId }: Props) {
+export function UserTable({ users, customers, portfolios, plants, currentUserId }: Props) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -152,7 +155,7 @@ export function UserTable({ users, customers, portfolios, currentUserId }: Props
                       {new Date(user.createdAt).toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric" })}
                     </TableCell>
                     <TableCell>
-                      <UserRowActions user={user} customers={customers} portfolios={portfolios} currentUserId={currentUserId} />
+                      <UserRowActions user={user} customers={customers} portfolios={portfolios} plants={plants} currentUserId={currentUserId} />
                     </TableCell>
                   </TableRow>
                 ))}

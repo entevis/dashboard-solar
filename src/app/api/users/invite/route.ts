@@ -14,6 +14,7 @@ const createUserSchema = z.object({
   customerId: z.coerce.number().int().positive().optional(),
   assignedPortfolioId: z.coerce.number().int().positive().optional(),
   portfolioIds: z.array(z.coerce.number().int().positive()).optional(),
+  plantIds: z.array(z.coerce.number().int().positive()).optional(),
 });
 
 function getAppUrl(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email, name, role, customerId, assignedPortfolioId, portfolioIds } =
+  const { email, name, role, customerId, assignedPortfolioId, portfolioIds, plantIds } =
     parsed.data;
 
   if ((role === "CLIENTE" || role === "CLIENTE_PERFILADO") && !customerId) {
@@ -58,6 +59,25 @@ export async function POST(request: NextRequest) {
       { error: "Se requiere al menos un portafolio para el rol Técnico" },
       { status: 400 }
     );
+  }
+
+  if (role === "CLIENTE_PERFILADO" && (!plantIds || plantIds.length === 0)) {
+    return NextResponse.json(
+      { error: "Se requiere al menos una planta para el rol Cliente Perfilado" },
+      { status: 400 }
+    );
+  }
+
+  if (role === "CLIENTE_PERFILADO" && plantIds && plantIds.length > 0 && customerId) {
+    const ownedPlants = await prisma.powerPlant.count({
+      where: { id: { in: plantIds }, customerId, active: 1 },
+    });
+    if (ownedPlants !== plantIds.length) {
+      return NextResponse.json(
+        { error: "Alguna planta seleccionada no pertenece al cliente" },
+        { status: 400 }
+      );
+    }
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -100,6 +120,12 @@ export async function POST(request: NextRequest) {
   if (role === "TECNICO" && portfolioIds && portfolioIds.length > 0) {
     await prisma.userPortfolioPermission.createMany({
       data: portfolioIds.map((portfolioId) => ({ userId: newUser.id, portfolioId })),
+    });
+  }
+
+  if (role === "CLIENTE_PERFILADO" && plantIds && plantIds.length > 0) {
+    await prisma.userPlantPermission.createMany({
+      data: plantIds.map((powerPlantId) => ({ userId: newUser.id, powerPlantId })),
     });
   }
 

@@ -25,28 +25,36 @@ const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& f
 
 interface Customer { id: number; name: string; rut: string }
 interface Portfolio { id: number; name: string }
+interface Plant { id: number; name: string; customerId: number }
 
 interface Props {
   customers: Customer[];
   portfolios: Portfolio[];
+  plants: Plant[];
 }
 
-export function CreateUserDialog({ customers, portfolios }: Props) {
+export function CreateUserDialog({ customers, portfolios, plants }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("");
   const [form, setForm] = useState({ name: "", email: "", customerId: "", assignedPortfolioId: "" });
   const [portfolioIds, setPortfolioIds] = useState<string[]>([]);
+  const [plantIds, setPlantIds] = useState<string[]>([]);
 
   const showCustomer = role === "CLIENTE" || role === "CLIENTE_PERFILADO";
   const showPortfolio = role === "OPERATIVO";
   const showPortfolioMulti = role === "TECNICO";
+  const showPlantMulti = role === "CLIENTE_PERFILADO" && !!form.customerId;
+  const customerPlants = form.customerId
+    ? plants.filter((p) => p.customerId === Number(form.customerId))
+    : [];
 
   function handleClose() {
     setOpen(false);
     setRole("");
     setPortfolioIds([]);
+    setPlantIds([]);
     setForm({ name: "", email: "", customerId: "", assignedPortfolioId: "" });
   }
 
@@ -63,6 +71,7 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
         customerId: form.customerId || undefined,
         assignedPortfolioId: form.assignedPortfolioId || undefined,
         portfolioIds: role === "TECNICO" ? portfolioIds.map(Number) : undefined,
+        plantIds: role === "CLIENTE_PERFILADO" ? plantIds.map(Number) : undefined,
       }),
     });
     if (!res.ok) {
@@ -99,7 +108,7 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
             <TextField label="Correo electrónico" type="email" size="small" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@empresa.cl" sx={inputSx} />
             <FormControl size="small" required sx={inputSx}>
               <InputLabel>Rol</InputLabel>
-              <Select label="Rol" value={role} onChange={(e) => { setRole(e.target.value); setPortfolioIds([]); setForm((f) => ({ ...f, customerId: "", assignedPortfolioId: "" })); }}>
+              <Select label="Rol" value={role} onChange={(e) => { setRole(e.target.value); setPortfolioIds([]); setPlantIds([]); setForm((f) => ({ ...f, customerId: "", assignedPortfolioId: "" })); }}>
                 <MenuItem value="MAESTRO">Maestro</MenuItem>
                 <MenuItem value="CLIENTE">Cliente</MenuItem>
                 <MenuItem value="CLIENTE_PERFILADO">Cliente Perfilado</MenuItem>
@@ -111,8 +120,34 @@ export function CreateUserDialog({ customers, portfolios }: Props) {
                 required
                 options={customers.map((c) => ({ id: c.id, name: c.name, secondary: c.rut }))}
                 value={form.customerId}
-                onChange={(v) => setForm({ ...form, customerId: v })}
+                onChange={(v) => { setForm({ ...form, customerId: v }); setPlantIds([]); }}
               />
+            )}
+            {showPlantMulti && (
+              <FormControl size="small" required sx={inputSx}>
+                <InputLabel>Plantas visibles</InputLabel>
+                <Select
+                  multiple
+                  label="Plantas visibles"
+                  value={plantIds}
+                  onChange={(e) => setPlantIds(typeof e.target.value === "string" ? e.target.value.split(",") : e.target.value as string[])}
+                  input={<OutlinedInput label="Plantas visibles" />}
+                  renderValue={(selected) => customerPlants.filter((p) => (selected as string[]).includes(String(p.id))).map((p) => p.name).join(", ")}
+                >
+                  {customerPlants.length === 0 ? (
+                    <MenuItem disabled dense>
+                      <ListItemText primary="Este cliente no tiene plantas" primaryTypographyProps={{ fontSize: "0.8125rem", color: "text.secondary" }} />
+                    </MenuItem>
+                  ) : (
+                    customerPlants.map((p) => (
+                      <MenuItem key={p.id} value={String(p.id)} dense>
+                        <Checkbox checked={plantIds.includes(String(p.id))} size="small" sx={{ py: 0 }} />
+                        <ListItemText primary={p.name} primaryTypographyProps={{ fontSize: "0.8125rem" }} />
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
             )}
             {showPortfolio && (
               <SearchableSelect

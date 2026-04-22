@@ -22,7 +22,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
   const q = params.q?.trim() ?? "";
   const role = VALID_ROLES.includes(params.role as UserRole) ? (params.role as UserRole) : undefined;
 
-  const [users, customers, portfolios] = await Promise.all([
+  const [users, customers, portfolios, plants] = await Promise.all([
     prisma.user.findMany({
       where: {
         active: 1,
@@ -41,6 +41,10 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           where: { active: 1 },
           select: { portfolioId: true },
         },
+        plantPermissions: {
+          where: { active: 1 },
+          select: { powerPlantId: true },
+        },
       },
       orderBy: { name: "asc" },
     }),
@@ -52,6 +56,11 @@ export default async function AdminUsersPage({ searchParams }: Props) {
     prisma.portfolio.findMany({
       where: { active: 1 },
       select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.powerPlant.findMany({
+      where: { active: 1 },
+      select: { id: true, name: true, customerId: true },
       orderBy: { name: "asc" },
     }),
   ]);
@@ -67,7 +76,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
           <UserFilterBar />
-          <CreateUserDialog customers={customers} portfolios={portfolios} />
+          <CreateUserDialog customers={customers} portfolios={portfolios} plants={plants} />
         </Box>
       </Box>
 
@@ -76,6 +85,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           users={users}
           customers={customers}
           portfolios={portfolios}
+          plants={plants}
           currentUserId={currentUser.id}
         />
       </Card>
