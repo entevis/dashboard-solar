@@ -80,7 +80,7 @@ export default async function DashboardLayout({
           selectedPortfolioId={selectedPortfolioId}
         />
 
-        <main id="main-content" className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-6 flex flex-col">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto min-h-0 p-4 pb-12 lg:p-6 lg:pb-12 flex flex-col">{children}</main>
       </div>
 
       <Toaster position="top-right" />

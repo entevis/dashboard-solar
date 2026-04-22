@@ -98,7 +98,21 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
       }}
     >
       {/* Logo */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2.5, height: 56 }}>
+      <Box
+        component={Link}
+        href={userRole === "MAESTRO" ? "/dashboard" : p("/overview")}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          px: 2.5,
+          height: 56,
+          textDecoration: "none",
+          color: "inherit",
+          transition: "opacity 0.15s",
+          "&:hover": { opacity: 0.75 },
+        }}
+      >
         <Box sx={{ width: 30, height: 30, borderRadius: 1.5, overflow: "hidden", flexShrink: 0 }}>
           <Image src="/logo.jpg" alt="S-Invest" width={30} height={30} style={{ objectFit: "contain" }} />
         </Box>

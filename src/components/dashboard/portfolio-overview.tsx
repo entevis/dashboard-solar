@@ -23,6 +23,7 @@ import { Bar, Line } from "react-chartjs-2";
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler, Tooltip, Legend);
 
 const MONTH_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 11 };
 
 interface MonthlyGen { month: number; kwh: number; co2: number }
@@ -325,25 +326,26 @@ function PendingPill({ count, label }: { count: number; label: string }) {
 /* ─── Charts ─── */
 
 function GenerationBarChart({ data }: { data: MonthlyGen[] }) {
-  const sorted = [...data].sort((a, b) => a.month - b.month);
-  return <Bar data={{ labels: sorted.map((d) => MONTH_SHORT[d.month - 1]), datasets: [{ data: sorted.map((d) => Math.round(d.kwh)), backgroundColor: "#2563eb", borderRadius: 6, borderSkipped: false }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0B1220", cornerRadius: 8, padding: 12, callbacks: { label: (ctx) => `  ${(ctx.parsed.y ?? 0).toLocaleString("es-CL")} kWh` } } }, scales: { y: { beginAtZero: true, grid: { color: "#eff4ff" }, ticks: { font: FONT, callback: (v) => `${Number(v) / 1000}k` }, border: { color: "#e6eeff" } }, x: { grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } } } }} />;
+  const byMonth = new Map(data.map((d) => [d.month, d]));
+  return <Bar data={{ labels: ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]), datasets: [{ data: ALL_MONTHS.map((m) => Math.round(byMonth.get(m)?.kwh ?? 0)), backgroundColor: "#2563eb", borderRadius: 6, borderSkipped: false }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0B1220", cornerRadius: 8, padding: 12, callbacks: { label: (ctx) => `  ${(ctx.parsed.y ?? 0).toLocaleString("es-CL")} kWh` } } }, scales: { y: { beginAtZero: true, grid: { color: "#eff4ff" }, ticks: { font: FONT, callback: (v) => `${Number(v) / 1000}k` }, border: { color: "#e6eeff" } }, x: { grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } } } }} />;
 }
 
 function Co2AreaChart({ data }: { data: MonthlyGen[] }) {
-  const sorted = [...data].sort((a, b) => a.month - b.month);
+  const byMonth = new Map(data.map((d) => [d.month, d]));
   let acc = 0;
-  const values = sorted.map((d) => { acc += d.co2; return parseFloat(acc.toFixed(2)); });
+  const values = ALL_MONTHS.map((m) => { acc += byMonth.get(m)?.co2 ?? 0; return parseFloat(acc.toFixed(2)); });
   const chartRef = useRef<ChartJS<"line"> | null>(null);
   useEffect(() => { const c = chartRef.current; if (!c?.chartArea) return; const g = c.ctx.createLinearGradient(0, c.chartArea.top, 0, c.chartArea.bottom); g.addColorStop(0, "rgba(22,163,74,0.3)"); g.addColorStop(1, "rgba(22,163,74,0.02)"); c.data.datasets[0].backgroundColor = g; c.update("none"); });
-  return <Line ref={chartRef} data={{ labels: sorted.map((d) => MONTH_SHORT[d.month - 1]), datasets: [{ data: values, borderColor: "#16a34a", backgroundColor: "rgba(22,163,74,0.4)", fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: "#16a34a", pointBorderColor: "#fff", pointBorderWidth: 2, borderWidth: 2.5 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0B1220", cornerRadius: 8, padding: 12, callbacks: { label: (ctx) => `  ${(ctx.parsed.y ?? 0).toFixed(1)} ton CO₂` } } }, scales: { y: { beginAtZero: true, grid: { color: "#eff4ff" }, ticks: { font: FONT }, border: { color: "#e6eeff" } }, x: { grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } } } }} />;
+  return <Line ref={chartRef} data={{ labels: ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]), datasets: [{ data: values, borderColor: "#16a34a", backgroundColor: "rgba(22,163,74,0.4)", fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: "#16a34a", pointBorderColor: "#fff", pointBorderWidth: 2, borderWidth: 2.5 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0B1220", cornerRadius: 8, padding: 12, callbacks: { label: (ctx) => `  ${(ctx.parsed.y ?? 0).toFixed(1)} ton CO₂` } } }, scales: { y: { beginAtZero: true, grid: { color: "#eff4ff" }, ticks: { font: FONT }, border: { color: "#e6eeff" } }, x: { grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } } } }} />;
 }
 
 function BillingStackedChart({ data }: { data: MonthlyBilling[] }) {
-  const sorted = [...data].sort((a, b) => a.month - b.month);
-  return <Bar data={{ labels: sorted.map((d) => MONTH_SHORT[d.month - 1]), datasets: [
-    { label: "Pagadas", data: sorted.map((d) => d.pagadas), backgroundColor: "#16a34a", borderRadius: 4, borderSkipped: false },
-    { label: "Por vencer", data: sorted.map((d) => d.porVencer), backgroundColor: "#F59E0B", borderRadius: 4, borderSkipped: false },
-    { label: "Vencidas", data: sorted.map((d) => d.vencidas), backgroundColor: "#dc2626", borderRadius: 4, borderSkipped: false },
+  const byMonth = new Map(data.map((d) => [d.month, d]));
+  const get = (m: number) => byMonth.get(m) ?? { month: m, pagadas: 0, porVencer: 0, vencidas: 0 };
+  return <Bar data={{ labels: ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]), datasets: [
+    { label: "Pagadas", data: ALL_MONTHS.map((m) => get(m).pagadas), backgroundColor: "#16a34a", borderRadius: 4, borderSkipped: false },
+    { label: "Por vencer", data: ALL_MONTHS.map((m) => get(m).porVencer), backgroundColor: "#F59E0B", borderRadius: 4, borderSkipped: false },
+    { label: "Vencidas", data: ALL_MONTHS.map((m) => get(m).vencidas), backgroundColor: "#dc2626", borderRadius: 4, borderSkipped: false },
   ] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8, padding: 16, font: FONT } }, tooltip: { backgroundColor: "#0B1220", cornerRadius: 8, padding: 12, callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${formatCLPShort(ctx.parsed.y ?? 0)}` } } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } }, y: { stacked: true, grid: { color: "#eff4ff" }, ticks: { font: FONT, callback: (v) => `$${Number(v) / 1_000_000}M` }, border: { color: "#e6eeff" } } } }} />;
 }
 

@@ -21,6 +21,7 @@ import { Bar, Line } from "react-chartjs-2";
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler, Tooltip, Legend);
 
 const MONTH_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 11 };
 const PORTFOLIO_COLORS = ["#2563eb", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6"];
 
@@ -270,12 +271,11 @@ function ImpactCard({ icon, iconBg, value, label, tooltip }: { icon: string; ico
 /* ─── Charts ─── */
 
 function GenStackedChart({ data, portfolios, colors }: { data: MonthlyByPortfolio[]; portfolios: PortfolioRow[]; colors: Map<number, string> }) {
-  const months = [...new Set(data.map((d) => d.month))].sort((a, b) => a - b);
-  const labels = months.map((m) => MONTH_SHORT[m - 1]);
+  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
 
   const datasets = portfolios.map((p) => ({
     label: p.name,
-    data: months.map((m) => data.find((d) => d.month === m && d.portfolioId === p.id)?.kwh ?? 0),
+    data: ALL_MONTHS.map((m) => data.find((d) => d.month === m && d.portfolioId === p.id)?.kwh ?? 0),
     backgroundColor: colors.get(p.id) || "#ccc",
     borderRadius: 4,
     borderSkipped: false as const,
@@ -297,13 +297,12 @@ function GenStackedChart({ data, portfolios, colors }: { data: MonthlyByPortfoli
 }
 
 function Co2LinesChart({ data, portfolios, colors }: { data: MonthlyByPortfolio[]; portfolios: PortfolioRow[]; colors: Map<number, string> }) {
-  const months = [...new Set(data.map((d) => d.month))].sort((a, b) => a - b);
-  const labels = months.map((m) => MONTH_SHORT[m - 1]);
+  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
 
   const datasets = portfolios.map((p) => {
     const c = colors.get(p.id) || "#ccc";
     let acc = 0;
-    const values = months.map((m) => { acc += data.find((d) => d.month === m && d.portfolioId === p.id)?.co2 ?? 0; return parseFloat(acc.toFixed(2)); });
+    const values = ALL_MONTHS.map((m) => { acc += data.find((d) => d.month === m && d.portfolioId === p.id)?.co2 ?? 0; return parseFloat(acc.toFixed(2)); });
     return {
       label: p.name, data: values, borderColor: c, backgroundColor: c + "20",
       fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: c,
@@ -327,15 +326,16 @@ function Co2LinesChart({ data, portfolios, colors }: { data: MonthlyByPortfolio[
 }
 
 function BillingStackedChart({ data }: { data: MonthlyBilling[] }) {
-  const sorted = [...data].sort((a, b) => a.month - b.month);
-  const labels = sorted.map((d) => MONTH_SHORT[d.month - 1]);
+  const byMonth = new Map(data.map((d) => [d.month, d]));
+  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
+  const get = (m: number) => byMonth.get(m) ?? { month: m, pagadas: 0, porVencer: 0, vencidas: 0 };
   return (
     <Bar data={{
       labels,
       datasets: [
-        { label: "Pagadas", data: sorted.map((d) => d.pagadas), backgroundColor: "#16a34a", borderRadius: 4, borderSkipped: false },
-        { label: "Por vencer", data: sorted.map((d) => d.porVencer), backgroundColor: "#F59E0B", borderRadius: 4, borderSkipped: false },
-        { label: "Vencidas", data: sorted.map((d) => d.vencidas), backgroundColor: "#dc2626", borderRadius: 4, borderSkipped: false },
+        { label: "Pagadas", data: ALL_MONTHS.map((m) => get(m).pagadas), backgroundColor: "#16a34a", borderRadius: 4, borderSkipped: false },
+        { label: "Por vencer", data: ALL_MONTHS.map((m) => get(m).porVencer), backgroundColor: "#F59E0B", borderRadius: 4, borderSkipped: false },
+        { label: "Vencidas", data: ALL_MONTHS.map((m) => get(m).vencidas), backgroundColor: "#dc2626", borderRadius: 4, borderSkipped: false },
       ],
     }} options={{
       responsive: true, maintainAspectRatio: false,

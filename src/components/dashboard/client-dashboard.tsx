@@ -23,6 +23,7 @@ import { Bar, Line } from "react-chartjs-2";
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler, Tooltip, Legend);
 
 const MONTH_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 11 };
 
 interface MonthlyGen {
@@ -342,9 +343,9 @@ function BillCard({ label, total, count, color }: { label: string; total: number
 /* ─── Charts ───────────────────────────────────────────────── */
 
 function GenerationBarChart({ data }: { data: MonthlyGen[] }) {
-  const sorted = [...data].sort((a, b) => a.month - b.month);
-  const labels = sorted.map((d) => MONTH_SHORT[d.month - 1]);
-  const values = sorted.map((d) => Math.round(d.kwh));
+  const byMonth = new Map(data.map((d) => [d.month, d]));
+  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
+  const values = ALL_MONTHS.map((m) => Math.round(byMonth.get(m)?.kwh ?? 0));
 
   return (
     <Bar
@@ -377,10 +378,10 @@ function GenerationBarChart({ data }: { data: MonthlyGen[] }) {
 }
 
 function Co2AreaChart({ data }: { data: MonthlyGen[] }) {
-  const sorted = [...data].sort((a, b) => a.month - b.month);
-  const labels = sorted.map((d) => MONTH_SHORT[d.month - 1]);
+  const byMonth = new Map(data.map((d) => [d.month, d]));
+  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
   let acc = 0;
-  const values = sorted.map((d) => { acc += d.co2; return parseFloat(acc.toFixed(2)); });
+  const values = ALL_MONTHS.map((m) => { acc += byMonth.get(m)?.co2 ?? 0; return parseFloat(acc.toFixed(2)); });
 
   const chartRef = useRef<ChartJS<"line"> | null>(null);
 
@@ -430,17 +431,18 @@ function Co2AreaChart({ data }: { data: MonthlyGen[] }) {
 }
 
 function BillingStackedChart({ data }: { data: MonthlyBilling[] }) {
-  const sorted = [...data].sort((a, b) => a.month - b.month);
-  const labels = sorted.map((d) => MONTH_SHORT[d.month - 1]);
+  const byMonth = new Map(data.map((d) => [d.month, d]));
+  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
+  const get = (m: number) => byMonth.get(m) ?? { month: m, pagadas: 0, porVencer: 0, vencidas: 0 };
 
   return (
     <Bar
       data={{
         labels,
         datasets: [
-          { label: "Pagadas", data: sorted.map((d) => d.pagadas), backgroundColor: "#16a34a", borderRadius: 4, borderSkipped: false },
-          { label: "Por vencer", data: sorted.map((d) => d.porVencer), backgroundColor: "#F59E0B", borderRadius: 4, borderSkipped: false },
-          { label: "Vencidas", data: sorted.map((d) => d.vencidas), backgroundColor: "#dc2626", borderRadius: 4, borderSkipped: false },
+          { label: "Pagadas", data: ALL_MONTHS.map((m) => get(m).pagadas), backgroundColor: "#16a34a", borderRadius: 4, borderSkipped: false },
+          { label: "Por vencer", data: ALL_MONTHS.map((m) => get(m).porVencer), backgroundColor: "#F59E0B", borderRadius: 4, borderSkipped: false },
+          { label: "Vencidas", data: ALL_MONTHS.map((m) => get(m).vencidas), backgroundColor: "#dc2626", borderRadius: 4, borderSkipped: false },
         ],
       }}
       options={{
@@ -464,14 +466,16 @@ function BillingStackedChart({ data }: { data: MonthlyBilling[] }) {
 
 function TopPlantsChart({ data }: { data: TopPlant[] }) {
   const barColors = ["#2563eb", "#60a5fa", "#93bbfd", "#b4c5ff", "#dbe1ff"];
+  const padded = [...data.slice(0, 5)];
+  while (padded.length < 5) padded.push({ name: "​".repeat(padded.length + 1), kwh: 0 });
 
   return (
     <Bar
       data={{
-        labels: data.map((d) => d.name),
+        labels: padded.map((d) => d.name),
         datasets: [{
-          data: data.map((d) => d.kwh),
-          backgroundColor: data.map((_, i) => barColors[i] || barColors[barColors.length - 1]),
+          data: padded.map((d) => d.kwh),
+          backgroundColor: padded.map((d, i) => (d.kwh === 0 ? "transparent" : barColors[i] || barColors[barColors.length - 1])),
           borderRadius: 6,
           borderSkipped: false,
         }],
@@ -484,6 +488,7 @@ function TopPlantsChart({ data }: { data: TopPlant[] }) {
           legend: { display: false },
           tooltip: {
             backgroundColor: "#0B1220", cornerRadius: 8, padding: 12,
+            filter: (ctx) => (ctx.parsed.x ?? 0) > 0,
             callbacks: { label: (ctx) => `  ${(ctx.parsed.x ?? 0).toLocaleString("es-CL")} kWh` },
           },
         },
