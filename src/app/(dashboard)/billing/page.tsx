@@ -66,7 +66,24 @@ export default async function BillingPage({
     if (user.role === UserRole.CLIENTE_PERFILADO) {
       const accessible = await getAccessiblePowerPlantIds(user);
       const ids = accessible === "all" ? [] : accessible;
-      invoiceWhere.powerPlantId = { in: ids };
+      // Invoices may lack powerPlantId; link via generationReport.duemintId when the
+      // report points to a permitted plant (directly or via plantNameRef).
+      const accessibleReports = await prisma.generationReport.findMany({
+        where: {
+          active: 1,
+          duemintId: { not: null },
+          OR: [
+            { powerPlantId: { in: ids } },
+            { plantNameRef: { powerPlantId: { in: ids } } },
+          ],
+        },
+        select: { duemintId: true },
+      });
+      const accessibleDuemintIds = accessibleReports.map((r) => r.duemintId).filter(Boolean) as string[];
+      invoiceWhere.OR = [
+        { powerPlantId: { in: ids } },
+        { duemintId: { in: accessibleDuemintIds } },
+      ];
     }
   } else if (user.role === UserRole.OPERATIVO) {
     const customerIds = await prisma.powerPlant.findMany({

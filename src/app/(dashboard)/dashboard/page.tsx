@@ -164,11 +164,37 @@ async function getMaestroDashboardData() {
 
 async function getClienteDashboardData(customerId: number, customerName: string, plantIds?: number[]) {
   const currentYear = getCurrentYearRange();
-  // When plantIds is set (CLIENTE_PERFILADO), restrict to those plants only and drop
-  // the "reports without FK, matched by customerId" fallback so we never leak data
-  // for non-permitted plants of the same customer.
+  // When plantIds is set (CLIENTE_PERFILADO), restrict to those plants — matching both
+  // direct powerPlantId and the plantNameRef path (reports/invoices may have null
+  // powerPlantId but link through plant_name_id or duemint_id).
+  const plantsWhere = plantIds
+    ? { id: { in: plantIds }, customerId, active: 1 }
+    : { customerId, active: 1 };
+
+  // Pre-fetch duemintIds of reports tied to permitted plants to scope invoices
+  // lacking a direct powerPlantId.
+  const accessibleDuemintIds = plantIds
+    ? await prisma.generationReport.findMany({
+        where: {
+          active: 1,
+          duemintId: { not: null },
+          OR: [
+            { powerPlantId: { in: plantIds } },
+            { plantNameRef: { powerPlantId: { in: plantIds } } },
+          ],
+        },
+        select: { duemintId: true },
+      }).then((rows) => rows.map((r) => r.duemintId).filter(Boolean) as string[])
+    : [];
+
   const reportWhere = plantIds
-    ? { active: 1, powerPlantId: { in: plantIds } }
+    ? {
+        active: 1,
+        OR: [
+          { powerPlantId: { in: plantIds } },
+          { plantNameRef: { powerPlantId: { in: plantIds } } },
+        ],
+      }
     : {
         active: 1,
         OR: [
@@ -176,9 +202,7 @@ async function getClienteDashboardData(customerId: number, customerName: string,
           { powerPlantId: null, customerId },
         ],
       };
-  const plantsWhere = plantIds
-    ? { id: { in: plantIds }, customerId, active: 1 }
-    : { customerId, active: 1 };
+
   const invoiceWhere: Record<string, unknown> = {
     customerId,
     active: 1,
@@ -187,7 +211,12 @@ async function getClienteDashboardData(customerId: number, customerName: string,
       lt: new Date(currentYear.year + 1, 0, 1),
     },
   };
-  if (plantIds) invoiceWhere.powerPlantId = { in: plantIds };
+  if (plantIds) {
+    invoiceWhere.OR = [
+      { powerPlantId: { in: plantIds } },
+      { duemintId: { in: accessibleDuemintIds } },
+    ];
+  }
 
   const [plants, reportsYear, invoicesYear] = await Promise.all([
     prisma.powerPlant.findMany({

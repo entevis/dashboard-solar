@@ -35,7 +35,12 @@ export default async function ReportsPage({ searchParams }: Props) {
       }).then((rows) => rows.map((r) => r.customerId));
 
   const accessClause = isPerfilado
-    ? { powerPlant: plantFilter }
+    ? {
+        OR: [
+          { powerPlant: plantFilter },
+          { plantNameRef: { powerPlant: plantFilter } },
+        ],
+      }
     : {
         OR: [
           { powerPlant: plantFilter },

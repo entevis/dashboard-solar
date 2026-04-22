@@ -1,5 +1,6 @@
 import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
+import { UserRole } from "@prisma/client";
 import { formatKwh } from "@/lib/utils/formatters";
 import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import { ReportTable } from "@/components/reports/report-table";
@@ -24,30 +25,38 @@ export default async function PortfolioReportsPage({ params, searchParams }: Pro
   const plantFilter = await buildPlantAccessFilter(user);
   const plantWhere = { ...plantFilter, portfolioId: pid };
 
-  // Include both plant-level reports (via powerPlant) and customer-level reports (via customer's plants in this portfolio)
-  const customerIdsInPortfolio = await prisma.powerPlant.findMany({
-    where: plantWhere,
-    select: { customerId: true },
-    distinct: ["customerId"],
-  }).then((rows) => rows.map((r) => r.customerId));
+  // For CLIENTE_PERFILADO, include reports linked via plantNameRef (since powerPlantId
+  // may be null) but drop the customer-wide fallback — that fallback leaks reports of
+  // non-permitted plants of the same customer.
+  const isPerfilado = user.role === UserRole.CLIENTE_PERFILADO;
 
-  const where: Record<string, unknown> = {
-    active: 1,
-    OR: [
-      { powerPlant: plantWhere },
-      { powerPlantId: null, customerId: { in: customerIdsInPortfolio } },
-    ],
-  };
+  const customerIdsInPortfolio = isPerfilado
+    ? []
+    : await prisma.powerPlant.findMany({
+        where: plantWhere,
+        select: { customerId: true },
+        distinct: ["customerId"],
+      }).then((rows) => rows.map((r) => r.customerId));
+
+  const accessClause = isPerfilado
+    ? {
+        OR: [
+          { powerPlant: plantWhere },
+          { plantNameRef: { powerPlant: plantWhere } },
+        ],
+      }
+    : {
+        OR: [
+          { powerPlant: plantWhere },
+          { powerPlantId: null, customerId: { in: customerIdsInPortfolio } },
+        ],
+      };
+
+  const where: Record<string, unknown> = { active: 1, ...accessClause };
   if (sp.year) where.periodYear = parseInt(sp.year);
   if (sp.powerPlantId) where.powerPlantId = parseInt(sp.powerPlantId);
 
-  const baseWhere = {
-    active: 1,
-    OR: [
-      { powerPlant: plantWhere },
-      { powerPlantId: null, customerId: { in: customerIdsInPortfolio } },
-    ],
-  };
+  const baseWhere = { active: 1, ...accessClause };
 
   const [reports, totalKwh, totalCo2, accessiblePlants] = await Promise.all([
     prisma.generationReport.findMany({

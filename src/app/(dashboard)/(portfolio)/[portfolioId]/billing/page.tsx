@@ -1,4 +1,4 @@
-import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
+import { requireAuth, buildPlantAccessFilter, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { formatCLP } from "@/lib/utils/formatters";
@@ -87,6 +87,32 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
     invoiceWhere = { ...invoiceWhere, customerId: user.customerId };
+    if (user.role === UserRole.CLIENTE_PERFILADO) {
+      const accessible = await getAccessiblePowerPlantIds(user);
+      const ids = accessible === "all" ? [] : accessible;
+      // Scope invoices to those tied to the user's permitted plants.
+      // Invoices may lack powerPlantId; link via generationReport.duemintId when the
+      // report points to a permitted plant (directly or via plantNameRef).
+      const accessibleReports = await prisma.generationReport.findMany({
+        where: {
+          active: 1,
+          duemintId: { not: null },
+          OR: [
+            { powerPlantId: { in: ids } },
+            { plantNameRef: { powerPlantId: { in: ids } } },
+          ],
+        },
+        select: { duemintId: true },
+      });
+      const accessibleDuemintIds = accessibleReports.map((r) => r.duemintId).filter(Boolean) as string[];
+      invoiceWhere = {
+        ...invoiceWhere,
+        OR: [
+          { powerPlantId: { in: ids } },
+          { duemintId: { in: accessibleDuemintIds } },
+        ],
+      };
+    }
   } else if (user.role === UserRole.OPERATIVO) {
     const plantFilter = await buildPlantAccessFilter(user);
     const plants = await prisma.powerPlant.findMany({ where: { ...plantFilter, portfolioId: pid }, select: { customerId: true } });
