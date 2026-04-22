@@ -114,13 +114,13 @@ export default function LoginPage() {
       {/* Right — Login form */}
       <Box
         sx={{
-          flex: "0 0 480px",
+          flex: { xs: "1 1 100%", md: "0 0 480px" },
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#fff",
-          px: 6,
+          px: { xs: 3, md: 6 },
           py: 4,
           width: { xs: "100%", md: 480 },
         }}
