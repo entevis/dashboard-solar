@@ -85,6 +85,9 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     invoiceWhere.customerId = customerId;
   }
 
+  const plantFilter = await buildPlantAccessFilter(user);
+  const plantWhere = { ...plantFilter, portfolioId: pid };
+
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
     invoiceWhere = { ...invoiceWhere, customerId: user.customerId };
     if (user.role === UserRole.CLIENTE_PERFILADO) {
@@ -114,8 +117,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       };
     }
   } else if (user.role === UserRole.OPERATIVO) {
-    const plantFilter = await buildPlantAccessFilter(user);
-    const plants = await prisma.powerPlant.findMany({ where: { ...plantFilter, portfolioId: pid }, select: { customerId: true } });
+    const plants = await prisma.powerPlant.findMany({ where: plantWhere, select: { customerId: true } });
     const customerIds = [...new Set(plants.map((p) => p.customerId))];
     invoiceWhere = { ...invoiceWhere, customerId: { in: customerIds } };
   }
@@ -133,11 +135,6 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   }
   const isMaestro = user.role === UserRole.MAESTRO;
   const isCliente = user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO;
-
-  // Plants: for clients, only show their own plants; otherwise all portfolio plants
-  const plantWhere = isCliente && user.customerId
-    ? { portfolioId: pid, active: 1, customerId: user.customerId }
-    : { portfolioId: pid, active: 1 };
 
   const [total, invoices, allInvoices, plantNames, customers] = await Promise.all([
     prisma.invoice.count({ where: tableWhere }),
