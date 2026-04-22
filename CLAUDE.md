@@ -23,13 +23,14 @@ Sistema de gestión de portafolios de inversión solar. Web app con Next.js 15 +
 
 ## Project Structure
 - `src/app/(auth)/` - Public auth pages (login)
-- `src/app/(dashboard)/` - Authenticated pages
-- `src/app/api/` - API routes
+- `src/app/(dashboard)/` - Authenticated pages (incl. `(portfolio)/[portfolioId]` scoped routes)
+- `src/app/api/` - API routes (incl. `webhooks/duemint`, `cron/sync-invoices`)
 - `src/components/ui/` - shadcn/ui components
 - `src/components/` - App-specific components
 - `src/lib/auth/` - Role-based access control
-- `src/lib/services/` - Business logic services
+- `src/lib/services/` - Business logic services (`duemint`, `email`, `audit`, `report-extraction`)
 - `src/lib/supabase/` - Supabase client utilities
+- `src/lib/mui/` - MUI theme registry (used alongside shadcn for data-heavy tables)
 - `prisma/schema.prisma` - Database schema
 
 ## Design System — "The Architectural Calm"
@@ -48,7 +49,7 @@ Sistema de gestión de portafolios de inversión solar. Web app con Next.js 15 +
 - All tables have `created_at`, `updated_at`, `active`
 - Plant entity is called `PowerPlant` (table: `power_plants`)
 - Client entity is `Customer` (table: `customers`), separate from `User`
-- User roles: MAESTRO, OPERATIVO, CLIENTE, CLIENTE_PERFILADO
+- User roles: MAESTRO, CLIENTE, CLIENTE_PERFILADO (OPERATIVO and TECNICO exist in the enum but are hidden in UI selectors)
 - All data queries must filter by user role via `getAccessiblePowerPlantIds()`
-- Billing module uses abstract interface (Duemint integration pending)
+- Billing module integrates with Duemint via `duemint.service.ts` (one companyId per portfolio), synced through `/api/cron/sync-invoices` and the `/api/webhooks/duemint` webhook
 - Spanish language for UI, English for code
