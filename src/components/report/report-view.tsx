@@ -2,12 +2,17 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import MuiTooltip from "@mui/material/Tooltip";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
@@ -34,6 +39,12 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineEleme
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const MONTHS_SHORT = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 
+interface PeriodNeighbor {
+  duemintId: string;
+  periodMonth: number;
+  periodYear: number;
+}
+
 interface Props {
   rawJson: Record<string, unknown>;
   plantName: string | null;
@@ -42,6 +53,8 @@ interface Props {
   periodYear: number;
   epcLogoUrl?: string | null;
   epcName?: string | null;
+  prev?: PeriodNeighbor | null;
+  next?: PeriodNeighbor | null;
 }
 
 function get(obj: unknown, path: string): unknown {
@@ -83,7 +96,7 @@ const tooltipStyle = {
 
 const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 12 };
 
-export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLogoUrl, epcName }: Props) {
+export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLogoUrl, epcName, prev, next }: Props) {
   const planta = rawJson.planta as Record<string, unknown> | undefined;
   const reporte = rawJson.reporte as Record<string, unknown> | undefined;
   const datos = get(reporte, "datos_reporte") as Record<string, unknown> | undefined;
@@ -216,13 +229,15 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
             {pNom} kW nominales · {inversores.length} inversor{inversores.length !== 1 ? "es" : ""}{portafolio ? ` · Portafolio ${portafolio}` : ""}
           </Typography>
         </Box>
-        <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", padding: "14px 20px", display: "inline-flex", alignItems: "center", gap: "20px", boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
+        <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", padding: "10px 12px 10px 8px", display: "inline-flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
+          <PeriodNavButton dir="prev" target={prev} />
           <Box sx={{ whiteSpace: "nowrap" }}>
             <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Periodo</Typography>
             <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{periodLabel}</Typography>
           </Box>
+          <PeriodNavButton dir="next" target={next} />
           <Box sx={{ width: "1px", height: "36px", backgroundColor: "#E5EAF2", flexShrink: 0 }} />
-          <Box sx={{ whiteSpace: "nowrap" }}>
+          <Box sx={{ whiteSpace: "nowrap", pr: 1 }}>
             <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Emitido</Typography>
             <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", textTransform: "capitalize" }}>{fechaCreacion ? new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
           </Box>
@@ -593,5 +608,39 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
         </Box>
       </Box>
     </Box>
+  );
+}
+
+function PeriodNavButton({ dir, target }: { dir: "prev" | "next"; target?: PeriodNeighbor | null }) {
+  const Icon = dir === "prev" ? ChevronLeftIcon : ChevronRightIcon;
+  const baseSx = {
+    width: 32,
+    height: 32,
+    borderRadius: "8px",
+    color: "#334155",
+    background: "#F6F8FB",
+    "&:hover": { background: "#EAF1FF", color: brandBlue },
+    "&.Mui-disabled": { color: "#CBD5E1", background: "#F6F8FB" },
+  };
+  if (!target) {
+    return (
+      <IconButton size="small" disabled sx={baseSx} aria-label={dir === "prev" ? "Periodo anterior" : "Periodo siguiente"}>
+        <Icon sx={{ fontSize: 20 }} />
+      </IconButton>
+    );
+  }
+  const label = `${MONTHS[target.periodMonth - 1]} ${target.periodYear}`;
+  return (
+    <MuiTooltip title={label} placement="top">
+      <IconButton
+        size="small"
+        component={Link}
+        href={`/report/${target.duemintId}`}
+        sx={baseSx}
+        aria-label={`${dir === "prev" ? "Periodo anterior" : "Periodo siguiente"}: ${label}`}
+      >
+        <Icon sx={{ fontSize: 20 }} />
+      </IconButton>
+    </MuiTooltip>
   );
 }

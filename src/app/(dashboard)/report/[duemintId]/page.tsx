@@ -40,6 +40,44 @@ export default async function ReportPage({ params }: Props) {
     epcName = plantNameEntry?.powerPlant?.epc?.name ?? null;
   }
 
+  // Find previous and next reports for the same plant
+  let prev: { duemintId: string; periodMonth: number; periodYear: number } | null = null;
+  let next: { duemintId: string; periodMonth: number; periodYear: number } | null = null;
+  if (report.plantNameId) {
+    const baseFilter = {
+      plantNameId: report.plantNameId,
+      active: 1,
+      duemintId: { not: null },
+      id: { not: report.id },
+    } as const;
+    const [prevRow, nextRow] = await Promise.all([
+      prisma.generationReport.findFirst({
+        where: {
+          ...baseFilter,
+          OR: [
+            { periodYear: { lt: report.periodYear } },
+            { periodYear: report.periodYear, periodMonth: { lt: report.periodMonth } },
+          ],
+        },
+        orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
+        select: { duemintId: true, periodMonth: true, periodYear: true },
+      }),
+      prisma.generationReport.findFirst({
+        where: {
+          ...baseFilter,
+          OR: [
+            { periodYear: { gt: report.periodYear } },
+            { periodYear: report.periodYear, periodMonth: { gt: report.periodMonth } },
+          ],
+        },
+        orderBy: [{ periodYear: "asc" }, { periodMonth: "asc" }],
+        select: { duemintId: true, periodMonth: true, periodYear: true },
+      }),
+    ]);
+    if (prevRow?.duemintId) prev = { duemintId: prevRow.duemintId, periodMonth: prevRow.periodMonth, periodYear: prevRow.periodYear };
+    if (nextRow?.duemintId) next = { duemintId: nextRow.duemintId, periodMonth: nextRow.periodMonth, periodYear: nextRow.periodYear };
+  }
+
   return (
     <ReportView
       rawJson={report.rawJson as Record<string, unknown>}
@@ -49,6 +87,8 @@ export default async function ReportPage({ params }: Props) {
       periodYear={report.periodYear}
       epcLogoUrl={epcLogoUrl}
       epcName={epcName}
+      prev={prev}
+      next={next}
     />
   );
 }
