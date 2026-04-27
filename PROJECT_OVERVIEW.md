@@ -707,6 +707,7 @@ Versiones pinned en [package.json](package.json). Principales (runtime):
 - Ajustes UX en dashboard y login (commits `51f0389`, `b3aff3c`).
 - Endurecimiento de scoping para `CLIENTE_PERFILADO` en billing/reports (`3aa1b19`, `e9cdbb0`).
 - Simplificación de flujos de recovery (`71b4501`).
+- Navegación entre periodos dentro del visor de reportes Delta Plus, con resolución server-side de prev/next por planta (`a2bbc7e`, `922be6a`).
 
 **Sugerencias de próximos hitos** (inferidas desde deuda técnica y negocio):
 - Activar el webhook Duemint para reflejar estado de pago en tiempo real.
@@ -776,12 +777,28 @@ Primera ejecución del prompt "Documentación viva de S-Invest". Necesidad de co
 - Necesidad operativa de formalizar el ciclo de mantención del documento vivo para que cada sesión deje rastro y no se pierda histórico.
 - Commits `cb21e80` (alta inicial del overview) y `413a4a2` (alta de los slash commands) en `main`. Sin cambios en el código de la app — esta sesión es puramente de tooling de documentación.
 
+### [2026-04-27] — Sesión 3
+
+#### Agregado
+- §18 (Roadmap): nueva señal de UX en el visor de reportes Delta Plus — navegación prev/next entre periodos dentro de la misma planta.
+
+#### Cambiado
+- N/A — no se modificó el contenido sustantivo de §1–§19 más allá del bullet agregado en §18.
+
+#### Removido
+- N/A.
+
+#### Motivación (qué cambió en el código que gatilló esto)
+- Commit `a2bbc7e` (`feat(report): add prev/next period navigation within same plant`): chevrons junto al label "Periodo" en la tarjeta del hero de [report/[duemintId]](src/app/(dashboard)/report/[duemintId]/page.tsx); resolución server-side de los vecinos ordenando por `(periodYear, periodMonth)` y links a la misma ruta `/report/[duemintId]`.
+- Commit `922be6a` (`fix(report): use powerPlantId as primary pivot for period navigation`): pivote primario `powerPlantId` (FK canónico al `PowerPlant`) con fallback a `plantNameId`; cubre reportes legacy/manuales con uno solo de los dos identificadores y evita registrar el caso degradado como deuda nueva.
+- Cambios acotados a UI ([src/components/report/report-view.tsx](src/components/report/report-view.tsx)) y a la resolución de vecinos en page.tsx — sin cambios en schema, APIs, seguridad ni tokens del design system.
+
 ---
 
 ## Sugerencias para la próxima sesión
 
-1. **Quick win — completar `.env.example`** (deuda #8): agregar `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `NEXT_PUBLIC_APP_URL`, `GOOGLE_SHEET_WEBHOOK_URL`, `DUEMINT_WEBHOOK_SECRET`. Trabajo de 5 minutos, alto retorno en onboarding.
+1. **Quick win — completar `.env.example`** (deuda #8): agregar `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `NEXT_PUBLIC_APP_URL`, `GOOGLE_SHEET_WEBHOOK_URL`, `DUEMINT_WEBHOOK_SECRET`. Trabajo de 5 minutos, alto retorno en onboarding. **Pendiente desde sesión 2.**
 2. **Resolver deuda #1 y #2 (migraciones Prisma)** — sigue siendo el mayor riesgo operativo. Confirmar cómo se aplica schema en prod y regenerar baseline si corresponde.
-3. **Reconciliar `.impeccable.md`** — eliminar, mover a guía de marca aspiracional, o alinear con los tokens reales de [globals.css](src/app/globals.css).
-4. **Activar procesamiento real del webhook Duemint** (deuda #3): definir contrato de eventos y mutaciones para no depender del cron diario.
+3. **Activar procesamiento real del webhook Duemint** (deuda #3): definir contrato de eventos y mutaciones para no depender del cron diario.
+4. **Reconciliar `.impeccable.md`** (deuda #7): eliminar, mover a guía de marca aspiracional o alinear con los tokens reales de [globals.css](src/app/globals.css).
 5. **Responder preguntas abiertas 1-4** (compliance, ambientes, RPO/RTO, migración stale) para sacar §7 y §11 de estado parcial (`🔍` → resuelto).
