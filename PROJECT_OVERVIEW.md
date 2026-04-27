@@ -1,7 +1,7 @@
 # S-Invest — Project Overview
 
 > Documento vivo. Fuente de verdad: el código. Si algo acá contradice al repo, gana el repo y se corrige este documento.
-> Última actualización: **2026-04-22**.
+> Última actualización: **2026-04-27**.
 
 ---
 
@@ -758,13 +758,30 @@ Versiones pinned en [package.json](package.json). Principales (runtime):
 #### Motivación (qué gatilló esto)
 Primera ejecución del prompt "Documentación viva de S-Invest". Necesidad de contar con una fuente única de verdad para el proyecto en estado piloto-producción. Recorrido inicial de repo + entrevista de contexto de negocio con el equipo (modelo de financiamiento, roles, integración Delta Plus vía Duemint).
 
+### [2026-04-27] — Sesión 2
+
+#### Agregado
+- Protocolo de mantención del documento: pareja de slash commands `/po-start` y `/po-end` (project-scoped en [.claude/commands/](.claude/commands/)) para abrir y cerrar formalmente cada sesión de trabajo sobre este overview.
+  - [`/po-start`](.claude/commands/po-start.md) lee el doc, identifica la fecha del último Changelog, hace `git log` desde entonces, cruza archivos tocados contra secciones y propone qué actualizar antes de editar.
+  - [`/po-end`](.claude/commands/po-end.md) registra la nueva entrada de Changelog, actualiza §19 (preguntas abiertas) y refresca las sugerencias para la próxima sesión.
+- Actualización del header del doc: fecha de última actualización pasa a `2026-04-27`.
+
+#### Cambiado
+- N/A (no se modificó contenido sustantivo de las secciones §1–§19).
+
+#### Removido
+- N/A.
+
+#### Motivación (qué cambió en el código que gatilló esto)
+- Necesidad operativa de formalizar el ciclo de mantención del documento vivo para que cada sesión deje rastro y no se pierda histórico.
+- Commits `cb21e80` (alta inicial del overview) y `413a4a2` (alta de los slash commands) en `main`. Sin cambios en el código de la app — esta sesión es puramente de tooling de documentación.
+
 ---
 
 ## Sugerencias para la próxima sesión
 
-1. **Resolver deuda #1 y #2 (migraciones Prisma)** — es el mayor riesgo operativo detectado. Confirmar cómo se aplica schema en prod hoy y decidir baseline correcto.
-2. **Reconciliar `.impeccable.md`** — decidir si se elimina, se reescribe como "guía de marca aspiracional" separada, o se alinea con tokens reales.
-3. **Activar procesamiento real del webhook Duemint** — definir contrato (qué eventos, qué mutaciones disparan).
-4. **Agregar al menos los env vars faltantes a `.env.example`** — trabajo de 5 minutos que evita fricción de onboarding.
-5. **Definir alcance de testing mínimo** — al menos un smoke test de `/api/cron/sync-invoices` antes de escalar el piloto.
-6. **Responder preguntas abiertas 1-4** para sacar las secciones §7 y §11 de estado parcial (`🔍` → hecho).
+1. **Quick win — completar `.env.example`** (deuda #8): agregar `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `NEXT_PUBLIC_APP_URL`, `GOOGLE_SHEET_WEBHOOK_URL`, `DUEMINT_WEBHOOK_SECRET`. Trabajo de 5 minutos, alto retorno en onboarding.
+2. **Resolver deuda #1 y #2 (migraciones Prisma)** — sigue siendo el mayor riesgo operativo. Confirmar cómo se aplica schema en prod y regenerar baseline si corresponde.
+3. **Reconciliar `.impeccable.md`** — eliminar, mover a guía de marca aspiracional, o alinear con los tokens reales de [globals.css](src/app/globals.css).
+4. **Activar procesamiento real del webhook Duemint** (deuda #3): definir contrato de eventos y mutaciones para no depender del cron diario.
+5. **Responder preguntas abiertas 1-4** (compliance, ambientes, RPO/RTO, migración stale) para sacar §7 y §11 de estado parcial (`🔍` → resuelto).
