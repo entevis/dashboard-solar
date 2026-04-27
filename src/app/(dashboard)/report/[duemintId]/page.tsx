@@ -22,6 +22,7 @@ export default async function ReportPage({ params }: Props) {
       plantName: true,
       rawJson: true,
       plantNameId: true,
+      powerPlantId: true,
       customer: { select: { name: true } },
     },
   });
@@ -40,12 +41,19 @@ export default async function ReportPage({ params }: Props) {
     epcName = plantNameEntry?.powerPlant?.epc?.name ?? null;
   }
 
-  // Find previous and next reports for the same plant
+  // Find previous and next reports for the same plant.
+  // Prefer powerPlantId (canonical FK to PowerPlant); fall back to plantNameId
+  // for legacy/manual reports where the PowerPlant link isn't backfilled yet.
+  const plantScope = report.powerPlantId
+    ? { powerPlantId: report.powerPlantId }
+    : report.plantNameId
+      ? { plantNameId: report.plantNameId }
+      : null;
   let prev: { duemintId: string; periodMonth: number; periodYear: number } | null = null;
   let next: { duemintId: string; periodMonth: number; periodYear: number } | null = null;
-  if (report.plantNameId) {
+  if (plantScope) {
     const baseFilter = {
-      plantNameId: report.plantNameId,
+      ...plantScope,
       active: 1,
       duemintId: { not: null },
       id: { not: report.id },
