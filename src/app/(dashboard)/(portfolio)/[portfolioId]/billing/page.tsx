@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { requireAuth, buildPlantAccessFilter, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
@@ -5,6 +6,7 @@ import { formatCLP } from "@/lib/utils/formatters";
 import { BillingFilters } from "@/components/billing/billing-filters";
 import { BillingTable, type BillingSortKey } from "@/components/billing/billing-table";
 import { ImportInvoiceDialog } from "@/components/billing/import-invoice-dialog";
+import { GenerationCharts } from "@/components/generation/generation-charts";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
@@ -46,6 +48,12 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const pageSize: PageSize = (VALID_SIZES as readonly number[]).includes(parsedSize) ? parsedSize as PageSize : PAGE_SIZE;
 
   const now = new Date();
+  const hasDateParams = !!(sp.month || sp.monthTo);
+  if (!hasDateParams && !sp.invoiceNumber) {
+    const y = now.getFullYear();
+    redirect(`/${pid}/billing?month=1&year=${y}&monthTo=12&yearTo=${y}`);
+  }
+
   const invoiceNumber = sp.invoiceNumber?.trim() ?? "";
   const month = Math.min(12, Math.max(1, parseInt(sp.month ?? "") || now.getMonth() + 1));
   const year = parseInt(sp.year ?? "") || now.getFullYear();
@@ -145,7 +153,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true } }),
+    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true, duemintId: true, issueDate: true } }),
     prisma.powerPlant.findMany({
       where: plantWhere,
       select: { id: true, name: true },
@@ -186,6 +194,38 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     { label: "Notas de crédito",  value: kpis.notaCredito, count: kpiCounts.notaCredito, color: "#434655" },
   ];
 
+  const allDuemintIds = allInvoices.map((inv) => inv.duemintId).filter(Boolean) as string[];
+  const chartReports = allDuemintIds.length > 0
+    ? await prisma.generationReport.findMany({
+        where: {
+          active: 1,
+          duemintId: { in: allDuemintIds },
+          periodYear: { gte: year, lte: yearTo ?? year },
+        },
+        select: { kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true },
+      })
+    : [];
+
+  const monthlyMap = new Map<string, { month: number; year: number; kwh: number; co2: number }>();
+  for (const r of chartReports) {
+    if (!r.periodMonth || !r.periodYear) continue;
+    const key = `${r.periodYear}-${r.periodMonth}`;
+    const cur = monthlyMap.get(key) ?? { month: r.periodMonth, year: r.periodYear, kwh: 0, co2: 0 };
+    cur.kwh += r.kwhGenerated ?? 0;
+    cur.co2 += r.co2Avoided ?? 0;
+    monthlyMap.set(key, cur);
+  }
+  const rangeEndYear = yearTo ?? year;
+  const rangeEndMonth = monthTo ?? month;
+  const chartData: { month: number; year: number; kwh: number; co2: number }[] = [];
+  for (let y = year; y <= rangeEndYear; y++) {
+    const mStart = y === year ? month : 1;
+    const mEnd = y === rangeEndYear ? rangeEndMonth : 12;
+    for (let m = mStart; m <= mEnd; m++) {
+      chartData.push(monthlyMap.get(`${y}-${m}`) ?? { month: m, year: y, kwh: 0, co2: 0 });
+    }
+  }
+
   const invoiceDuemintIds = invoices.map((inv) => inv.duemintId).filter(Boolean) as string[];
   const reports = invoiceDuemintIds.length > 0
     ? await prisma.generationReport.findMany({
@@ -211,7 +251,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   });
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 3 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <Box>
         <Typography variant="h5" fontWeight={700} color="text.primary">Facturas y reportes</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
@@ -243,7 +283,9 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
         ))}
       </Box>
 
-      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {chartData.length > 0 && <GenerationCharts data={chartData} />}
+
+      <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {invoices.length === 0 ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 1.5, color: "text.secondary" }}>
             <ReceiptLongOutlinedIcon sx={{ fontSize: 36 }} />

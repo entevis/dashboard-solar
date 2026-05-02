@@ -39,6 +39,7 @@ export function GenerationCharts({ data }: Props) {
   const sorted = [...data].sort((a, b) => a.year * 12 + a.month - (b.year * 12 + b.month));
   const labels = sorted.map((d) => `${MONTH_SHORT[d.month - 1]} ${d.year}`);
   const kwhValues = sorted.map((d) => Math.round(d.kwh));
+  const kwhMax = Math.ceil((Math.max(...kwhValues, 0) + 20000) / 10000) * 10000;
 
   let acc = 0;
   const co2Accumulated = sorted.map((d) => {
@@ -61,6 +62,7 @@ export function GenerationCharts({ data }: Props) {
                 backgroundColor: "#2563eb",
                 borderRadius: 6,
                 borderSkipped: false,
+                barThickness: 32,
               }],
             }}
             options={{
@@ -70,6 +72,7 @@ export function GenerationCharts({ data }: Props) {
               scales: {
                 y: {
                   beginAtZero: true,
+                  max: kwhMax,
                   grid: { color: "#eff4ff" },
                   ticks: { font: FONT, callback: (v) => `${Number(v) / 1000}k` },
                   border: { color: "#c3c6d7" },
