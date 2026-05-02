@@ -1,7 +1,9 @@
 import { Resend } from "resend";
 import { getPortfolioLogo, PORTFOLIO_LOGOS } from "@/lib/portfolio-logos";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? "S-Invest <no-reply@sinvest.cl>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.sinvest.cl";
@@ -80,7 +82,7 @@ export async function sendInviteEmail(params: {
     </td></tr>
   `);
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: params.to,
     subject: `Invitación a ${params.portfolioName} — S-Invest`,
@@ -117,7 +119,7 @@ export async function sendRecoveryEmail(params: {
     </td></tr>
   `);
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: params.to,
     subject: "Restablecer contraseña — S-Invest",
