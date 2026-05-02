@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -44,14 +44,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [bgImage, setBgImage] = useState(LOGIN_BACKGROUNDS[0]);
   const router = useRouter();
 
-  const bgImage = useMemo(() => {
+  useEffect(() => {
     const last = localStorage.getItem("login-bg-last");
     const pool = LOGIN_BACKGROUNDS.filter((b) => b !== last);
     const picked = pool[Math.floor(Math.random() * pool.length)];
     localStorage.setItem("login-bg-last", picked);
-    return picked;
+    setBgImage(picked);
   }, []);
 
   useEffect(() => {
