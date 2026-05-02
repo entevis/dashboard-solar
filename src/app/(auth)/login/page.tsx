@@ -15,14 +15,17 @@ import Image from "next/image";
 import Link from "next/link";
 
 const LOGIN_BACKGROUNDS = [
-  "/login-bg/login-bg-1.jpg",
-  "/login-bg/login-bg-2.jpg",
+  "/login-bg/login-bg-1.png",
+  "/login-bg/login-bg-2.png",
   "/login-bg/login-bg-3.jpg",
   "/login-bg/login-bg-4.jpg",
   "/login-bg/login-bg-5.jpg",
   "/login-bg/login-bg-6.jpg",
-  "/login-bg/login-bg-7.jpg",
+  "/login-bg/login-bg-7.png",
   "/login-bg/login-bg-8.jpg",
+  "/login-bg/login-bg-9.png",
+  "/login-bg/login-bg-10.png",
+  "/login-bg/login-bg-11.jpg",
 ];
 
 const inputSx = {
