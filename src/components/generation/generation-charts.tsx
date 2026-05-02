@@ -4,6 +4,9 @@ import { useRef, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -33,6 +36,22 @@ interface Props {
   data: MonthlyData[];
 }
 
+function downloadExcel(sorted: MonthlyData[]) {
+  import("xlsx").then((XLSX) => {
+    const rows = sorted.map((d) => ({
+      "Período": `${MONTH_SHORT[d.month - 1]} ${d.year}`,
+      "Generación (kWh)": Math.round(d.kwh),
+      "CO₂ Evitado (ton)": parseFloat(d.co2.toFixed(4)),
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 12 }, { wch: 18 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Generación");
+    const period = `${MONTH_SHORT[sorted[0].month - 1]}${sorted[0].year}-${MONTH_SHORT[sorted[sorted.length - 1].month - 1]}${sorted[sorted.length - 1].year}`;
+    XLSX.writeFile(wb, `generacion-${period}.xlsx`);
+  });
+}
+
 export function GenerationCharts({ data }: Props) {
   if (data.length === 0) return null;
 
@@ -50,9 +69,16 @@ export function GenerationCharts({ data }: Props) {
   return (
     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
       <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", p: 2.5 }}>
-        <Typography fontSize="0.8125rem" fontWeight={700} sx={{ mb: 2 }}>
-          Generación mensual (kWh)
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+          <Typography fontSize="0.8125rem" fontWeight={700}>
+            Generación mensual (kWh)
+          </Typography>
+          <Tooltip title="Descargar Excel">
+            <IconButton size="small" onClick={() => downloadExcel(sorted)} sx={{ color: "text.secondary", "&:hover": { color: "#004ac6" } }}>
+              <DownloadOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
         <Box sx={{ height: 260 }}>
           <Bar
             data={{
