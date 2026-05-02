@@ -124,7 +124,6 @@ export function PlantTabsClient({ plant, canEdit, base }: Props) {
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Tabs value="overview" variant="scrollable" scrollButtons={false} sx={{ flex: 1, minWidth: 0 }}>
             <Tab label="General" value="overview" onClick={() => guardedNavigate(base)} />
-            <Tab label="Facturas y reportes" value="generation" onClick={() => guardedNavigate(`${base}/generation`)} />
           </Tabs>
           {canEdit && (
             <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 1, alignItems: "center", pl: 2, flexShrink: 0 }}>

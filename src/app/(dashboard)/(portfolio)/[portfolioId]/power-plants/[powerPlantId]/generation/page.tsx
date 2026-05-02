@@ -1,6 +1,6 @@
 import { requireAuth, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { BillingTable, type BillingSortKey } from "@/components/billing/billing-table";
 import { GenerationCharts } from "@/components/generation/generation-charts";
@@ -34,9 +34,7 @@ interface Props {
 
 export default async function PortfolioPlantGenerationPage({ params, searchParams }: Props) {
   const { portfolioId, powerPlantId } = await params;
-  const pid = parseInt(portfolioId);
-  const id = parseInt(powerPlantId);
-  const user = await requireAuth();
+  redirect(`/${portfolioId}/power-plants/${powerPlantId}`);
   const sp = await searchParams;
 
   const accessibleIds = await getAccessiblePowerPlantIds(user);
