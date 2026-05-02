@@ -46,10 +46,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const bgImage = useMemo(
-    () => LOGIN_BACKGROUNDS[Math.floor(Math.random() * LOGIN_BACKGROUNDS.length)],
-    [],
-  );
+  const bgImage = useMemo(() => {
+    const last = localStorage.getItem("login-bg-last");
+    const pool = LOGIN_BACKGROUNDS.filter((b) => b !== last);
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    localStorage.setItem("login-bg-last", picked);
+    return picked;
+  }, []);
 
   useEffect(() => {
     const url = new URL(window.location.href);
