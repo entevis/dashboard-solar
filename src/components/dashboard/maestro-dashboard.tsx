@@ -22,7 +22,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineEleme
 
 const MONTH_SHORT = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 11 };
+const FONT = { family: '"Archivo Narrow", sans-serif', size: 11 };
 const PORTFOLIO_COLORS = ["#2563eb", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6"];
 
 interface PortfolioRow {

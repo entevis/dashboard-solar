@@ -108,7 +108,7 @@ export function MobileNav({ userRole, selectedPortfolioId }: MobileNavProps) {
           <Box sx={{ width: 28, height: 28, borderRadius: 1.5, overflow: "hidden", flexShrink: 0 }}>
             <Image src="/logo.jpg" alt="S-Invest" width={28} height={28} style={{ objectFit: "contain" }} />
           </Box>
-          <Typography sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700, fontSize: "0.9375rem", color: "#0d1c2e" }}>
+          <Typography sx={{ fontFamily: '"Archivo Narrow", sans-serif', fontWeight: 700, fontSize: "0.9375rem", color: "#0d1c2e" }}>
             S-Invest
           </Typography>
         </Box>
@@ -153,7 +153,7 @@ export function MobileNav({ userRole, selectedPortfolioId }: MobileNavProps) {
                               fontSize: "0.8125rem",
                               fontWeight: isActive ? 600 : 500,
                               color: isActive ? "#0d1c2e" : "#434655",
-                              fontFamily: '"Plus Jakarta Sans", sans-serif',
+                              fontFamily: '"Archivo Narrow", sans-serif',
                             },
                           },
                         }}

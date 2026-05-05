@@ -41,16 +41,16 @@ export const theme = createTheme({
 
   // ── Typography ───────────────────────────────────────────────────────
   typography: {
-    fontFamily: '"Plus Jakarta Sans", sans-serif',
-    h1: { fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 },
-    h2: { fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 },
-    h3: { fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 700 },
-    h4: { fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 600 },
-    h5: { fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 600 },
-    h6: { fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 600 },
+    fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif',
+    h1: { fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif', fontWeight: 700 },
+    h2: { fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif', fontWeight: 700 },
+    h3: { fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif', fontWeight: 700 },
+    h4: { fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif', fontWeight: 600 },
+    h5: { fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif', fontWeight: 600 },
+    h6: { fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif', fontWeight: 600 },
     // Page title
     pageTitle: {
-      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif',
       fontSize: "1.5rem",   // 24px
       fontWeight: 700,
       lineHeight: 1.3,
@@ -58,7 +58,7 @@ export const theme = createTheme({
     },
     // Section title
     sectionTitle: {
-      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif',
       fontSize: "1.25rem",  // 20px
       fontWeight: 600,
       lineHeight: 1.4,
@@ -109,7 +109,7 @@ export const theme = createTheme({
         root: {
           borderRadius: 8,
           textTransform: "none",
-          fontFamily: '"Plus Jakarta Sans", sans-serif',
+          fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif',
           fontWeight: 500,
           fontSize: "0.8125rem",
           boxShadow: "none",
@@ -267,7 +267,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 9999,
-          fontFamily: '"Plus Jakarta Sans", sans-serif',
+          fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif',
           fontSize: "0.6875rem",
           fontWeight: 600,
           height: 22,
@@ -287,7 +287,7 @@ export const theme = createTheme({
     MuiDialogTitle: {
       styleOverrides: {
         root: {
-          fontFamily: '"Plus Jakarta Sans", sans-serif',
+          fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif',
           fontSize: "1rem",
           fontWeight: 600,
           padding: "16px 20px 10px",
@@ -306,7 +306,7 @@ export const theme = createTheme({
     MuiTab: {
       styleOverrides: {
         root: {
-          fontFamily: '"Plus Jakarta Sans", sans-serif',
+          fontFamily: 'var(--font-archivo-narrow), "Archivo Narrow", sans-serif',
           fontSize: "0.8125rem",
           fontWeight: 500,
           textTransform: "none",

@@ -118,7 +118,7 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
         </Box>
         <Typography
           sx={{
-            fontFamily: '"Plus Jakarta Sans", sans-serif',
+            fontFamily: '"Archivo Narrow", sans-serif',
             fontWeight: 700,
             fontSize: "0.9375rem",
             color: "#0d1c2e",
@@ -190,7 +190,7 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
                             fontSize: "0.8125rem",
                             fontWeight: isActive ? 600 : 500,
                             color: isActive ? "#0d1c2e" : "#434655",
-                            fontFamily: '"Plus Jakarta Sans", sans-serif',
+                            fontFamily: '"Archivo Narrow", sans-serif',
                           },
                         },
                       }}

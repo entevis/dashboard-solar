@@ -133,7 +133,7 @@ export function Topbar({ userName, userEmail, userRole, portfolios = [], selecte
               fontSize: "0.8125rem",
               fontWeight: 500,
               color: "#0d1c2e",
-              fontFamily: '"Plus Jakarta Sans", sans-serif',
+              fontFamily: '"Archivo Narrow", sans-serif',
             }}
           >
             {userName}

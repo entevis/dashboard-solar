@@ -94,7 +94,7 @@ const tooltipStyle = {
   boxPadding: 4,
 };
 
-const FONT = { family: '"Plus Jakarta Sans", sans-serif', size: 12 };
+const FONT = { family: '"Archivo Narrow", sans-serif', size: 12 };
 
 export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLogoUrl, epcName, prev, next }: Props) {
   const planta = rawJson.planta as Record<string, unknown> | undefined;
