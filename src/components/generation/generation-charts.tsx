@@ -188,9 +188,6 @@ export function GenerationCharts({ data }: Props) {
   const accumStep = niceStep(maxAccum);
   const accumMax = (Math.ceil(maxAccum / accumStep) + 1) * accumStep;
 
-  // Right axis shares the same max as the accumulated axis so bars always stay below the line
-  const monthlyMax = accumMax;
-
   return (
     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
       <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", p: 2.5 }}>
@@ -259,7 +256,6 @@ export function GenerationCharts({ data }: Props) {
             accumulated={co2Accumulated}
             accumStep={accumStep}
             accumMax={accumMax}
-            monthlyMax={monthlyMax}
           />
         </Box>
       </Card>
@@ -273,14 +269,12 @@ function Co2DualChart({
   accumulated,
   accumStep,
   accumMax,
-  monthlyMax,
 }: {
   labels: string[];
   monthly: number[];
   accumulated: number[];
   accumStep: number;
   accumMax: number;
-  monthlyMax: number;
 }) {
   const chartRef = useRef<ChartJS | null>(null);
 
@@ -317,7 +311,7 @@ function Co2DualChart({
             backgroundColor: "rgba(74, 222, 128, 0.75)",
             borderRadius: 4,
             barThickness: 20,
-            yAxisID: "y2",
+            yAxisID: "y",
             order: 2,
           },
           {
@@ -374,16 +368,7 @@ function Co2DualChart({
             beginAtZero: true,
             max: accumMax,
             grid: { color: "#eff4ff" },
-            ticks: { font: FONT, stepSize: accumStep, color: "#16a34a" },
-            border: { color: "#c3c6d7" },
-          },
-          y2: {
-            type: "linear" as const,
-            position: "right" as const,
-            beginAtZero: true,
-            max: monthlyMax,
-            grid: { drawOnChartArea: false },
-            ticks: { font: FONT, color: "#15803d" },
+            ticks: { font: FONT, stepSize: accumStep },
             border: { color: "#c3c6d7" },
           },
           x: {
