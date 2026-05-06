@@ -50,14 +50,14 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
       items: [
         { label: "Resumen general",        href: "/dashboard",       icon: DashboardOutlinedIcon },
         { label: "Resumen del portafolio",  href: p("/overview"),     icon: AssessmentOutlinedIcon },
-        { label: "Plantas",                 href: p("/power-plants"), icon: BoltOutlinedIcon },
+        { label: "Plantas Fotovoltaicas",    href: p("/power-plants"), icon: BoltOutlinedIcon },
       ],
     },
     {
       roles: ["OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
         { label: "Resumen general",  href: "/dashboard",       icon: DashboardOutlinedIcon },
-        { label: "Plantas",          href: p("/power-plants"),  icon: BoltOutlinedIcon },
+        { label: "Plantas Fotovoltaicas", href: p("/power-plants"), icon: BoltOutlinedIcon },
       ],
     },
     {
@@ -128,11 +128,29 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
         </Typography>
       </Box>
 
+      {/* Tagline */}
+      <Box sx={{ px: 2.5, pt: 0.5, pb: 2 }}>
+        <Typography
+          sx={{
+            fontFamily: '"Archivo Narrow", sans-serif',
+            fontSize: "0.6875rem",
+            fontWeight: 400,
+            fontStyle: "italic",
+            color: "#7a8aaa",
+            lineHeight: 1.55,
+          }}
+        >
+          Un portafolio de proyectos fotovoltaicos bajo modalidad ESCO, gestionado para maximizar la generación de energía y los ahorros de nuestros clientes.
+        </Typography>
+      </Box>
+
+      <Divider sx={{ mx: 2.5, borderStyle: "dashed", borderColor: "#c3cfe8" }} />
+
       {/* Nav */}
       <Box
         component="nav"
         aria-label="Navegación principal"
-        sx={{ flex: 1, overflowY: "auto", py: 1, px: 1 }}
+        sx={{ flex: 1, overflowY: "auto", pt: 2, pb: 1, px: 1 }}
       >
         {visibleSections.map((section, i) => (
           <Box key={i}>

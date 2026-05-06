@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef, useEffect } from "react";
 import Link from "next/link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -18,7 +17,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Bar, Line } from "react-chartjs-2";
+import type { Plugin } from "chart.js";
+import { Bar } from "react-chartjs-2";
+import { GenerationCharts } from "@/components/generation/generation-charts";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -81,6 +82,58 @@ export interface ClientDashboardProps {
   plants: PlantRow[];
 }
 
+const LABEL_FONT = `500 9.5px "Archivo Narrow", sans-serif`;
+
+const billingTotalLabels: Plugin<"bar"> = {
+  id: "billingTotalLabels",
+  afterDatasetsDraw(chart) {
+    const { ctx, data } = chart;
+    const n = data.labels?.length ?? 0;
+    for (let i = 0; i < n; i++) {
+      let total = 0;
+      let topY = Infinity;
+      for (let d = 0; d < data.datasets.length; d++) {
+        const v = (data.datasets[d].data[i] as number) ?? 0;
+        if (!v) continue;
+        total += v;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const y = (chart.getDatasetMeta(d).data[i] as any)?.y;
+        if (y !== undefined) topY = Math.min(topY, y);
+      }
+      if (!total || topY === Infinity) continue;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const x = (chart.getDatasetMeta(0).data[i] as any)?.x;
+      if (x === undefined) continue;
+      ctx.save();
+      ctx.font = LABEL_FONT;
+      ctx.fillStyle = "#434655";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(formatCLPShort(total), x, topY - 3);
+      ctx.restore();
+    }
+  },
+};
+
+const topPlantsLabels: Plugin<"bar"> = {
+  id: "topPlantsLabels",
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    chart.getDatasetMeta(0).data.forEach((bar, index) => {
+      const value = chart.data.datasets[0].data[index] as number;
+      if (!value) return;
+      ctx.save();
+      ctx.font = LABEL_FONT;
+      ctx.fillStyle = "#434655";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ctx.fillText(`${Math.round(value / 1000)}k kWh`, (bar as any).x + 5, (bar as any).y);
+      ctx.restore();
+    });
+  },
+};
+
 function formatCLPShort(amount: number): string {
   if (Math.abs(amount) >= 1_000_000) {
     return `$${(amount / 1_000_000).toFixed(1).replace(".", ",")}M`;
@@ -119,9 +172,9 @@ export function ClientDashboard(props: ClientDashboardProps) {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
       <Box>
-        <Typography variant="h5" fontWeight={700} color="text.primary">Mis Plantas</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-          Resumen de tus activos solares — {customerName}
+        <Typography variant="h5" fontWeight={700} color="text.primary">Resumen de Generación, Facturación e Impacto</Typography>
+        <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ mt: 0.25 }}>
+          {customerName}
         </Typography>
       </Box>
 
@@ -134,14 +187,13 @@ export function ClientDashboard(props: ClientDashboardProps) {
       </Box>
 
       {/* Charts: Generation + CO2 */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" }, gap: 2 }}>
-        <ChartCard title="Generación mensual" subtitle="kWh generados por mes en todas tus plantas">
-          <GenerationBarChart data={monthlyGeneration} />
-        </ChartCard>
-        <ChartCard title="CO₂ evitado acumulado" subtitle="Toneladas acumuladas en el año">
-          <Co2AreaChart data={monthlyGeneration} />
-        </ChartCard>
-      </Box>
+      <GenerationCharts
+        data={Array.from({ length: 12 }, (_, i) => {
+          const m = i + 1;
+          const found = monthlyGeneration.find((d) => d.month === m);
+          return { month: m, year, kwh: found?.kwh ?? 0, co2: found?.co2 ?? 0 };
+        })}
+      />
 
       {/* Impact */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
@@ -342,94 +394,6 @@ function BillCard({ label, total, count, color }: { label: string; total: number
 
 /* ─── Charts ───────────────────────────────────────────────── */
 
-function GenerationBarChart({ data }: { data: MonthlyGen[] }) {
-  const byMonth = new Map(data.map((d) => [d.month, d]));
-  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
-  const values = ALL_MONTHS.map((m) => Math.round(byMonth.get(m)?.kwh ?? 0));
-
-  return (
-    <Bar
-      data={{
-        labels,
-        datasets: [{
-          data: values,
-          backgroundColor: "#2563eb",
-          borderRadius: 6,
-          borderSkipped: false,
-        }],
-      }}
-      options={{
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: "#0B1220", cornerRadius: 8, padding: 12,
-            callbacks: { label: (ctx) => `  ${(ctx.parsed.y ?? 0).toLocaleString("es-CL")} kWh` },
-          },
-        },
-        scales: {
-          y: { beginAtZero: true, grid: { color: "#eff4ff" }, ticks: { font: FONT, callback: (v) => `${Number(v) / 1000}k` }, border: { color: "#e6eeff" } },
-          x: { grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } },
-        },
-      }}
-    />
-  );
-}
-
-function Co2AreaChart({ data }: { data: MonthlyGen[] }) {
-  const byMonth = new Map(data.map((d) => [d.month, d]));
-  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
-  let acc = 0;
-  const values = ALL_MONTHS.map((m) => { acc += byMonth.get(m)?.co2 ?? 0; return parseFloat(acc.toFixed(2)); });
-
-  const chartRef = useRef<ChartJS<"line"> | null>(null);
-
-  useEffect(() => {
-    const chart = chartRef.current;
-    if (!chart) return;
-    const ctx = chart.ctx;
-    const area = chart.chartArea;
-    if (!area) return;
-    const gradient = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-    gradient.addColorStop(0, "rgba(22, 163, 74, 0.3)");
-    gradient.addColorStop(1, "rgba(22, 163, 74, 0.02)");
-    chart.data.datasets[0].backgroundColor = gradient;
-    chart.update("none");
-  });
-
-  return (
-    <Line
-      ref={chartRef}
-      data={{
-        labels,
-        datasets: [{
-          data: values,
-          borderColor: "#16a34a",
-          backgroundColor: "rgba(22, 163, 74, 0.4)",
-          fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: "#16a34a",
-          pointBorderColor: "#fff", pointBorderWidth: 2, borderWidth: 2.5,
-        }],
-      }}
-      options={{
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: "#0B1220", cornerRadius: 8, padding: 12,
-            callbacks: { label: (ctx) => `  ${(ctx.parsed.y ?? 0).toFixed(1)} ton CO₂` },
-          },
-        },
-        scales: {
-          y: { beginAtZero: true, grid: { color: "#eff4ff" }, ticks: { font: FONT }, border: { color: "#e6eeff" } },
-          x: { grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } },
-        },
-      }}
-    />
-  );
-}
-
 function BillingStackedChart({ data }: { data: MonthlyBilling[] }) {
   const byMonth = new Map(data.map((d) => [d.month, d]));
   const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
@@ -437,6 +401,7 @@ function BillingStackedChart({ data }: { data: MonthlyBilling[] }) {
 
   return (
     <Bar
+      plugins={[billingTotalLabels]}
       data={{
         labels,
         datasets: [
@@ -448,6 +413,7 @@ function BillingStackedChart({ data }: { data: MonthlyBilling[] }) {
       options={{
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { top: 18 } },
         plugins: {
           legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8, padding: 16, font: FONT } },
           tooltip: {
@@ -471,6 +437,7 @@ function TopPlantsChart({ data }: { data: TopPlant[] }) {
 
   return (
     <Bar
+      plugins={[topPlantsLabels]}
       data={{
         labels: padded.map((d) => d.name),
         datasets: [{
@@ -484,6 +451,7 @@ function TopPlantsChart({ data }: { data: TopPlant[] }) {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { right: 60 } },
         plugins: {
           legend: { display: false },
           tooltip: {

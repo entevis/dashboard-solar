@@ -67,7 +67,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
       <Box>
-        <Typography variant="h5" fontWeight={700} color="text.primary">Plantas Solares</Typography>
+        <Typography variant="h5" fontWeight={700} color="text.primary">Plantas Fotovoltaicas</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
           {plants.length} {plants.length === 1 ? "planta encontrada" : "plantas encontradas"}
         </Typography>

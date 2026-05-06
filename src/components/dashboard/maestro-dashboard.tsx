@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import MuiTooltip from "@mui/material/Tooltip";
@@ -16,7 +15,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Bar, Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
+import { GenerationCharts } from "@/components/generation/generation-charts";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler, Tooltip, Legend);
 
@@ -97,6 +97,16 @@ export function MaestroDashboard(props: MaestroDashboardProps) {
   const portfolioColorMap = new Map<number, string>();
   portfolios.forEach((p, i) => portfolioColorMap.set(p.id, PORTFOLIO_COLORS[i % PORTFOLIO_COLORS.length]));
 
+  const monthlyTotals = ALL_MONTHS.map((m) => {
+    const entries = monthlyByPortfolio.filter((d) => d.month === m);
+    return {
+      month: m,
+      year,
+      kwh: entries.reduce((s, d) => s + d.kwh, 0),
+      co2: entries.reduce((s, d) => s + d.co2, 0),
+    };
+  });
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <Box>
@@ -162,15 +172,8 @@ export function MaestroDashboard(props: MaestroDashboardProps) {
         </Box>
       </Box>
 
-      {/* Charts: Generation by portfolio + CO2 */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "3fr 2fr" }, gap: 2 }}>
-        <ChartCard title="Generación mensual por portafolio" subtitle="kWh generados por mes, desglosados por portafolio">
-          <GenStackedChart data={monthlyByPortfolio} portfolios={portfolios} colors={portfolioColorMap} />
-        </ChartCard>
-        <ChartCard title="CO₂ evitado acumulado" subtitle="Toneladas acumuladas por portafolio">
-          <Co2LinesChart data={monthlyByPortfolio} portfolios={portfolios} colors={portfolioColorMap} />
-        </ChartCard>
-      </Box>
+      {/* Charts: Generation + CO2 */}
+      <GenerationCharts data={monthlyTotals} />
 
       {/* Billing */}
       <Box>
@@ -269,61 +272,6 @@ function ImpactCard({ icon, iconBg, value, label, tooltip }: { icon: string; ico
 }
 
 /* ─── Charts ─── */
-
-function GenStackedChart({ data, portfolios, colors }: { data: MonthlyByPortfolio[]; portfolios: PortfolioRow[]; colors: Map<number, string> }) {
-  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
-
-  const datasets = portfolios.map((p) => ({
-    label: p.name,
-    data: ALL_MONTHS.map((m) => data.find((d) => d.month === m && d.portfolioId === p.id)?.kwh ?? 0),
-    backgroundColor: colors.get(p.id) || "#ccc",
-    borderRadius: 4,
-    borderSkipped: false as const,
-  }));
-
-  return (
-    <Bar data={{ labels, datasets }} options={{
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8, padding: 16, font: FONT } },
-        tooltip: { backgroundColor: "#0B1220", cornerRadius: 8, padding: 12, callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${Math.round((ctx.parsed.y ?? 0) / 1000)}k kWh` } },
-      },
-      scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } },
-        y: { stacked: true, grid: { color: "#eff4ff" }, ticks: { font: FONT, callback: (v) => `${(Number(v) / 1_000_000).toFixed(1)}M` }, border: { color: "#e6eeff" } },
-      },
-    }} />
-  );
-}
-
-function Co2LinesChart({ data, portfolios, colors }: { data: MonthlyByPortfolio[]; portfolios: PortfolioRow[]; colors: Map<number, string> }) {
-  const labels = ALL_MONTHS.map((m) => MONTH_SHORT[m - 1]);
-
-  const datasets = portfolios.map((p) => {
-    const c = colors.get(p.id) || "#ccc";
-    let acc = 0;
-    const values = ALL_MONTHS.map((m) => { acc += data.find((d) => d.month === m && d.portfolioId === p.id)?.co2 ?? 0; return parseFloat(acc.toFixed(2)); });
-    return {
-      label: p.name, data: values, borderColor: c, backgroundColor: c + "20",
-      fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: c,
-      pointBorderColor: "#fff", pointBorderWidth: 2, borderWidth: 2.5,
-    };
-  });
-
-  return (
-    <Line data={{ labels, datasets }} options={{
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8, padding: 16, font: FONT } },
-        tooltip: { backgroundColor: "#0B1220", cornerRadius: 8, padding: 12, callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toFixed(1)} ton` } },
-      },
-      scales: {
-        y: { beginAtZero: true, grid: { color: "#eff4ff" }, ticks: { font: FONT }, border: { color: "#e6eeff" } },
-        x: { grid: { display: false }, ticks: { font: FONT }, border: { color: "#e6eeff" } },
-      },
-    }} />
-  );
-}
 
 function BillingStackedChart({ data }: { data: MonthlyBilling[] }) {
   const byMonth = new Map(data.map((d) => [d.month, d]));
