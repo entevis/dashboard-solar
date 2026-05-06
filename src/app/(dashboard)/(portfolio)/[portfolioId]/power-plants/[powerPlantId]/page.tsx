@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { PortfolioLogo } from "@/components/ui/portfolio-logo";
+import { BackToPlantsButton } from "@/components/power-plants/back-to-plants-button";
 import { getPortfolioLogo } from "@/lib/portfolio-logos";
 import { PlantTabsClient } from "@/components/power-plants/plant-tabs-client";
 import { UserRole } from "@prisma/client";
@@ -40,7 +41,7 @@ export default async function PortfolioPlantDetailPage({ params }: Props) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
         <Box>
           <Typography variant="h5" fontWeight={700} color="text.primary">{plant.name}</Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.5 }}>
@@ -50,6 +51,7 @@ export default async function PortfolioPlantDetailPage({ params }: Props) {
             </Typography>
           </Box>
         </Box>
+        <BackToPlantsButton href={`/${pid}/power-plants`} />
       </Box>
 
       <PlantTabsClient plant={plant} canEdit={canEdit} base={base} />

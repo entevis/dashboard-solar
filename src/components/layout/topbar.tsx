@@ -55,8 +55,7 @@ export function Topbar({ userName, userEmail, userRole, portfolios = [], selecte
       position="sticky"
       elevation={0}
       sx={{
-        backgroundColor: "rgba(255,255,255,0.85)",
-        backdropFilter: "blur(20px)",
+        backgroundColor: "#ffffff",
         boxShadow: "0 1px 0 0 #c3c6d7",
         zIndex: 20,
       }}

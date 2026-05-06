@@ -2,6 +2,7 @@ import { requireAuth, buildPlantAccessFilter } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { PlantFilterBar } from "@/components/power-plants/plant-filter-bar";
 import { PlantTable } from "@/components/power-plants/plant-table";
+import { PlantCards } from "@/components/power-plants/plant-cards";
 import { ExportPlantsButton } from "@/components/power-plants/export-plants-button";
 import { UserRole } from "@prisma/client";
 import Box from "@mui/material/Box";
@@ -29,7 +30,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
     ...(sParams.customerId ? { customerId: parseInt(sParams.customerId) } : {}),
   };
 
-  const [plants, customers, portfolio] = await Promise.all([
+  const [plants, customers] = await Promise.all([
     prisma.powerPlant.findMany({
       where,
       include: {
@@ -45,11 +46,23 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-    prisma.portfolio.findUnique({ where: { id: pid }, select: { id: true, name: true } }),
   ]);
 
-  const canEdit = user.role === UserRole.MAESTRO;
+  const isMaestro = user.role === UserRole.MAESTRO;
+  const canEdit = isMaestro;
   const hasFilters = !!(sParams.q || sParams.customerId);
+
+  const emptyState = (
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
+      {hasFilters
+        ? <SearchOffOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
+        : <BoltOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
+      }
+      <Typography fontSize="0.875rem" color="text.secondary">
+        {hasFilters ? "Ninguna planta coincide con los filtros aplicados." : "Las plantas solares que gestiones aparecerán aquí."}
+      </Typography>
+    </Box>
+  );
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minHeight: 0 }}>
@@ -67,21 +80,15 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
         actions={canEdit ? <ExportPlantsButton /> : undefined}
       />
 
-      <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-        {plants.length === 0 ? (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10, gap: 1.5 }}>
-            {hasFilters
-              ? <SearchOffOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
-              : <BoltOutlinedIcon sx={{ fontSize: 36, color: "text.disabled" }} />
-            }
-            <Typography fontSize="0.875rem" color="text.secondary">
-              {hasFilters ? "Ninguna planta coincide con los filtros aplicados." : "Las plantas solares que gestiones aparecerán aquí."}
-            </Typography>
-          </Box>
-        ) : (
-          <PlantTable plants={plants} portfolios={[]} customers={customers} canEdit={false} />
-        )}
-      </Box>
+      {isMaestro ? (
+        <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+          {plants.length === 0 ? emptyState : (
+            <PlantTable plants={plants} portfolios={[]} customers={customers} canEdit={false} />
+          )}
+        </Box>
+      ) : plants.length === 0 ? emptyState : (
+        <PlantCards plants={plants} />
+      )}
     </Box>
   );
 }
