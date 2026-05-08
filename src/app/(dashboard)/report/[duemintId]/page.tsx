@@ -5,11 +5,28 @@ import { ReportView } from "@/components/report/report-view";
 
 interface Props {
   params: Promise<{ duemintId: string }>;
+  searchParams?: Promise<{ back?: string }>;
 }
 
-export default async function ReportPage({ params }: Props) {
+const BACK_LABELS: Record<string, string> = {
+  "/dashboard": "Resumen general",
+  "/billing": "Facturas y reportes",
+};
+
+function getBackLabel(back?: string): string {
+  if (!back) return "Volver";
+  const path = back.split("?")[0];
+  if (path in BACK_LABELS) return BACK_LABELS[path];
+  if (path.endsWith("/overview")) return "Resumen del portafolio";
+  return "Volver";
+}
+
+export default async function ReportPage({ params, searchParams }: Props) {
   await requireAuth();
   const { duemintId } = await params;
+  const { back } = (await searchParams) ?? {};
+  const backHref = back ?? null;
+  const backLabel = getBackLabel(back);
 
   const report = await prisma.generationReport.findUnique({
     where: { duemintId },
@@ -97,6 +114,8 @@ export default async function ReportPage({ params }: Props) {
       epcName={epcName}
       prev={prev}
       next={next}
+      backHref={backHref}
+      backLabel={backLabel}
     />
   );
 }

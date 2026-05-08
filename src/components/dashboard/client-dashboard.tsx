@@ -283,7 +283,7 @@ export function ClientDashboard(props: ClientDashboardProps) {
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                         {MONTH_SHORT[p.lastReportMonth - 1]} {p.lastReportYear}
                         {p.lastReportDuemintId && (
-                          <Link href={`/report/${p.lastReportDuemintId}`} title="Ver reporte" style={{ display: "inline-flex", color: "#004ac6" }}>
+                          <Link href={`/report/${p.lastReportDuemintId}?back=/dashboard`} title="Ver reporte" style={{ display: "inline-flex", color: "#004ac6" }}>
                             <DescriptionOutlinedIcon sx={{ fontSize: 16 }} />
                           </Link>
                         )}

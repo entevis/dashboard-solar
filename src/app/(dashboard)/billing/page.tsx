@@ -1,6 +1,7 @@
 import { requireAuth, buildPlantAccessFilter, getAccessiblePowerPlantIds } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
+import { redirect } from "next/navigation";
 import { formatCLP } from "@/lib/utils/formatters";
 import { BillingFilters } from "@/components/billing/billing-filters";
 import { BillingTable, type BillingSortKey } from "@/components/billing/billing-table";
@@ -36,6 +37,35 @@ export default async function BillingPage({
   const user = await requireAuth();
   const params = await searchParams;
 
+  // CLIENTE/CLIENTE_PERFILADO always use the portfolio billing page (which has charts).
+  // Redirect transparently, preserving any query params already on the URL.
+  if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
+    let portfolioId: number | null = null;
+    if (user.customerId) {
+      const plant = await prisma.powerPlant.findFirst({
+        where: { customerId: user.customerId, active: 1 },
+        select: { portfolioId: true },
+      });
+      portfolioId = plant?.portfolioId ?? null;
+    } else {
+      const perm = await prisma.userPlantPermission.findFirst({
+        where: { userId: user.id, active: 1 },
+        select: { powerPlantId: true },
+      });
+      if (perm) {
+        const plant = await prisma.powerPlant.findUnique({
+          where: { id: perm.powerPlantId },
+          select: { portfolioId: true },
+        });
+        portfolioId = plant?.portfolioId ?? null;
+      }
+    }
+    if (portfolioId) {
+      const qs = new URLSearchParams(params as Record<string, string>).toString();
+      redirect(`/${portfolioId}/billing${qs ? `?${qs}` : ""}`);
+    }
+  }
+
   const page = Math.max(1, parseInt(params.page ?? "1") || 1);
   const VALID_SIZES = [15, 50, 100] as const;
   type PageSize = typeof VALID_SIZES[number];
@@ -44,8 +74,9 @@ export default async function BillingPage({
 
   const now = new Date();
   const invoiceNumber = params.invoiceNumber?.trim() ?? "";
-  const month = Math.min(12, Math.max(1, parseInt(params.month ?? "") || now.getMonth() + 1));
-  const year = parseInt(params.year ?? "") || now.getFullYear();
+  const hasMonthParam = !!params.month || !!params.year;
+  let month = Math.min(12, Math.max(1, parseInt(params.month ?? "") || now.getMonth() + 1));
+  let year = parseInt(params.year ?? "") || now.getFullYear();
 
   const VALID_STATUSES = ["pagada", "porVencer", "vencida", "notaCredito"];
   const status = VALID_STATUSES.includes(params.status ?? "") ? params.status! : "all";
@@ -53,16 +84,12 @@ export default async function BillingPage({
   const sortBy = VALID_SORT_KEYS.includes(params.sortBy as BillingSortKey) ? params.sortBy as BillingSortKey : "issueDate";
   const sortDir = params.sortDir === "asc" ? "asc" : "desc";
 
+  // Build role filter first (without date) so the latestInvoice query respects user scope
   const plantFilter = await buildPlantAccessFilter(user);
-  let invoiceWhere: Record<string, unknown> = { active: 1 };
-  if (!invoiceNumber) {
-    const periodStart = new Date(year, month - 1, 1);
-    const periodEnd = new Date(year, month, 1);
-    invoiceWhere.issueDate = { gte: periodStart, lt: periodEnd };
-  }
+  let roleWhere: Record<string, unknown> = { active: 1 };
 
   if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
-    invoiceWhere.customerId = user.customerId;
+    roleWhere.customerId = user.customerId;
     if (user.role === UserRole.CLIENTE_PERFILADO) {
       const accessible = await getAccessiblePowerPlantIds(user);
       const ids = accessible === "all" ? [] : accessible;
@@ -80,7 +107,7 @@ export default async function BillingPage({
         select: { duemintId: true },
       });
       const accessibleDuemintIds = accessibleReports.map((r) => r.duemintId).filter(Boolean) as string[];
-      invoiceWhere.OR = [
+      roleWhere.OR = [
         { powerPlantId: { in: ids } },
         { duemintId: { in: accessibleDuemintIds } },
       ];
@@ -91,7 +118,28 @@ export default async function BillingPage({
       select: { customerId: true },
       distinct: ["customerId"],
     }).then((rows) => rows.map((r) => r.customerId));
-    invoiceWhere = { ...invoiceWhere, customerId: { in: customerIds } };
+    roleWhere = { ...roleWhere, customerId: { in: customerIds } };
+  }
+
+  // Default to most recent month with data for this user (scoped to their role)
+  if (!hasMonthParam && !invoiceNumber) {
+    const latestInvoice = await prisma.invoice.findFirst({
+      where: { ...roleWhere, issueDate: { not: null } },
+      orderBy: { issueDate: "desc" },
+      select: { issueDate: true },
+    });
+    if (latestInvoice?.issueDate) {
+      month = latestInvoice.issueDate.getMonth() + 1;
+      year = latestInvoice.issueDate.getFullYear();
+    }
+  }
+
+  // Add date restriction for the selected period
+  const invoiceWhere: Record<string, unknown> = { ...roleWhere };
+  if (!invoiceNumber) {
+    const periodStart = new Date(year, month - 1, 1);
+    const periodEnd = new Date(year, month, 1);
+    invoiceWhere.issueDate = { gte: periodStart, lt: periodEnd };
   }
 
   // statusCode: 1=Pagada, 2=Por vencer, 3=Vencida, 4=Documento (nota de crédito)
@@ -170,6 +218,13 @@ export default async function BillingPage({
     };
   });
 
+  const backParams = new URLSearchParams({ month: String(month), year: String(year) });
+  if (status !== "all") backParams.set("status", status);
+  if (sortBy !== "issueDate") backParams.set("sortBy", sortBy);
+  if (sortDir !== "desc") backParams.set("sortDir", sortDir);
+  if (invoiceNumber) backParams.set("invoiceNumber", invoiceNumber);
+  const reportBackHref = `/billing?${backParams.toString()}`;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: 3 }}>
 
@@ -211,7 +266,7 @@ export default async function BillingPage({
             <Typography variant="caption" color="text.secondary">El historial de facturación aparecerá aquí cuando esté disponible.</Typography>
           </Box>
         ) : (
-          <BillingTable invoices={serializedInvoices} total={total} page={page} pageSize={pageSize} />
+          <BillingTable invoices={serializedInvoices} total={total} page={page} pageSize={pageSize} reportBackHref={reportBackHref} />
         )}
       </Card>
     </Box>

@@ -100,9 +100,10 @@ interface Props {
   total: number;
   page: number;
   pageSize: number;
+  reportBackHref?: string;
 }
 
-export function BillingTable({ invoices, total, page, pageSize }: Props) {
+export function BillingTable({ invoices, total, page, pageSize, reportBackHref }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -210,6 +211,7 @@ export function BillingTable({ invoices, total, page, pageSize }: Props) {
                       url={inv.url ?? null}
                       pdfUrl={inv.pdfUrl ?? null}
                       reportUrl={inv.reportUrl ?? null}
+                      reportBackHref={reportBackHref}
                     />
                   </TableCell>
                 </TableRow>

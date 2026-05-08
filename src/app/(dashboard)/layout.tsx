@@ -32,14 +32,28 @@ export default async function DashboardLayout({
   // CLIENTE/CLIENTE_PERFILADO → resolve portfolio from their plants
   if (
     (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) &&
-    user.customerId &&
     !selectedPortfolioId
   ) {
-    const firstPlant = await prisma.powerPlant.findFirst({
-      where: { customerId: user.customerId, active: 1 },
-      select: { portfolioId: true },
-    });
-    if (firstPlant) selectedPortfolioId = firstPlant.portfolioId;
+    if (user.customerId) {
+      const firstPlant = await prisma.powerPlant.findFirst({
+        where: { customerId: user.customerId, active: 1 },
+        select: { portfolioId: true },
+      });
+      if (firstPlant) selectedPortfolioId = firstPlant.portfolioId;
+    } else if (user.role === UserRole.CLIENTE_PERFILADO) {
+      // CLIENTE_PERFILADO without customerId — resolve from plant permissions
+      const firstPermission = await prisma.userPlantPermission.findFirst({
+        where: { userId: user.id, active: 1 },
+        select: { powerPlantId: true },
+      });
+      if (firstPermission) {
+        const plant = await prisma.powerPlant.findUnique({
+          where: { id: firstPermission.powerPlantId },
+          select: { portfolioId: true },
+        });
+        if (plant) selectedPortfolioId = plant.portfolioId;
+      }
+    }
   }
 
   // OPERATIVO → use assigned portfolio

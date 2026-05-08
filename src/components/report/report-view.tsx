@@ -13,6 +13,7 @@ import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
@@ -55,6 +56,8 @@ interface Props {
   epcName?: string | null;
   prev?: PeriodNeighbor | null;
   next?: PeriodNeighbor | null;
+  backHref?: string | null;
+  backLabel?: string | null;
 }
 
 function get(obj: unknown, path: string): unknown {
@@ -96,7 +99,7 @@ const tooltipStyle = {
 
 const FONT = { family: '"Archivo Narrow", sans-serif', size: 12 };
 
-export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLogoUrl, epcName, prev, next }: Props) {
+export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLogoUrl, epcName, prev, next, backHref, backLabel }: Props) {
   const planta = rawJson.planta as Record<string, unknown> | undefined;
   const reporte = rawJson.reporte as Record<string, unknown> | undefined;
   const datos = get(reporte, "datos_reporte") as Record<string, unknown> | undefined;
@@ -229,17 +232,38 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
             {pNom} kW nominales · {inversores.length} inversor{inversores.length !== 1 ? "es" : ""}{portafolio ? ` · Portafolio ${portafolio}` : ""}
           </Typography>
         </Box>
-        <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", padding: "10px 12px 10px 8px", display: "inline-flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
-          <PeriodNavButton dir="prev" target={prev} />
-          <Box sx={{ whiteSpace: "nowrap" }}>
-            <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Periodo</Typography>
-            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{periodLabel}</Typography>
-          </Box>
-          <PeriodNavButton dir="next" target={next} />
-          <Box sx={{ width: "1px", height: "36px", backgroundColor: "#E5EAF2", flexShrink: 0 }} />
-          <Box sx={{ whiteSpace: "nowrap", pr: 1 }}>
-            <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Emitido</Typography>
-            <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", textTransform: "capitalize" }}>{fechaCreacion ? new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1.5 }}>
+          {backHref && (
+            <Box
+              component={Link}
+              href={backHref}
+              sx={{
+                display: "inline-flex", alignItems: "center", gap: 0.75,
+                px: 1.5, py: 0.875, borderRadius: "10px",
+                background: "#F6F8FB", color: "#334155",
+                fontSize: "0.8125rem", fontWeight: 500, textDecoration: "none",
+                boxShadow: "0 1px 2px rgba(15,23,42,0.04)",
+                border: "1px solid #E5EAF2",
+                transition: "background 0.15s, color 0.15s",
+                "&:hover": { background: "#EAF1FF", color: brandBlue, borderColor: "#C7D9FF" },
+              }}
+            >
+              <ArrowBackOutlinedIcon sx={{ fontSize: 15 }} />
+              {backLabel ?? "Volver"}
+            </Box>
+          )}
+          <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", padding: "10px 12px 10px 8px", display: "inline-flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
+            <PeriodNavButton dir="prev" target={prev} />
+            <Box sx={{ whiteSpace: "nowrap" }}>
+              <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Periodo</Typography>
+              <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{periodLabel}</Typography>
+            </Box>
+            <PeriodNavButton dir="next" target={next} />
+            <Box sx={{ width: "1px", height: "36px", backgroundColor: "#E5EAF2", flexShrink: 0 }} />
+            <Box sx={{ whiteSpace: "nowrap", pr: 1 }}>
+              <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Emitido</Typography>
+              <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", textTransform: "capitalize" }}>{fechaCreacion ? new Date(fechaCreacion).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" }) : "—"}</Typography>
+            </Box>
           </Box>
         </Box>
       </Box>

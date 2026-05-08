@@ -250,6 +250,17 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     };
   });
 
+  const backParams = new URLSearchParams({ month: String(month), year: String(year) });
+  if (monthTo !== undefined) backParams.set("monthTo", String(monthTo));
+  if (yearTo !== undefined) backParams.set("yearTo", String(yearTo));
+  if (status !== "all") backParams.set("status", status);
+  if (sortBy !== "issueDate") backParams.set("sortBy", sortBy);
+  if (sortDir !== "desc") backParams.set("sortDir", sortDir);
+  if (sp.plantNameId) backParams.set("plantNameId", sp.plantNameId);
+  if (sp.customerId) backParams.set("customerId", sp.customerId);
+  if (invoiceNumber) backParams.set("invoiceNumber", invoiceNumber);
+  const reportBackHref = `/${pid}/billing?${backParams.toString()}`;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <Box>
@@ -293,7 +304,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
             <Typography variant="caption" color="text.secondary">El historial de facturación aparecerá aquí cuando esté disponible.</Typography>
           </Box>
         ) : (
-          <BillingTable invoices={serializedInvoices} total={total} page={page} pageSize={pageSize} />
+          <BillingTable invoices={serializedInvoices} total={total} page={page} pageSize={pageSize} reportBackHref={reportBackHref} />
         )}
       </Card>
     </Box>

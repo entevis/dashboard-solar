@@ -20,9 +20,10 @@ interface Props {
   url: string | null;
   pdfUrl: string | null;
   reportUrl: string | null;
+  reportBackHref?: string;
 }
 
-export function InvoiceRowActions({ invoiceId, duemintId, isPaid, url, pdfUrl, reportUrl }: Props) {
+export function InvoiceRowActions({ invoiceId, duemintId, isPaid, url, pdfUrl, reportUrl, reportBackHref }: Props) {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,7 +90,7 @@ export function InvoiceRowActions({ invoiceId, duemintId, isPaid, url, pdfUrl, r
               Ver reporte
             </MenuItem>
             {duemintId && (
-              <MenuItem component="a" href={`/report/${duemintId}`} target="_blank" onClick={() => setAnchorEl(null)} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
+              <MenuItem component="a" href={`/report/${duemintId}${reportBackHref ? `?back=${encodeURIComponent(reportBackHref)}` : ""}`} target="_blank" rel="noopener noreferrer" onClick={() => setAnchorEl(null)} sx={{ fontSize: "0.8125rem", gap: 1.5 }}>
                 <AssessmentOutlinedIcon sx={{ fontSize: 15, color: "#2563eb" }} />
                 Ver nuevo reporte
               </MenuItem>
