@@ -31,6 +31,7 @@ interface Plant {
   city: string | null;
   capacityKw: number;
   status: string;
+  contractType: string;
   portfolioId: number;
   customerId: number;
   solcorId: string | null;
@@ -143,7 +144,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
     };
   }
 
-  const W = { solcorId: 100, name: 200, plantName: 180, city: 130, dist: 140, tariff: 110, date: 120, dur: 100, kw: 110, yield: 160, actions: 40 };
+  const W = { solcorId: 100, name: 200, plantName: 180, city: 130, dist: 140, tariff: 110, contract: 120, date: 120, dur: 100, kw: 110, yield: 160, actions: 40 };
 
   const headSx = (w: number, align?: "right" | "center") => ({
     width: w, maxWidth: w, minWidth: w,
@@ -252,6 +253,9 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
               <TableCell sx={headSx(W.tariff)}>
                 <TableSortLabel {...col("tariffId")}>ID Tarifa</TableSortLabel>
               </TableCell>
+              <TableCell sx={headSx(W.contract)}>
+                <Typography fontSize="0.75rem" fontWeight={600} sx={{ lineHeight: 1.5 }}>Tipo Contrato</Typography>
+              </TableCell>
               <TableCell sx={headSx(W.date)}>
                 <TableSortLabel {...col("startDate")}>Fecha Inicio</TableSortLabel>
               </TableCell>
@@ -284,6 +288,23 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
                 <TruncCell value={plant.city ?? plant.location} width={W.city} />
                 <TruncCell value={plant.distributorCompany} width={W.dist} />
                 <TruncCell value={plant.tariffId} width={W.tariff} />
+                <TableCell sx={{ width: W.contract, maxWidth: W.contract, p: "6px 12px" }}>
+                  <Box
+                    sx={{
+                      display: "inline-block",
+                      px: 0.875,
+                      py: 0.25,
+                      borderRadius: "9999px",
+                      backgroundColor: "#eff4ff",
+                      fontSize: "0.6875rem",
+                      fontWeight: 600,
+                      color: "#004ac6",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {plant.contractType}
+                  </Box>
+                </TableCell>
                 <TableCell sx={{ width: W.date, maxWidth: W.date, p: "6px 12px" }}>
                   {plant.startDate ? new Intl.DateTimeFormat("es-CL").format(new Date(plant.startDate)) : "—"}
                 </TableCell>

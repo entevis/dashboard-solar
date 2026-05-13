@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { UserRole } from "@prisma/client";
 import { logAction } from "@/lib/services/audit.service";
+import { normalizeRut } from "@/lib/utils/formatters";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -63,7 +64,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const updated = await prisma.customer.update({ where: { id }, data: parsed.data });
+  const data = parsed.data.rut ? { ...parsed.data, rut: normalizeRut(parsed.data.rut) } : parsed.data;
+  const updated = await prisma.customer.update({ where: { id }, data });
   logAction(user.id, "UPDATE", "customer", id, { changes: parsed.data });
 
   return NextResponse.json(updated);

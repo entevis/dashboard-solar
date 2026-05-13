@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { UserRole } from "@prisma/client";
 import { logAction } from "@/lib/services/audit.service";
+import { normalizeRut } from "@/lib/utils/formatters";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -51,16 +52,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  // Check RUT uniqueness
-  const existing = await prisma.customer.findUnique({
-    where: { rut: parsed.data.rut },
+  const normalized = { ...parsed.data, rut: normalizeRut(parsed.data.rut) };
+
+  // Check RUT uniqueness (exclude soft-deleted)
+  const existing = await prisma.customer.findFirst({
+    where: { rut: normalized.rut, active: 1 },
   });
   if (existing) {
     return NextResponse.json({ error: "Ya existe un cliente con este RUT" }, { status: 409 });
   }
 
   const customer = await prisma.customer.create({
-    data: parsed.data,
+    data: normalized,
   });
 
   logAction(user.id, "CREATE", "customer", customer.id, { rut: parsed.data.rut });

@@ -11,6 +11,14 @@ export function formatRut(rut: string): string {
 }
 
 /**
+ * Normalize a RUT input to canonical format XX.XXX.XXX-X.
+ * Accepts any format (with/without dots, with/without dash, lower/uppercase).
+ */
+export function normalizeRut(raw: string): string {
+  return formatRut(raw);
+}
+
+/**
  * Format number as Chilean pesos (CLP)
  */
 export function formatCLP(amount: number): string {

@@ -4,6 +4,7 @@ import { PlantFilterBar } from "@/components/power-plants/plant-filter-bar";
 import { PlantTable } from "@/components/power-plants/plant-table";
 import { PlantCards } from "@/components/power-plants/plant-cards";
 import { ExportPlantsButton } from "@/components/power-plants/export-plants-button";
+import { CreatePlantDialog } from "@/components/power-plants/create-plant-dialog";
 import { UserRole } from "@prisma/client";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -20,6 +21,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
   const pid = parseInt(portfolioId);
   const user = await requireAuth();
   const sParams = await searchParams;
+  const isMaestro = user.role === UserRole.MAESTRO;
 
   const filter = await buildPlantAccessFilter(user);
 
@@ -30,7 +32,7 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
     ...(sParams.customerId ? { customerId: parseInt(sParams.customerId) } : {}),
   };
 
-  const [plants, customers] = await Promise.all([
+  const [plants, filterCustomers, allCustomers, portfolio] = await Promise.all([
     prisma.powerPlant.findMany({
       where,
       include: {
@@ -46,9 +48,14 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    isMaestro
+      ? prisma.customer.findMany({ where: { active: 1 }, select: { id: true, name: true }, orderBy: { name: "asc" } })
+      : Promise.resolve([] as { id: number; name: string }[]),
+    isMaestro
+      ? prisma.portfolio.findUnique({ where: { id: pid }, select: { name: true } })
+      : Promise.resolve(null),
   ]);
 
-  const isMaestro = user.role === UserRole.MAESTRO;
   const canEdit = isMaestro;
   const hasFilters = !!(sParams.q || sParams.customerId);
 
@@ -75,15 +82,20 @@ export default async function PowerPlantsPage({ params, searchParams }: Props) {
 
       <PlantFilterBar
         portfolios={[]}
-        customers={customers}
+        customers={filterCustomers}
         hidePortfolioFilter
-        actions={canEdit ? <ExportPlantsButton /> : undefined}
+        actions={canEdit ? (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <ExportPlantsButton />
+            <CreatePlantDialog portfolios={[]} customers={allCustomers} fixedPortfolioId={pid} fixedPortfolioName={portfolio?.name} />
+          </Box>
+        ) : undefined}
       />
 
       {isMaestro ? (
         <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, backgroundColor: "white", overflow: "hidden", display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           {plants.length === 0 ? emptyState : (
-            <PlantTable plants={plants} portfolios={[]} customers={customers} canEdit={false} />
+            <PlantTable plants={plants} portfolios={[]} customers={filterCustomers} canEdit={false} />
           )}
         </Box>
       ) : plants.length === 0 ? emptyState : (

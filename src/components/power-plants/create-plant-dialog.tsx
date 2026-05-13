@@ -26,17 +26,24 @@ interface Props {
   customers: Option[];
   /** Pre-fixes and locks the portfolio selector */
   fixedPortfolioId?: number;
+  fixedPortfolioName?: string;
 }
 
 const emptyForm = {
   name: "",
   solcorId: "",
+  contractType: "PPA/ESCO",
   capacityKw: "",
   specificYield: "",
   distributorCompany: "",
   tariffId: "",
   startDate: "",
   durationYears: "",
+  panelCount: "",
+  installationType: "",
+  surfaceM2: "",
+  economicSector: "",
+  economicSector2: "",
   status: "active",
   portfolioId: "",
   customerId: "",
@@ -49,7 +56,7 @@ const emptyForm = {
 
 type FormErrors = Partial<Record<keyof typeof emptyForm, string>>;
 
-export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: Props) {
+export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId, fixedPortfolioName }: Props) {
   const router = useRouter();
   const isMobile = useMediaQuery("(max-width:599px)");
   const [open, setOpen] = useState(false);
@@ -92,12 +99,18 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
           customerId: parseInt(form.customerId),
           capacityKw: parseFloat(form.capacityKw),
           status: form.status,
+          contractType: form.contractType,
           solcorId: form.solcorId || null,
           distributorCompany: form.distributorCompany || null,
           tariffId: form.tariffId || null,
           startDate: form.startDate || null,
           durationYears: form.durationYears ? parseFloat(form.durationYears) : null,
           specificYield: form.specificYield ? parseFloat(form.specificYield) : null,
+          panelCount: form.panelCount ? parseInt(form.panelCount) : null,
+          installationType: form.installationType || null,
+          surfaceM2: form.surfaceM2 ? parseFloat(form.surfaceM2) : null,
+          economicSector: form.economicSector || null,
+          economicSector2: form.economicSector2 || null,
           address: (form.addrAddress || form.addrCity || form.addrCounty) ? {
             address: form.addrAddress || null,
             reference: form.addrReference || null,
@@ -137,6 +150,15 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField fullWidth size="small" label="ID Solcor" value={form.solcorId} onChange={sf("solcorId")} placeholder="Ej: SOL-001" />
               </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Tipo de contrato</InputLabel>
+                  <Select label="Tipo de contrato" value={form.contractType} onChange={(e) => setForm({ ...form, contractType: e.target.value })}>
+                    <MenuItem value="PPA/ESCO">PPA/ESCO</MenuItem>
+                    <MenuItem value="Leasing">Leasing</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
 
               {/* Técnico */}
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -160,6 +182,27 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
                 <TextField fullWidth size="small" label="Duración (años)" type="number" inputProps={{ min: 1, max: 50 }} value={form.durationYears} onChange={sf("durationYears")} />
               </Grid>
 
+              {/* Instalación */}
+              <Grid size={12}>
+                <Divider sx={{ my: 0.5 }} />
+                <Typography variant="overline" color="text.secondary">Instalación</Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="N° Paneles" type="number" inputProps={{ min: 0, inputMode: "numeric" }} value={form.panelCount} onChange={sf("panelCount")} placeholder="Ej: 400" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Tipo instalación" value={form.installationType} onChange={sf("installationType")} placeholder="Techo / Suelo" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Superficie (m²)" type="number" inputProps={{ min: 0, step: "0.1", inputMode: "decimal" }} value={form.surfaceM2} onChange={sf("surfaceM2")} placeholder="Ej: 2500" />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Sector económico" value={form.economicSector} onChange={sf("economicSector")} />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField fullWidth size="small" label="Sector económico 2" value={form.economicSector2} onChange={sf("economicSector2")} />
+              </Grid>
+
               {/* Estado / Portfolio / Cliente */}
               <Grid size={12}>
                 <FormControl fullWidth size="small" required>
@@ -171,18 +214,21 @@ export function CreatePlantDialog({ portfolios, customers, fixedPortfolioId }: P
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <FormControl fullWidth size="small" error={!!errors.portfolioId}>
-                  <InputLabel>Portafolio</InputLabel>
-                  <Select
-                    label="Portafolio"
-                    value={form.portfolioId}
-                    onChange={(e) => { if (!fixedPortfolioId) { setForm({ ...form, portfolioId: e.target.value }); setErrors((prev) => ({ ...prev, portfolioId: undefined })); } }}
-                    inputProps={fixedPortfolioId ? { readOnly: true } : {}}
-                  >
-                    {portfolios.map((p) => <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>)}
-                  </Select>
-                  {errors.portfolioId && <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>{errors.portfolioId}</Typography>}
-                </FormControl>
+                {fixedPortfolioId ? (
+                  <TextField fullWidth size="small" label="Portafolio" value={fixedPortfolioName ?? String(fixedPortfolioId)} slotProps={{ input: { readOnly: true } }} sx={{ "& .MuiInputBase-input": { color: "text.secondary" } }} />
+                ) : (
+                  <FormControl fullWidth size="small" error={!!errors.portfolioId}>
+                    <InputLabel>Portafolio</InputLabel>
+                    <Select
+                      label="Portafolio"
+                      value={form.portfolioId}
+                      onChange={(e) => { setForm({ ...form, portfolioId: e.target.value }); setErrors((prev) => ({ ...prev, portfolioId: undefined })); }}
+                    >
+                      {portfolios.map((p) => <MenuItem key={p.id} value={String(p.id)}>{p.name}</MenuItem>)}
+                    </Select>
+                    {errors.portfolioId && <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>{errors.portfolioId}</Typography>}
+                  </FormControl>
+                )}
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <FormControl fullWidth size="small" error={!!errors.customerId}>

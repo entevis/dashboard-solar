@@ -21,6 +21,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import { CustomerContactsSheet } from "@/components/admin/customer-contacts-sheet";
+import { normalizeRut } from "@/lib/utils/formatters";
 import { toast } from "@/lib/utils/toast";
 
 const inputSx = { "& .MuiOutlinedInput-root": { backgroundColor: "#eff4ff", "& fieldset": { borderColor: "transparent" }, "&:hover fieldset": { borderColor: "transparent" }, "&.Mui-focused fieldset": { borderColor: "#004ac6", borderWidth: 2 } } };
@@ -35,6 +36,12 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
   const [contactsOpen, setContactsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: customer.name, rut: customer.rut, altName: customer.altName ?? "" });
+
+  function handleRutChange(raw: string) {
+    const digits = raw.replace(/[^0-9kK]/g, "");
+    const formatted = digits.length > 1 ? normalizeRut(digits) : digits;
+    setForm((prev) => ({ ...prev, rut: formatted }));
+  }
 
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
@@ -91,7 +98,7 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
         <Box component="form" onSubmit={handleEdit}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <TextField label="Razón social" size="small" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} sx={inputSx} />
-            <TextField label="RUT" size="small" required value={form.rut} onChange={(e) => setForm({ ...form, rut: e.target.value })} sx={inputSx} />
+            <TextField label="RUT" size="small" required value={form.rut} onChange={(e) => handleRutChange(e.target.value)} placeholder="76.123.456-7" helperText="Formato: XX.XXX.XXX-X" sx={inputSx} />
             <TextField label="Nombre alternativo" size="small" value={form.altName} onChange={(e) => setForm({ ...form, altName: e.target.value })} placeholder="Alias opcional" sx={inputSx} />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>

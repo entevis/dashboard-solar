@@ -179,6 +179,10 @@ export async function GET(request: NextRequest) {
           if (!existingReport.plantNameId && plantNameEntry) {
             updateData.plantNameId = plantNameEntry.id;
           }
+          if (!existingReport.plantName && rawJson) {
+            const visibleName = String(((rawJson as Record<string, unknown>).planta as Record<string, unknown>)?.nombre_visible ?? "");
+            if (visibleName) updateData.plantName = visibleName;
+          }
           if (Object.keys(updateData).length > 0) {
             await prisma.generationReport.update({ where: { duemintId }, data: updateData });
             reportsUpdated++; pStats.repUpdated++;

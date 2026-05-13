@@ -194,12 +194,15 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     { label: "Notas de crédito",  value: kpis.notaCredito, count: kpiCounts.notaCredito, color: "#434655" },
   ];
 
-  const allDuemintIds = allInvoices.map((inv) => inv.duemintId).filter(Boolean) as string[];
-  const chartReports = allDuemintIds.length > 0
+  const chartDuemintIds = allInvoices
+    .filter((inv) => inv.statusCode !== 4)
+    .map((inv) => inv.duemintId)
+    .filter(Boolean) as string[];
+  const chartReports = chartDuemintIds.length > 0
     ? await prisma.generationReport.findMany({
         where: {
           active: 1,
-          duemintId: { in: allDuemintIds },
+          duemintId: { in: chartDuemintIds },
           periodYear: { gte: year, lte: yearTo ?? year },
         },
         select: { kwhGenerated: true, co2Avoided: true, periodMonth: true, periodYear: true },
@@ -230,7 +233,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const reports = invoiceDuemintIds.length > 0
     ? await prisma.generationReport.findMany({
         where: { duemintId: { in: invoiceDuemintIds }, active: 1 },
-        select: { duemintId: true, kwhGenerated: true, co2Avoided: true, fileUrl: true, periodMonth: true, periodYear: true, plantName: true },
+        select: { duemintId: true, kwhGenerated: true, co2Avoided: true, fileUrl: true, periodMonth: true, periodYear: true, plantName: true, powerPlant: { select: { name: true } }, plantNameRef: { select: { name: true } } },
       })
     : [];
   const reportByDuemintId = new Map(reports.map((r) => [r.duemintId, r]));
@@ -246,7 +249,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       reportUrl: report?.fileUrl ?? null,
       reportPeriodMonth: report?.periodMonth ?? null,
       reportPeriodYear: report?.periodYear ?? null,
-      reportPlantName: report?.plantName ?? null,
+      reportPlantName: report?.plantName ?? report?.plantNameRef?.name ?? report?.powerPlant?.name ?? null,
     };
   });
 

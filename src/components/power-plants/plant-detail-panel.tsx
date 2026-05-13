@@ -30,6 +30,7 @@ export interface SerializedPlant {
   id: number;
   name: string;
   status: string;
+  contractType: string;
   solcorId: string | null;
   capacityKw: number;
   specificYield: number | null;
@@ -54,6 +55,7 @@ export type FormState = {
   name: string;
   solcorId: string;
   status: string;
+  contractType: string;
   capacityKw: string;
   specificYield: string;
   distributorCompany: string;
@@ -171,6 +173,12 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                         <MenuItem value="maintenance">En mantenimiento</MenuItem>
                       </TextField>
                     </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField select fullWidth size="small" label="Tipo de contrato" value={form.contractType} onChange={ef("contractType")}>
+                        <MenuItem value="PPA/ESCO">PPA/ESCO</MenuItem>
+                        <MenuItem value="Leasing">Leasing</MenuItem>
+                      </TextField>
+                    </Grid>
                   </>
                 ) : (
                   <>
@@ -186,6 +194,16 @@ export function PlantDetailPanel({ plant, isEditing, form, onField }: Props) {
                           sx={plant.status === "active"
                             ? { backgroundColor: "#dbe1ff", color: "#0d1c2e", fontWeight: 600 }
                             : { backgroundColor: "#e6eeff", color: "#434655", fontWeight: 500 }}
+                        />
+                      </Box>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: "block", mb: 0.5, letterSpacing: "0.04em" }}>Tipo de contrato</Typography>
+                        <Chip
+                          label={plant.contractType}
+                          size="small"
+                          sx={{ backgroundColor: "#eff4ff", color: "#004ac6", fontWeight: 600 }}
                         />
                       </Box>
                     </Grid>

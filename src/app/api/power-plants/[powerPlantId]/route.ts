@@ -24,6 +24,13 @@ const updateSchema = z.object({
   surfaceM2: z.number().positive().nullable().optional(),
   economicSector: z.string().nullable().optional(),
   economicSector2: z.string().nullable().optional(),
+  contractType: z.enum(["PPA/ESCO", "Leasing"]).optional(),
+  billingType: z.enum(["Tarifa Fija", "Tarifa Variable", "Cuota Leasing"]).nullable().optional(),
+  selfConsumptionTariff: z.enum(["Tres Cargos", "Cargo por Energía", "Cargo por Inyección"]).nullable().optional(),
+  injectionTariff: z.enum(["Tres Cargos", "Cargo por Energía", "Cargo por Inyección"]).nullable().optional(),
+  selfConsumptionDiscount: z.number().min(0).max(100).nullable().optional(),
+  injectionDiscount: z.number().min(0).max(100).nullable().optional(),
+  firstInstallmentUsd: z.number().positive().nullable().optional(),
   address: z.object({
     address: z.string().nullable().optional(),
     reference: z.string().nullable().optional(),

@@ -20,6 +20,10 @@ export default async function CustomersPage({ searchParams }: Props) {
   const cookieStore = await cookies();
   const portfolioId = parseInt(cookieStore.get("portfolio_id")?.value ?? "") || null;
 
+  const [portfolios] = await Promise.all([
+    prisma.portfolio.findMany({ where: { active: 1 }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  ]);
+
   const where: Record<string, unknown> = { active: 1 };
   if (portfolioId) {
     where.powerPlants = { some: { portfolioId, active: 1 } };
@@ -62,7 +66,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
           <CustomerFilterBar />
-          <CreateCustomerDialog />
+          <CreateCustomerDialog portfolios={portfolios} />
         </Box>
       </Box>
 

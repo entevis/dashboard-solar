@@ -9,6 +9,7 @@ import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import SolarPowerOutlinedIcon from "@mui/icons-material/SolarPowerOutlined";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
+import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 
 interface Plant {
   id: number;
@@ -17,6 +18,7 @@ interface Plant {
   city: string | null;
   capacityKw: number;
   status: string;
+  contractType: string;
   portfolioId: number;
   distributorCompany: string | null;
   startDate: Date | null;
@@ -172,6 +174,10 @@ function PlantCard({ plant }: { plant: Plant }) {
             label={new Intl.DateTimeFormat("es-CL").format(new Date(plant.startDate))}
           />
         )}
+        <DataRow
+          icon={<ArticleOutlinedIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0 }} />}
+          label={plant.contractType}
+        />
       </Box>
 
       {/* CTA — visible solo en hover */}
