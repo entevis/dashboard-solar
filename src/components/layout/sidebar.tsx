@@ -30,6 +30,7 @@ type NavItem = {
   label: string;
   href: string;
   icon: React.ElementType;
+  requiresPortfolio?: boolean;
 };
 type NavSection = {
   title?: string;
@@ -49,23 +50,23 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
     {
       roles: ["MAESTRO"],
       items: [
-        { label: "Resumen general",        href: "/dashboard",       icon: DashboardOutlinedIcon },
-        { label: "Resumen del portafolio",  href: p("/overview"),     icon: AssessmentOutlinedIcon },
-        { label: "Plantas Fotovoltaicas",    href: p("/power-plants"), icon: BoltOutlinedIcon },
+        { label: "Resumen general",       href: "/dashboard",       icon: DashboardOutlinedIcon },
+        { label: "Resumen del portafolio", href: p("/overview"),     icon: AssessmentOutlinedIcon, requiresPortfolio: true },
+        { label: "Plantas Fotovoltaicas",  href: p("/power-plants"), icon: BoltOutlinedIcon,       requiresPortfolio: true },
       ],
     },
     {
       roles: ["OPERATIVO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
-        { label: "Resumen general",  href: "/dashboard",       icon: DashboardOutlinedIcon },
-        { label: "Plantas Fotovoltaicas", href: p("/power-plants"), icon: BoltOutlinedIcon },
+        { label: "Resumen general",      href: "/dashboard",       icon: DashboardOutlinedIcon },
+        { label: "Plantas Fotovoltaicas", href: p("/power-plants"), icon: BoltOutlinedIcon, requiresPortfolio: true },
       ],
     },
     {
       roles: ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
-        { label: "Facturas y reportes", href: p("/billing"),           icon: ReceiptLongOutlinedIcon },
-        { label: "Análisis de Ahorro",  href: p("/savings-analysis"),  icon: AttachMoneyOutlinedIcon },
+        { label: "Facturas y reportes", href: p("/billing"),          icon: ReceiptLongOutlinedIcon, requiresPortfolio: true },
+        { label: "Análisis de Ahorro",  href: p("/savings-analysis"), icon: AttachMoneyOutlinedIcon, requiresPortfolio: true },
       ],
     },
     {
@@ -177,21 +178,24 @@ export function Sidebar({ userRole, selectedPortfolioId }: SidebarProps) {
             )}
             <List disablePadding>
               {section.items.map((item) => {
-                const isActive =
-                  pathname === item.href || pathname.startsWith(item.href + "/");
+                const disabled = !!item.requiresPortfolio && !pid;
+                const isActive = !disabled &&
+                  (pathname === item.href || pathname.startsWith(item.href + "/"));
                 return (
                   <ListItemButton
                     key={item.href}
-                    component={Link}
-                    href={item.href}
+                    component={disabled ? "div" : Link}
+                    {...(!disabled && { href: item.href })}
                     aria-current={isActive ? "page" : undefined}
                     selected={isActive}
+                    disabled={disabled}
                     sx={{
                       borderRadius: 2,
                       mb: 0.25,
                       py: 0.875,
                       px: 1.25,
                       minHeight: 36,
+                      ...(disabled && { opacity: 0.35, cursor: "default", pointerEvents: "none" }),
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 32 }}>
