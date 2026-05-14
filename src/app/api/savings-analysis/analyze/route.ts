@@ -7,6 +7,27 @@ import { calculateSavings } from "@/lib/savings/calculator";
 
 export const maxDuration = 60;
 
+// pdfjs-dist executes `new DOMMatrix` at module-init level.
+// DOMMatrix is not available in Node.js < 22; polyfill it so the module loads.
+if (typeof globalThis.DOMMatrix === "undefined") {
+  class NodeDOMMatrix {
+    a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+    constructor(init?: number[] | string) {
+      if (Array.isArray(init) && init.length === 6) {
+        [this.a, this.b, this.c, this.d, this.e, this.f] = init as [number,number,number,number,number,number];
+      }
+    }
+    invertSelf() { return this; }
+    multiplySelf() { return this; }
+    preMultiplySelf() { return this; }
+    translate(tx = 0, ty = 0) { return new NodeDOMMatrix([this.a, this.b, this.c, this.d, this.e + tx, this.f + ty]); }
+    scale(sx = 1, sy = 1) { return new NodeDOMMatrix([this.a * sx, this.b * sy, this.c * sx, this.d * sy, this.e, this.f]); }
+    rotate() { return new NodeDOMMatrix(); }
+    getTransform() { return { a: this.a, b: this.b, c: this.c, d: this.d, e: this.e, f: this.f }; }
+  }
+  (globalThis as Record<string, unknown>).DOMMatrix = NodeDOMMatrix;
+}
+
 function normalizeDiscount(raw: number | null | undefined): number | null {
   if (raw === null || raw === undefined) return null;
   return raw > 1 ? raw : raw * 100;
