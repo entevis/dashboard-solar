@@ -94,9 +94,10 @@ export async function POST(request: NextRequest) {
           return boleta;
         } catch (fileErr) {
           console.error("[savings-analysis] PDF parse error:", file.name, fileErr);
+          const errDetail = fileErr instanceof Error ? `${fileErr.name}: ${fileErr.message}` : String(fileErr);
           return {
             fileName: file.name,
-            error: "Error al leer el archivo — asegúrate de que sea un PDF válido.",
+            error: `Error al leer el archivo: ${errDetail}`,
             p1NetElectricidad: 0, p1NetTransporte: 0, p1NetServicioPub: 0,
             p1NetFondoEstab: 0, p1Admin: 0, p1Potencia: 0, p1FactorPot: 0,
             descuentoMes: 0, consumoKwh: 0, inyeccionKwh: 0,
