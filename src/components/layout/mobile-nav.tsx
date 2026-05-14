@@ -21,6 +21,7 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import AttachMoneyOutlinedIcon from "@mui/icons-material/AttachMoneyOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
 import type { UserRole } from "@prisma/client";
 
@@ -69,7 +70,8 @@ export function MobileNav({ userRole, selectedPortfolioId }: MobileNavProps) {
     {
       roles: ["MAESTRO", "CLIENTE", "CLIENTE_PERFILADO"],
       items: [
-        { label: "Facturas y reportes", href: p("/billing"),  icon: ReceiptLongOutlinedIcon },
+        { label: "Facturas y reportes", href: p("/billing"),           icon: ReceiptLongOutlinedIcon },
+        { label: "Análisis de Ahorro",  href: p("/savings-analysis"),  icon: AttachMoneyOutlinedIcon },
       ],
     },
     {

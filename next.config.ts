@@ -45,6 +45,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["pdf-parse"],
   webpack: (config) => {
     // Required for react-pdf
     config.resolve.alias.canvas = false;
