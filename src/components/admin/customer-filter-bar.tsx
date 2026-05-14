@@ -31,7 +31,7 @@ export function CustomerFilterBar() {
     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
       <TextField
         size="small"
-        placeholder="Buscar cliente..."
+        placeholder="Nombre o RUT..."
         defaultValue={searchParams.get("q") ?? ""}
         onChange={handleSearch}
         slotProps={{
@@ -43,7 +43,7 @@ export function CustomerFilterBar() {
             ),
           },
         }}
-        sx={{ width: 200 }}
+        sx={{ width: 240 }}
       />
       {isPending && (
         <Typography variant="caption" color="text.secondary">Filtrando...</Typography>

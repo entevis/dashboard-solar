@@ -54,15 +54,27 @@ export async function POST(request: NextRequest) {
 
   const normalized = { ...parsed.data, rut: normalizeRut(parsed.data.rut) };
 
-  // Check RUT uniqueness (including soft-deleted, since DB has @unique constraint)
+  // Check RUT uniqueness (DB has @unique constraint, so we must handle soft-deleted too)
   const existing = await prisma.customer.findFirst({
     where: { rut: normalized.rut },
   });
+
   if (existing) {
-    const msg = existing.active === 1
-      ? "Ya existe un cliente con este RUT"
-      : "Ya existe un cliente eliminado con este RUT. Contacta al administrador.";
-    return NextResponse.json({ error: msg }, { status: 409 });
+    if (existing.active === 1) {
+      return NextResponse.json({ error: "Ya existe un cliente con este RUT" }, { status: 409 });
+    }
+    // Soft-deleted customer with same RUT → restore it with the new data
+    try {
+      const restored = await prisma.customer.update({
+        where: { id: existing.id },
+        data: { ...normalized, active: 1 },
+      });
+      logAction(user.id, "CREATE", "customer", restored.id, { rut: normalized.rut });
+      return NextResponse.json(restored, { status: 201 });
+    } catch (err) {
+      console.error("[POST /api/customers] restore", err);
+      return NextResponse.json({ error: "Error al restaurar cliente" }, { status: 500 });
+    }
   }
 
   try {
