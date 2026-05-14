@@ -23,6 +23,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { customerId } = await params;
   const id = parseInt(customerId);
 
+  // MAESTRO can see any customer's contacts.
+  // CLIENTE / CLIENTE_PERFILADO can only see their own customer's contacts.
+  // All other roles are denied (contacts are PII).
+  if (user.role !== UserRole.MAESTRO) {
+    if (!user.customerId || user.customerId !== id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   const contacts = await prisma.contact.findMany({
     where: { customerId: id, active: 1 },
     orderBy: { name: "asc" },

@@ -25,8 +25,8 @@ const createSchema = z.object({
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user || user.role !== UserRole.MAESTRO) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const portfolios = await prisma.portfolio.findMany({

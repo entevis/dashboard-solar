@@ -95,6 +95,7 @@ export function calculateSavings(
     let inyeccionesMain = 0;
     let sumConsumoKwh = 0;
     let tresCargosDistroRate = 0;
+    let mainHasZeroConsumption = false;
 
     for (const b of monthBoletas) {
       const isMain = b.clienteNum === mainClientNum;
@@ -109,15 +110,18 @@ export function calculateSavings(
       const monto_total = Math.max(0, monto_consumos + descuentoMes);
       const otros = b.p1Potencia + b.p1Admin + b.p1FactorPot;
 
-      if (isMain && b.consumoKwh > 0) {
-        // Rate uses only variable charges (proportional to kWh) — potencia/admin are fixed
-        // and handled separately in sumOtrosCargos for the counterfactual.
-        tresCargosDistroRate =
-          (b.p1NetElectricidad + b.p1NetTransporte + b.p1NetServicioPub + b.p1NetFondoEstab) /
-          b.consumoKwh;
+      if (isMain) {
+        if (b.consumoKwh > 0) {
+          // Rate uses only variable charges (proportional to kWh) — potencia/admin are fixed
+          // and handled separately in sumOtrosCargos for the counterfactual.
+          tresCargosDistroRate =
+            (b.p1NetElectricidad + b.p1NetTransporte + b.p1NetServicioPub + b.p1NetFondoEstab) /
+            b.consumoKwh;
+        } else {
+          mainHasZeroConsumption = true;
+        }
+        inyeccionesMain = b.inyeccionKwh;
       }
-
-      if (isMain) inyeccionesMain = b.inyeccionKwh;
       sumConsumoKwh += b.consumoKwh;
       sumOtrosCargos += otros;
       sumMontoTotal += monto_total;
@@ -134,6 +138,11 @@ export function calculateSavings(
         distributionPct: distributionPctMap.get(b.clienteNum ?? "") ?? null,
         isMain,
       });
+    }
+
+    if (mainHasZeroConsumption) {
+      incompleteMths.push({ year, month, reason: "La boleta principal registra 0 kWh de consumo — no se puede calcular la tarifa variable para este período." });
+      continue;
     }
 
     const totalConsumoMensual = factura.kwhGenerated + sumConsumoKwh - inyeccionesMain;

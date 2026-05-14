@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
+import { UserRole } from "@prisma/client";
 import { fetchInvoiceById, toFloat } from "@/lib/services/duemint.service";
 import {
   extractAllReportUrls,
@@ -12,8 +13,8 @@ export async function PATCH(
   { params }: { params: Promise<{ invoiceId: string }> }
 ) {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user || user.role !== UserRole.MAESTRO) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { invoiceId } = await params;

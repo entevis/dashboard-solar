@@ -22,10 +22,11 @@ function normalizeRut(rut: string) {
 }
 
 export async function GET(request: NextRequest) {
-  // Verify authorization — Vercel Cron sends Bearer token
+  // Verify authorization — Vercel Cron sends Bearer token.
+  // Fail closed: if CRON_SECRET is not configured, deny all requests.
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
