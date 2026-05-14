@@ -20,12 +20,15 @@ export default async function DashboardLayout({
   }
 
   // Read persisted portfolio selection from cookie (MAESTRO only)
+  // "0"  → user explicitly chose "Todos los portafolios" (no filter, stay in dashboard)
+  // absent / "" → first visit, must pick a portfolio
   const cookieStore = await cookies();
   const rawCookie = cookieStore.get("portfolio_id")?.value;
-  let selectedPortfolioId = rawCookie ? parseInt(rawCookie) : null;
+  const cookiePresent = rawCookie !== undefined && rawCookie !== "";
+  let selectedPortfolioId = rawCookie ? parseInt(rawCookie) || null : null;
 
-  // MAESTRO without a portfolio selected → force selection page
-  if (user.role === UserRole.MAESTRO && !selectedPortfolioId) {
+  // MAESTRO without a portfolio cookie → force selection page
+  if (user.role === UserRole.MAESTRO && !cookiePresent) {
     redirect("/select-portfolio");
   }
 

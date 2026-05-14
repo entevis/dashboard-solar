@@ -36,7 +36,8 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
 
   function handleChange(value: string) {
     if (value === "") {
-      document.cookie = `${COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+      // "0" signals "all portfolios chosen" — distinct from absent cookie (= must select)
+      document.cookie = `${COOKIE_NAME}=0; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
       pendingName.current = null;
       startTransition(() => {
         if (urlMatch) {
