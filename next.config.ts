@@ -46,6 +46,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["pdf-parse"],
+  outputFileTracingIncludes: {
+    "/api/savings-analysis/analyze": [
+      "./node_modules/pdf-parse/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+    ],
+  },
   webpack: (config) => {
     // Required for react-pdf
     config.resolve.alias.canvas = false;
