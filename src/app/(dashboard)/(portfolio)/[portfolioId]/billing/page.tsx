@@ -78,14 +78,20 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     invoiceWhere.issueDate = { gte: periodStart, lt: periodEnd };
   }
 
-  // Filter by power plant — find invoices via their linked generation reports
+  // Filter by power plant — via linked generation reports OR invoice.powerPlantId directly
   if (plantId) {
     const matchingReports = await prisma.generationReport.findMany({
-      where: { powerPlantId: plantId, duemintId: { not: null } },
+      where: { powerPlantId: plantId, duemintId: { not: null }, active: 1 },
       select: { duemintId: true },
     });
-    const duemintIds = matchingReports.map((r) => r.duemintId).filter(Boolean) as string[];
-    invoiceWhere.duemintId = { in: duemintIds };
+    const reportDuemintIds = matchingReports.map((r) => r.duemintId).filter(Boolean) as string[];
+    invoiceWhere = {
+      ...invoiceWhere,
+      OR: [
+        { duemintId: { in: reportDuemintIds } },
+        { powerPlantId: plantId },
+      ],
+    };
   }
 
   // Filter by customer
@@ -148,7 +154,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     prisma.invoice.count({ where: tableWhere }),
     prisma.invoice.findMany({
       where: tableWhere,
-      include: { customer: { select: { name: true } }, portfolio: { select: { name: true } } },
+      include: { customer: { select: { name: true } }, portfolio: { select: { name: true } }, powerPlant: { select: { name: true } } },
       orderBy: buildOrderBy(sortBy, sortDir),
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -249,7 +255,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       reportUrl: report?.fileUrl ?? null,
       reportPeriodMonth: report?.periodMonth ?? null,
       reportPeriodYear: report?.periodYear ?? null,
-      reportPlantName: report?.plantName ?? report?.plantNameRef?.name ?? report?.powerPlant?.name ?? null,
+      reportPlantName: report?.plantName ?? report?.plantNameRef?.name ?? report?.powerPlant?.name ?? inv.powerPlant?.name ?? null,
     };
   });
 

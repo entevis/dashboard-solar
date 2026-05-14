@@ -287,7 +287,7 @@ model GenerationReport {
   plantName    String?  @map("plant_name")
   rawJson      Json?    @map("raw_json")
   source       String   @default("manual")
-  duemintId    String?  @unique @map("duemint_id")
+  duemintId    String?  @map("duemint_id")
   active       Int      @default(1)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -296,7 +296,9 @@ model GenerationReport {
   customer     Customer?   @relation(fields: [customerId], references: [id])
   plantNameRef PlantName?  @relation(fields: [plantNameId], references: [id])
 
+  @@unique([duemintId, powerPlantId])
   @@unique([powerPlantId, periodMonth, periodYear])
+  @@index([duemintId])
   @@index([powerPlantId])
   @@index([customerId])
   @@index([plantNameId])

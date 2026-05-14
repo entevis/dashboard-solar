@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/session";
 import { fetchInvoiceById, toFloat } from "@/lib/services/duemint.service";
 import {
-  extractReportUrl,
+  extractAllReportUrls,
   extractDataFromReportPage,
 } from "@/lib/services/report-extraction.service";
 
@@ -93,34 +93,43 @@ export async function PATCH(
     },
   });
 
-  // --- Sync linked generation report ---
+  // --- Sync linked generation reports (one per plant) ---
   const storedInvoice = await prisma.invoice.findUnique({
     where: { id },
     select: { gloss: true },
   });
   const gloss = inv.gloss ?? storedInvoice?.gloss ?? null;
-  const reportUrl = extractReportUrl(gloss);
+  const reportUrls = extractAllReportUrls(gloss);
   let reportSynced = false;
-  let reportDebug: Record<string, unknown> = { gloss: !!gloss, reportUrl };
+  const reportDebug: Record<string, unknown> = { gloss: !!gloss, reportUrls };
 
-  if (reportUrl) {
-    const extractionResult = await extractDataFromReportPage(reportUrl);
-    const { kwhGenerated, co2Avoided, periodMonth, periodYear, rawJson, ...debug } = extractionResult;
-    reportDebug = { ...reportDebug, ...debug, kwhGenerated, co2Avoided, periodMonth, periodYear };
+  if (reportUrls.length > 0) {
+    const customer = await prisma.customer.findUnique({
+      where: { id: invoice.customerId },
+      select: { name: true },
+    });
 
-    if (periodMonth && periodYear) {
-      const customer = await prisma.customer.findUnique({
-        where: { id: invoice.customerId },
-        select: { name: true },
-      });
+    for (const reportUrl of reportUrls) {
+      const extractionResult = await extractDataFromReportPage(reportUrl);
+      const { kwhGenerated, co2Avoided, periodMonth, periodYear, rawJson } = extractionResult;
 
-      const existingReport = await prisma.generationReport.findUnique({
-        where: { duemintId: invoice.duemintId },
+      if (!periodMonth || !periodYear) continue;
+
+      const nombreVisible = rawJson
+        ? String(((rawJson as Record<string, unknown>).planta as Record<string, unknown>)?.nombre_visible ?? "")
+        : "";
+      const plantNameEntry = nombreVisible
+        ? await prisma.plantName.findFirst({ where: { name: nombreVisible } })
+        : null;
+      const resolvedPowerPlantId = plantNameEntry?.powerPlantId ?? null;
+
+      const existingReport = await prisma.generationReport.findFirst({
+        where: { duemintId: invoice.duemintId, powerPlantId: resolvedPowerPlantId },
       });
 
       if (existingReport) {
         await prisma.generationReport.update({
-          where: { duemintId: invoice.duemintId },
+          where: { id: existingReport.id },
           data: {
             fileUrl: reportUrl,
             kwhGenerated: kwhGenerated ?? null,
@@ -128,13 +137,18 @@ export async function PATCH(
             rawJson: rawJson ? (rawJson as object) : undefined,
             periodMonth,
             periodYear,
+            ...(!existingReport.powerPlantId && resolvedPowerPlantId ? { powerPlantId: resolvedPowerPlantId } : {}),
+            ...(!existingReport.plantNameId && plantNameEntry ? { plantNameId: plantNameEntry.id } : {}),
+            ...(!existingReport.plantName && nombreVisible ? { plantName: nombreVisible } : {}),
           },
         });
-        reportSynced = true;
       } else {
         await prisma.generationReport.create({
           data: {
             customerId: invoice.customerId,
+            powerPlantId: resolvedPowerPlantId,
+            plantNameId: plantNameEntry?.id ?? null,
+            plantName: nombreVisible || null,
             periodMonth,
             periodYear,
             fileUrl: reportUrl,
@@ -146,8 +160,8 @@ export async function PATCH(
             duemintId: invoice.duemintId,
           },
         });
-        reportSynced = true;
       }
+      reportSynced = true;
     }
   }
 

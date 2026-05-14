@@ -110,12 +110,40 @@ export async function requirePortfolioAccess(user: User, portfolioId: number) {
     return portfolio;
   }
 
-  if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
+  if (user.role === UserRole.CLIENTE) {
     const plant = await prisma.powerPlant.findFirst({
       where: { portfolioId, customerId: user.customerId ?? -1, active: 1 },
       select: { id: true },
     });
     if (!plant) redirect("/dashboard");
+    return portfolio;
+  }
+
+  if (user.role === UserRole.CLIENTE_PERFILADO) {
+    // May have access via customerId or via explicit plant permissions
+    let hasAccess = false;
+    if (user.customerId) {
+      const plant = await prisma.powerPlant.findFirst({
+        where: { portfolioId, customerId: user.customerId, active: 1 },
+        select: { id: true },
+      });
+      hasAccess = !!plant;
+    }
+    if (!hasAccess) {
+      const perms = await prisma.userPlantPermission.findMany({
+        where: { userId: user.id, active: 1 },
+        select: { powerPlantId: true },
+      });
+      const permPlantIds = perms.map((p) => p.powerPlantId);
+      if (permPlantIds.length > 0) {
+        const plant = await prisma.powerPlant.findFirst({
+          where: { id: { in: permPlantIds }, portfolioId, active: 1 },
+          select: { id: true },
+        });
+        hasAccess = !!plant;
+      }
+    }
+    if (!hasAccess) redirect("/dashboard");
     return portfolio;
   }
 

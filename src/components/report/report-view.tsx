@@ -253,12 +253,12 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
             </Box>
           )}
           <Box sx={{ background: "#fff", border: "1px solid #E5EAF2", borderRadius: "14px", padding: "10px 12px 10px 8px", display: "inline-flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}>
-            <PeriodNavButton dir="prev" target={prev} />
+            <PeriodNavButton dir="prev" target={prev} backHref={backHref} />
             <Box sx={{ whiteSpace: "nowrap" }}>
               <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Periodo</Typography>
               <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{periodLabel}</Typography>
             </Box>
-            <PeriodNavButton dir="next" target={next} />
+            <PeriodNavButton dir="next" target={next} backHref={backHref} />
             <Box sx={{ width: "1px", height: "36px", backgroundColor: "#E5EAF2", flexShrink: 0 }} />
             <Box sx={{ whiteSpace: "nowrap", pr: 1 }}>
               <Typography sx={{ fontSize: "0.6875rem", textTransform: "uppercase", color: "#64748B", letterSpacing: "0.07em", marginBottom: "3px" }}>Emitido</Typography>
@@ -635,7 +635,7 @@ export function ReportView({ rawJson, plantName, periodMonth, periodYear, epcLog
   );
 }
 
-function PeriodNavButton({ dir, target }: { dir: "prev" | "next"; target?: PeriodNeighbor | null }) {
+function PeriodNavButton({ dir, target, backHref }: { dir: "prev" | "next"; target?: PeriodNeighbor | null; backHref?: string | null }) {
   const Icon = dir === "prev" ? ChevronLeftIcon : ChevronRightIcon;
   const baseSx = {
     width: 32,
@@ -654,12 +654,15 @@ function PeriodNavButton({ dir, target }: { dir: "prev" | "next"; target?: Perio
     );
   }
   const label = `${MONTHS[target.periodMonth - 1]} ${target.periodYear}`;
+  const href = backHref
+    ? `/report/${target.duemintId}?back=${encodeURIComponent(backHref)}`
+    : `/report/${target.duemintId}`;
   return (
     <MuiTooltip title={label} placement="top">
       <IconButton
         size="small"
         component={Link}
-        href={`/report/${target.duemintId}`}
+        href={href}
         sx={baseSx}
         aria-label={`${dir === "prev" ? "Periodo anterior" : "Periodo siguiente"}: ${label}`}
       >

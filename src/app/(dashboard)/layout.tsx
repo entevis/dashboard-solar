@@ -29,11 +29,9 @@ export default async function DashboardLayout({
     redirect("/select-portfolio");
   }
 
-  // CLIENTE/CLIENTE_PERFILADO → resolve portfolio from their plants
-  if (
-    (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) &&
-    !selectedPortfolioId
-  ) {
+  // CLIENTE/CLIENTE_PERFILADO → always resolve from their plants (ignore MAESTRO cookie)
+  if (user.role === UserRole.CLIENTE || user.role === UserRole.CLIENTE_PERFILADO) {
+    selectedPortfolioId = null;
     if (user.customerId) {
       const firstPlant = await prisma.powerPlant.findFirst({
         where: { customerId: user.customerId, active: 1 },

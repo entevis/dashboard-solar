@@ -39,18 +39,30 @@ export async function middleware(request: NextRequest) {
   const isSetPassword = pathname.startsWith("/set-password");
   const isSelectPortfolio = pathname.startsWith("/select-portfolio");
 
-  // Redirect unauthenticated users to login
-  if (!user && !isPublicPath && !isSelectPortfolio && !isSetPassword) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
+  if (!user) {
+    // For Next.js prefetch requests, return 401 instead of redirecting.
+    // Concurrent prefetches can hit a Supabase refresh-token rotation race
+    // condition ("Refresh Token Not Found"), which would otherwise cause a
+    // spurious /login → /dashboard redirect loop while the user is already
+    // on the page. A 401 tells the client to re-fetch on actual navigation.
+    const isPrefetch = request.headers.get("next-router-prefetch") === "1";
+    if (isPrefetch && !isPublicPath && !isSetPassword) {
+      return new NextResponse(null, { status: 401 });
+    }
 
-  // Unauthenticated user trying to access select-portfolio → login
-  if (!user && isSelectPortfolio) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    // Redirect unauthenticated users to login
+    if (!isPublicPath && !isSelectPortfolio && !isSetPassword) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    // Unauthenticated user trying to access select-portfolio → login
+    if (isSelectPortfolio) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
   }
 
   // Redirect authenticated users away from login (but NOT from select-portfolio)

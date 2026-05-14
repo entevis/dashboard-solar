@@ -11,14 +11,23 @@
 const REPORT_API_BASE = "https://django.deltactivos.cl/api/reportes";
 
 /**
- * Extract the report code from a dplus URL in the invoice gloss field.
+ * Extract the first report URL from a dplus URL in the invoice gloss field.
  * URL format: https://dplus.deltactivos.cl/public/reporte/{code}
- * Returns the full dplus URL (for storage) and the code (for API call).
  */
 export function extractReportUrl(gloss: string | null): string | null {
   if (!gloss) return null;
   const match = gloss.match(/https?:\/\/dplus\.deltactivos\.cl\/public\/reporte\/[a-zA-Z0-9]+/);
   return match?.[0] ?? null;
+}
+
+/**
+ * Extract all unique dplus report URLs from an invoice gloss field.
+ * An invoice covering multiple plants will have one URL per plant.
+ */
+export function extractAllReportUrls(gloss: string | null): string[] {
+  if (!gloss) return [];
+  const matches = gloss.match(/https?:\/\/dplus\.deltactivos\.cl\/public\/reporte\/[a-zA-Z0-9]+/g) ?? [];
+  return [...new Set(matches)];
 }
 
 function extractReportCode(url: string): string | null {

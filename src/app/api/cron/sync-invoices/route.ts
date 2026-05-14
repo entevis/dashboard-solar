@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchInvoicesSince, toFloat } from "@/lib/services/duemint.service";
 import {
-  extractReportUrl,
+  extractAllReportUrls,
   extractDataFromReportPage,
 } from "@/lib/services/report-extraction.service";
 
@@ -147,77 +147,79 @@ export async function GET(request: NextRequest) {
       // --- Report extraction ---
       if (inv.status === 4) { reportsSkipped++; pStats.repSkipped++; continue; } // Skip "Documento" status
 
-      const reportUrl = extractReportUrl(inv.gloss);
-      if (!reportUrl) { reportsSkipped++; pStats.repSkipped++; continue; }
+      const reportUrls = extractAllReportUrls(inv.gloss);
+      if (reportUrls.length === 0) { reportsSkipped++; pStats.repSkipped++; continue; }
 
-      const existingReport = await prisma.generationReport.findUnique({ where: { duemintId } });
+      for (const reportUrl of reportUrls) {
+        try {
+          const { kwhGenerated, co2Avoided, periodMonth, periodYear, rawJson } = await extractDataFromReportPage(reportUrl);
 
-      try {
-        const { kwhGenerated, co2Avoided, periodMonth, periodYear, rawJson } = await extractDataFromReportPage(reportUrl);
+          if (!periodMonth || !periodYear) { reportsSkipped++; pStats.repSkipped++; continue; }
 
-        if (!periodMonth || !periodYear) { reportsSkipped++; pStats.repSkipped++; continue; }
-
-        // Auto-link plantName if it exists
-        const plantNameEntry = rawJson
-          ? await prisma.plantName.findFirst({ where: { name: String((rawJson as Record<string, unknown>).planta && (((rawJson as Record<string, unknown>).planta) as Record<string, unknown>).nombre_visible) || "" } })
-          : null;
-
-        const resolvedPowerPlantId = plantNameEntry?.powerPlantId ?? null;
-
-        if (existingReport) {
-          const updateData: Record<string, unknown> = {};
-          if (kwhGenerated != null && existingReport.kwhGenerated == null) updateData.kwhGenerated = kwhGenerated;
-          if (co2Avoided != null && existingReport.co2Avoided == null) updateData.co2Avoided = co2Avoided;
-          if (rawJson && !existingReport.rawJson) updateData.rawJson = rawJson as object;
-          if (existingReport.periodMonth !== periodMonth || existingReport.periodYear !== periodYear) {
-            updateData.periodMonth = periodMonth;
-            updateData.periodYear = periodYear;
-          }
-          if (!existingReport.powerPlantId && resolvedPowerPlantId) {
-            updateData.powerPlantId = resolvedPowerPlantId;
-          }
-          if (!existingReport.plantNameId && plantNameEntry) {
-            updateData.plantNameId = plantNameEntry.id;
-          }
-          if (!existingReport.plantName && rawJson) {
-            const visibleName = String(((rawJson as Record<string, unknown>).planta as Record<string, unknown>)?.nombre_visible ?? "");
-            if (visibleName) updateData.plantName = visibleName;
-          }
-          if (Object.keys(updateData).length > 0) {
-            await prisma.generationReport.update({ where: { duemintId }, data: updateData });
-            reportsUpdated++; pStats.repUpdated++;
-          } else {
-            reportsSkipped++; pStats.repSkipped++;
-          }
-        } else {
-          const plantName = rawJson
+          const nombreVisible = rawJson
             ? String(((rawJson as Record<string, unknown>).planta as Record<string, unknown>)?.nombre_visible ?? "")
+            : "";
+          const plantNameEntry = nombreVisible
+            ? await prisma.plantName.findFirst({ where: { name: nombreVisible } })
             : null;
+          const resolvedPowerPlantId = plantNameEntry?.powerPlantId ?? null;
 
-          await prisma.generationReport.create({
-            data: {
-              customerId: customer.id,
-              powerPlantId: resolvedPowerPlantId,
-              periodMonth,
-              periodYear,
-              fileUrl: reportUrl,
-              fileName: `Reporte ${customer.name} - ${String(periodMonth).padStart(2, "0")}/${periodYear}`,
-              plantName: plantName || null,
-              plantNameId: plantNameEntry?.id ?? null,
-              kwhGenerated: kwhGenerated ?? null,
-              co2Avoided: co2Avoided ?? null,
-              rawJson: rawJson ? (rawJson as object) : undefined,
-              source: "duemint",
-              duemintId,
-            },
+          const existingByUrl = await prisma.generationReport.findFirst({ where: { fileUrl: reportUrl, active: 1 } });
+          if (existingByUrl) {
+            const plantIdToSet = existingByUrl.powerPlantId ?? resolvedPowerPlantId;
+            if (plantIdToSet) await prisma.invoice.update({ where: { duemintId }, data: { powerPlantId: plantIdToSet } });
+            reportsSkipped++; pStats.repSkipped++;
+            continue;
+          }
+
+          const existingReport = await prisma.generationReport.findFirst({
+            where: { duemintId, powerPlantId: resolvedPowerPlantId },
           });
-          reportsCreated++; pStats.repCreated++;
+
+          if (existingReport) {
+            const updateData: Record<string, unknown> = {};
+            if (kwhGenerated != null && existingReport.kwhGenerated == null) updateData.kwhGenerated = kwhGenerated;
+            if (co2Avoided != null && existingReport.co2Avoided == null) updateData.co2Avoided = co2Avoided;
+            if (rawJson && !existingReport.rawJson) updateData.rawJson = rawJson as object;
+            if (existingReport.periodMonth !== periodMonth || existingReport.periodYear !== periodYear) {
+              updateData.periodMonth = periodMonth;
+              updateData.periodYear = periodYear;
+            }
+            if (!existingReport.powerPlantId && resolvedPowerPlantId) updateData.powerPlantId = resolvedPowerPlantId;
+            if (!existingReport.plantNameId && plantNameEntry) updateData.plantNameId = plantNameEntry.id;
+            if (!existingReport.plantName && nombreVisible) updateData.plantName = nombreVisible;
+            if (Object.keys(updateData).length > 0) {
+              await prisma.generationReport.update({ where: { id: existingReport.id }, data: updateData });
+              reportsUpdated++; pStats.repUpdated++;
+            } else {
+              reportsSkipped++; pStats.repSkipped++;
+            }
+          } else {
+            await prisma.generationReport.create({
+              data: {
+                customerId: customer.id,
+                powerPlantId: resolvedPowerPlantId,
+                periodMonth,
+                periodYear,
+                fileUrl: reportUrl,
+                fileName: `Reporte ${customer.name} - ${String(periodMonth).padStart(2, "0")}/${periodYear}`,
+                plantName: nombreVisible || null,
+                plantNameId: plantNameEntry?.id ?? null,
+                kwhGenerated: kwhGenerated ?? null,
+                co2Avoided: co2Avoided ?? null,
+                rawJson: rawJson ? (rawJson as object) : undefined,
+                source: "duemint",
+                duemintId,
+              },
+            });
+            reportsCreated++; pStats.repCreated++;
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Error desconocido";
+          errors.push(`Report ${duemintId}: ${msg}`);
+          pStats.errors.push(`Report ${duemintId}: ${msg}`);
+          reportsSkipped++; pStats.repSkipped++;
         }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Error desconocido";
-        errors.push(`Report ${duemintId}: ${msg}`);
-        pStats.errors.push(`Report ${duemintId}: ${msg}`);
-        reportsSkipped++; pStats.repSkipped++;
       }
     }
 

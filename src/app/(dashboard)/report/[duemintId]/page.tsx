@@ -17,6 +17,7 @@ function getBackLabel(back?: string): string {
   if (!back) return "Volver";
   const path = back.split("?")[0];
   if (path in BACK_LABELS) return BACK_LABELS[path];
+  if (path.endsWith("/billing")) return "Facturas y reportes";
   if (path.endsWith("/overview")) return "Resumen del portafolio";
   return "Volver";
 }
@@ -28,7 +29,7 @@ export default async function ReportPage({ params, searchParams }: Props) {
   const backHref = back ?? null;
   const backLabel = getBackLabel(back);
 
-  const report = await prisma.generationReport.findUnique({
+  const report = await prisma.generationReport.findFirst({
     where: { duemintId },
     select: {
       id: true,

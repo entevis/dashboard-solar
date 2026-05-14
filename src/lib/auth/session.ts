@@ -1,8 +1,12 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import type { User } from "@prisma/client";
 
-export async function getCurrentUser(): Promise<User | null> {
+// React.cache deduplicates this across layout + page within the same render,
+// preventing concurrent supabase.auth.getUser() calls that trigger token
+// rotation race conditions.
+export const getCurrentUser = cache(async (): Promise<User | null> => {
   const supabase = await createClient();
   const {
     data: { user: authUser },
@@ -15,4 +19,4 @@ export async function getCurrentUser(): Promise<User | null> {
   });
 
   return user;
-}
+});

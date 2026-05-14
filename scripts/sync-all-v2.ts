@@ -146,10 +146,10 @@ async function fetchAllInvoicesParallel(companyId: string, since: string, batchS
 
 const REPORT_API = "https://django.deltactivos.cl/api/reportes";
 
-function extractReportUrl(gloss: string | null): string | null {
-  if (!gloss) return null;
-  const match = gloss.match(/https?:\/\/dplus\.deltactivos\.cl\/public\/reporte\/[a-zA-Z0-9]+/);
-  return match?.[0] ?? null;
+function extractAllReportUrls(gloss: string | null): string[] {
+  if (!gloss) return [];
+  const matches = gloss.match(/https?:\/\/dplus\.deltactivos\.cl\/public\/reporte\/[a-zA-Z0-9]+/g) ?? [];
+  return [...new Set(matches)];
 }
 
 function extractReportCode(url: string): string | null {
@@ -176,13 +176,13 @@ async function fetchReportData(dplusUrl: string) {
         periodYear = d.getFullYear();
       }
     }
-    const plantName: string | null = data?.planta?.nombre_visible ?? null;
+    const nombreVisible: string | null = data?.planta?.nombre_visible ?? null;
     return {
       kwhGenerated: typeof tecnico.produccion_total === "number" ? tecnico.produccion_total : null,
       co2Avoided: typeof tecnico.co2 === "number" ? tecnico.co2 : null,
       periodMonth,
       periodYear,
-      plantName,
+      nombreVisible,
     };
   } catch {
     return null;
@@ -323,12 +323,14 @@ async function main() {
       if (!inv.id || !inv.gloss) continue;
       const sn = (inv.statusName ?? "").toLowerCase();
       if (sn.includes("nul") || sn.includes("cancel")) continue;
-      const reportUrl = extractReportUrl(inv.gloss);
-      if (!reportUrl) continue;
+      const reportUrls = extractAllReportUrls(inv.gloss);
+      if (reportUrls.length === 0) continue;
       const rawTaxId = inv.clientTaxId ?? inv.client?.taxId ?? null;
       const customer = rawTaxId ? customerByRut.get(normalizeRut(rawTaxId)) : null;
       if (!customer) continue;
-      reportTasks.push({ duemintId: String(inv.id), reportUrl, customerId: customer.id, customerName: customer.name });
+      for (const reportUrl of reportUrls) {
+        reportTasks.push({ duemintId: String(inv.id), reportUrl, customerId: customer.id, customerName: customer.name });
+      }
     }
 
     console.log(`  📊 Extrayendo ${reportTasks.length} reportes (batches de ${batchReports})...`);
@@ -342,17 +344,43 @@ async function main() {
       await Promise.all(batch.map(async (task) => {
         const { duemintId, reportUrl, customerId, customerName } = task;
 
-        const existing = await withRetry(
-          () => prisma.generationReport.findUnique({ where: { duemintId } }),
-          `rfind ${duemintId}`,
-        );
-        if (existing && existing.kwhGenerated != null && existing.co2Avoided != null && existing.plantName != null) {
+        const reportData = await fetchReportData(reportUrl);
+        if (!reportData || !reportData.periodMonth || !reportData.periodYear) {
           rSkipped++;
           return;
         }
 
-        const reportData = await fetchReportData(reportUrl);
-        if (!reportData || !reportData.periodMonth || !reportData.periodYear) {
+        const plantNameEntry = reportData.nombreVisible
+          ? await withRetry(
+              () => prisma.plantName.findFirst({ where: { name: reportData.nombreVisible! } }),
+              `pname ${duemintId}`,
+            )
+          : null;
+        const resolvedPowerPlantId = plantNameEntry?.powerPlantId ?? null;
+
+        // Skip if another invoice already created a report for this same URL,
+        // but still associate the invoice with the plant.
+        const existingByUrl = await withRetry(
+          () => prisma.generationReport.findFirst({ where: { fileUrl: reportUrl, active: 1 } }),
+          `rfindurl ${duemintId}`,
+        );
+        if (existingByUrl) {
+          const plantIdToSet = existingByUrl.powerPlantId ?? resolvedPowerPlantId;
+          if (plantIdToSet) {
+            await withRetry(
+              () => prisma.invoice.update({ where: { duemintId }, data: { powerPlantId: plantIdToSet } }),
+              `inv-plant ${duemintId}`,
+            );
+          }
+          rSkipped++;
+          return;
+        }
+
+        const existing = await withRetry(
+          () => prisma.generationReport.findFirst({ where: { duemintId, powerPlantId: resolvedPowerPlantId } }),
+          `rfind ${duemintId}`,
+        );
+        if (existing && existing.kwhGenerated != null && existing.co2Avoided != null && existing.plantName != null) {
           rSkipped++;
           return;
         }
@@ -361,14 +389,16 @@ async function main() {
           const updateData: Record<string, unknown> = {};
           if (reportData.kwhGenerated != null && existing.kwhGenerated == null) updateData.kwhGenerated = reportData.kwhGenerated;
           if (reportData.co2Avoided != null && existing.co2Avoided == null) updateData.co2Avoided = reportData.co2Avoided;
-          if (reportData.plantName && existing.plantName !== reportData.plantName) updateData.plantName = reportData.plantName;
+          if (reportData.nombreVisible && existing.plantName !== reportData.nombreVisible) updateData.plantName = reportData.nombreVisible;
           if (existing.periodMonth !== reportData.periodMonth || existing.periodYear !== reportData.periodYear) {
             updateData.periodMonth = reportData.periodMonth;
             updateData.periodYear = reportData.periodYear;
           }
+          if (!existing.powerPlantId && resolvedPowerPlantId) updateData.powerPlantId = resolvedPowerPlantId;
+          if (!existing.plantNameId && plantNameEntry) updateData.plantNameId = plantNameEntry.id;
           if (Object.keys(updateData).length > 0) {
             await withRetry(
-              () => prisma.generationReport.update({ where: { duemintId }, data: updateData }),
+              () => prisma.generationReport.update({ where: { id: existing.id }, data: updateData }),
               `rupd ${duemintId}`,
             );
             rUpdated++;
@@ -380,11 +410,13 @@ async function main() {
             () => prisma.generationReport.create({
               data: {
                 customerId,
+                powerPlantId: resolvedPowerPlantId,
+                plantNameId: plantNameEntry?.id ?? null,
                 periodMonth: reportData.periodMonth,
                 periodYear: reportData.periodYear,
                 fileUrl: reportUrl,
                 fileName: `Reporte ${customerName} - ${String(reportData.periodMonth).padStart(2, "0")}/${reportData.periodYear}`,
-                plantName: reportData.plantName ?? null,
+                plantName: reportData.nombreVisible ?? null,
                 kwhGenerated: reportData.kwhGenerated ?? null,
                 co2Avoided: reportData.co2Avoided ?? null,
                 source: "duemint",

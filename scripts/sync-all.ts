@@ -109,10 +109,10 @@ async function fetchAllInvoices(companyId: string, since: string, portfolioId: n
 
 const REPORT_API = "https://django.deltactivos.cl/api/reportes";
 
-function extractReportUrl(gloss: string | null): string | null {
-  if (!gloss) return null;
-  const match = gloss.match(/https?:\/\/dplus\.deltactivos\.cl\/public\/reporte\/[a-zA-Z0-9]+/);
-  return match?.[0] ?? null;
+function extractAllReportUrls(gloss: string | null): string[] {
+  if (!gloss) return [];
+  const matches = gloss.match(/https?:\/\/dplus\.deltactivos\.cl\/public\/reporte\/[a-zA-Z0-9]+/g) ?? [];
+  return [...new Set(matches)];
 }
 
 function extractReportCode(url: string): string | null {
@@ -139,13 +139,13 @@ async function fetchReportData(dplusUrl: string) {
         periodYear = d.getFullYear();
       }
     }
-    const plantName: string | null = data?.planta?.nombre_visible ?? null;
+    const nombreVisible: string | null = data?.planta?.nombre_visible ?? null;
     return {
       kwhGenerated: typeof tecnico.produccion_total === "number" ? tecnico.produccion_total : null,
       co2Avoided: typeof tecnico.co2 === "number" ? tecnico.co2 : null,
       periodMonth,
       periodYear,
-      plantName,
+      nombreVisible,
     };
   } catch {
     return null;
@@ -269,7 +269,7 @@ async function main() {
       if (!inv.id || !inv.gloss) return false;
       const sn = (inv.statusName ?? "").toLowerCase();
       if (sn.includes("nul") || sn.includes("cancel")) return false;
-      return !!extractReportUrl(inv.gloss);
+      return extractAllReportUrls(inv.gloss).length > 0;
     });
 
     console.log(`  📊 Extrayendo ${invoicesWithGloss.length} reportes...`);
@@ -279,63 +279,95 @@ async function main() {
 
     for (const inv of invoicesWithGloss) {
       const duemintId = String(inv.id);
-      const reportUrl = extractReportUrl(inv.gloss)!;
+      const reportUrls = extractAllReportUrls(inv.gloss);
       const rawTaxId = inv.clientTaxId ?? inv.client?.taxId ?? null;
       const customer = rawTaxId ? customerByRut.get(normalizeRut(rawTaxId)) : null;
       if (!customer) { rSkipped++; continue; }
 
-      const existing = await withRetry(
-        () => prisma.generationReport.findUnique({ where: { duemintId } }),
-        `report-find ${duemintId}`,
-      );
-      if (existing && existing.kwhGenerated != null && existing.co2Avoided != null) {
-        rSkipped++;
-        continue;
-      }
-
-      const reportData = await fetchReportData(reportUrl);
-      if (!reportData || !reportData.periodMonth || !reportData.periodYear) {
-        rSkipped++;
-        continue;
-      }
-
-      if (existing) {
-        const updateData: Record<string, unknown> = {};
-        if (reportData.kwhGenerated != null && existing.kwhGenerated == null) updateData.kwhGenerated = reportData.kwhGenerated;
-        if (reportData.co2Avoided != null && existing.co2Avoided == null) updateData.co2Avoided = reportData.co2Avoided;
-        if (reportData.plantName && existing.plantName !== reportData.plantName) updateData.plantName = reportData.plantName;
-        if (existing.periodMonth !== reportData.periodMonth || existing.periodYear !== reportData.periodYear) {
-          updateData.periodMonth = reportData.periodMonth;
-          updateData.periodYear = reportData.periodYear;
-        }
-        if (Object.keys(updateData).length > 0) {
-          await withRetry(
-            () => prisma.generationReport.update({ where: { duemintId }, data: updateData }),
-            `report-update ${duemintId}`,
-          );
-          rUpdated++;
-        } else {
+      for (const reportUrl of reportUrls) {
+        const reportData = await fetchReportData(reportUrl);
+        if (!reportData || !reportData.periodMonth || !reportData.periodYear) {
           rSkipped++;
+          continue;
         }
-      } else {
-        await withRetry(
-          () => prisma.generationReport.create({
-            data: {
-              customerId: customer.id,
-              periodMonth: reportData.periodMonth,
-              periodYear: reportData.periodYear,
-              fileUrl: reportUrl,
-              fileName: `Reporte ${customer.name} - ${String(reportData.periodMonth).padStart(2, "0")}/${reportData.periodYear}`,
-              plantName: reportData.plantName ?? null,
-              kwhGenerated: reportData.kwhGenerated ?? null,
-              co2Avoided: reportData.co2Avoided ?? null,
-              source: "duemint",
-              duemintId,
-            },
-          }),
-          `report-create ${duemintId}`,
+
+        const plantNameEntry = reportData.nombreVisible
+          ? await withRetry(
+              () => prisma.plantName.findFirst({ where: { name: reportData.nombreVisible! } }),
+              `pname ${duemintId}`,
+            )
+          : null;
+        const resolvedPowerPlantId = plantNameEntry?.powerPlantId ?? null;
+
+        // Skip if another invoice already created a report for this same URL,
+        // but still associate the invoice with the plant.
+        const existingByUrl = await withRetry(
+          () => prisma.generationReport.findFirst({ where: { fileUrl: reportUrl, active: 1 } }),
+          `report-findurl ${duemintId}`,
         );
-        rCreated++;
+        if (existingByUrl) {
+          const plantIdToSet = existingByUrl.powerPlantId ?? resolvedPowerPlantId;
+          if (plantIdToSet) {
+            await withRetry(
+              () => prisma.invoice.update({ where: { duemintId }, data: { powerPlantId: plantIdToSet } }),
+              `inv-plant ${duemintId}`,
+            );
+          }
+          rSkipped++;
+          continue;
+        }
+
+        const existing = await withRetry(
+          () => prisma.generationReport.findFirst({ where: { duemintId, powerPlantId: resolvedPowerPlantId } }),
+          `report-find ${duemintId}`,
+        );
+        if (existing && existing.kwhGenerated != null && existing.co2Avoided != null) {
+          rSkipped++;
+          continue;
+        }
+
+        if (existing) {
+          const updateData: Record<string, unknown> = {};
+          if (reportData.kwhGenerated != null && existing.kwhGenerated == null) updateData.kwhGenerated = reportData.kwhGenerated;
+          if (reportData.co2Avoided != null && existing.co2Avoided == null) updateData.co2Avoided = reportData.co2Avoided;
+          if (reportData.nombreVisible && existing.plantName !== reportData.nombreVisible) updateData.plantName = reportData.nombreVisible;
+          if (existing.periodMonth !== reportData.periodMonth || existing.periodYear !== reportData.periodYear) {
+            updateData.periodMonth = reportData.periodMonth;
+            updateData.periodYear = reportData.periodYear;
+          }
+          if (!existing.powerPlantId && resolvedPowerPlantId) updateData.powerPlantId = resolvedPowerPlantId;
+          if (!existing.plantNameId && plantNameEntry) updateData.plantNameId = plantNameEntry.id;
+          if (Object.keys(updateData).length > 0) {
+            await withRetry(
+              () => prisma.generationReport.update({ where: { id: existing.id }, data: updateData }),
+              `report-update ${duemintId}`,
+            );
+            rUpdated++;
+          } else {
+            rSkipped++;
+          }
+        } else {
+          await withRetry(
+            () => prisma.generationReport.create({
+              data: {
+                customerId: customer.id,
+                powerPlantId: resolvedPowerPlantId,
+                plantNameId: plantNameEntry?.id ?? null,
+                periodMonth: reportData.periodMonth,
+                periodYear: reportData.periodYear,
+                fileUrl: reportUrl,
+                fileName: `Reporte ${customer.name} - ${String(reportData.periodMonth).padStart(2, "0")}/${reportData.periodYear}`,
+                plantName: reportData.nombreVisible ?? null,
+                kwhGenerated: reportData.kwhGenerated ?? null,
+                co2Avoided: reportData.co2Avoided ?? null,
+                source: "duemint",
+                duemintId,
+              },
+            }),
+            `report-create ${duemintId}`,
+          );
+          rCreated++;
+        }
       }
 
       const total = rCreated + rUpdated + rSkipped;
