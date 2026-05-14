@@ -18,7 +18,9 @@ export default async function CustomersPage({ searchParams }: Props) {
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
   const cookieStore = await cookies();
-  const portfolioId = parseInt(cookieStore.get("portfolio_id")?.value ?? "") || null;
+  const rawPortfolioId = cookieStore.get("portfolio_id")?.value ?? "";
+  const portfolioId = parseInt(rawPortfolioId) || null;
+  const showPortfolio = rawPortfolioId === "0";
 
   const [portfolios] = await Promise.all([
     prisma.portfolio.findMany({ where: { active: 1 }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
@@ -45,14 +47,27 @@ export default async function CustomersPage({ searchParams }: Props) {
           users: { where: { active: 1 } },
         },
       },
+      powerPlants: {
+        where: { active: 1 },
+        select: { portfolioId: true, portfolio: { select: { id: true, name: true } } },
+      },
     },
     orderBy: { name: "asc" },
   });
 
   const serialized = customers.map((c) => ({
-    ...c,
+    id: c.id,
+    name: c.name,
+    rut: c.rut,
+    altName: c.altName,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
+    _count: c._count,
+    portfolios: showPortfolio
+      ? Array.from(
+          new Map(c.powerPlants.map((pp) => [pp.portfolioId, pp.portfolio.name])).entries()
+        ).map(([id, name]) => ({ id, name }))
+      : undefined,
   }));
 
   return (
@@ -71,7 +86,7 @@ export default async function CustomersPage({ searchParams }: Props) {
       </Box>
 
       <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", overflow: "hidden", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <CustomerTable customers={serialized} />
+        <CustomerTable customers={serialized} showPortfolio={showPortfolio} />
       </Card>
     </Box>
   );

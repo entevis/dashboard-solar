@@ -14,6 +14,7 @@ import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { PlantRowActions } from "@/components/power-plants/plant-row-actions";
 
 interface PlantAddress {
@@ -32,11 +33,17 @@ interface Plant {
   capacityKw: number;
   status: string;
   contractType: string;
+  billingType: string | null;
   portfolioId: number;
   customerId: number;
   solcorId: string | null;
   distributorCompany: string | null;
   tariffId: string | null;
+  selfConsumptionTariff: string | null;
+  injectionTariff: string | null;
+  selfConsumptionDiscount: number | null;
+  injectionDiscount: number | null;
+  firstInstallmentUsd: number | null;
   startDate: Date | null;
   durationYears: number | null;
   specificYield: number | null;
@@ -55,7 +62,7 @@ interface PlantTableProps {
   canEdit: boolean;
 }
 
-type SortKey = "solcorId" | "name" | "plantNameLabel" | "city" | "distributorCompany" | "tariffId" | "startDate" | "durationYears" | "capacityKw" | "specificYield";
+type SortKey = "solcorId" | "name" | "plantNameLabel" | "city" | "distributorCompany" | "tariffId" | "selfConsumptionTariff" | "injectionTariff" | "selfConsumptionDiscount" | "injectionDiscount" | "firstInstallmentUsd" | "startDate" | "durationYears" | "capacityKw" | "specificYield";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZES = [15, 25, 50, 100];
@@ -90,16 +97,21 @@ function TruncCell({ value, width }: { value: string | null; width: number }) {
 
 function getValue(plant: Plant, key: SortKey): string | number | null {
   switch (key) {
-    case "solcorId":          return plant.solcorId ?? "";
-    case "name":              return plant.name;
-    case "plantNameLabel":    return plant.plantNames.map((p) => p.name).join(", ") || "";
-    case "city":              return plant.city ?? plant.location ?? "";
-    case "distributorCompany": return plant.distributorCompany ?? "";
-    case "tariffId":          return plant.tariffId ?? "";
-    case "startDate":         return plant.startDate ? new Date(plant.startDate).getTime() : -Infinity;
-    case "durationYears":     return plant.durationYears ?? -Infinity;
-    case "capacityKw":        return plant.capacityKw;
-    case "specificYield":     return plant.specificYield ?? -Infinity;
+    case "solcorId":               return plant.solcorId ?? "";
+    case "name":                   return plant.name;
+    case "plantNameLabel":         return plant.plantNames.map((p) => p.name).join(", ") || "";
+    case "city":                   return plant.city ?? plant.location ?? "";
+    case "distributorCompany":     return plant.distributorCompany ?? "";
+    case "tariffId":               return plant.tariffId ?? "";
+    case "selfConsumptionTariff":  return plant.selfConsumptionTariff ?? "";
+    case "injectionTariff":        return plant.injectionTariff ?? "";
+    case "selfConsumptionDiscount": return plant.selfConsumptionDiscount ?? -Infinity;
+    case "injectionDiscount":      return plant.injectionDiscount ?? -Infinity;
+    case "firstInstallmentUsd":    return plant.firstInstallmentUsd ?? -Infinity;
+    case "startDate":              return plant.startDate ? new Date(plant.startDate).getTime() : -Infinity;
+    case "durationYears":          return plant.durationYears ?? -Infinity;
+    case "capacityKw":             return plant.capacityKw;
+    case "specificYield":          return plant.specificYield ?? -Infinity;
   }
 }
 
@@ -144,7 +156,7 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
     };
   }
 
-  const W = { solcorId: 100, name: 200, plantName: 180, city: 130, dist: 140, tariff: 110, contract: 120, date: 120, dur: 100, kw: 110, yield: 160, actions: 40 };
+  const W = { solcorId: 100, name: 200, plantName: 180, city: 130, dist: 140, tariff: 110, scTariff: 110, scDisc: 90, injTariff: 110, injDisc: 90, contract: 120, installment: 130, date: 120, dur: 100, kw: 110, yield: 160, actions: 40 };
 
   const headSx = (w: number, align?: "right" | "center") => ({
     width: w, maxWidth: w, minWidth: w,
@@ -253,8 +265,38 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
               <TableCell sx={headSx(W.tariff)}>
                 <TableSortLabel {...col("tariffId")}>ID Tarifa</TableSortLabel>
               </TableCell>
+              <TableCell sx={headSx(W.scTariff)}>
+                <TableSortLabel {...col("selfConsumptionTariff")}>Tarifa AC</TableSortLabel>
+              </TableCell>
+              <TableCell sx={headSx(W.scDisc, "right")}>
+                <TableSortLabel {...col("selfConsumptionDiscount")} sx={{ justifyContent: "flex-end", width: "100%", flexDirection: "row-reverse" }}>
+                  Desc. AC
+                </TableSortLabel>
+              </TableCell>
+              <TableCell sx={headSx(W.injTariff)}>
+                <TableSortLabel {...col("injectionTariff")}>Tarifa Iny.</TableSortLabel>
+              </TableCell>
+              <TableCell sx={headSx(W.injDisc, "right")}>
+                <TableSortLabel {...col("injectionDiscount")} sx={{ justifyContent: "flex-end", width: "100%", flexDirection: "row-reverse" }}>
+                  Desc. Iny.
+                </TableSortLabel>
+              </TableCell>
               <TableCell sx={headSx(W.contract)}>
                 <Typography fontSize="0.75rem" fontWeight={600} sx={{ lineHeight: 1.5 }}>Tipo Contrato</Typography>
+              </TableCell>
+              <TableCell sx={headSx(W.installment, "right")}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 0.5 }}>
+                  <TableSortLabel {...col("firstInstallmentUsd")} sx={{ justifyContent: "flex-end", width: "100%", flexDirection: "row-reverse" }}>
+                    Monto Cuota
+                  </TableSortLabel>
+                  <Tooltip
+                    title="Monto de la primera cuota del contrato de Leasing (USD). No necesariamente se mantiene en el tiempo: se ajusta por CPI según la frecuencia acordada en el contrato."
+                    placement="top"
+                    enterDelay={200}
+                  >
+                    <InfoOutlinedIcon sx={{ fontSize: 14, color: "text.disabled", flexShrink: 0, cursor: "help" }} />
+                  </Tooltip>
+                </Box>
               </TableCell>
               <TableCell sx={headSx(W.date)}>
                 <TableSortLabel {...col("startDate")}>Fecha Inicio</TableSortLabel>
@@ -288,6 +330,18 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
                 <TruncCell value={plant.city ?? plant.location} width={W.city} />
                 <TruncCell value={plant.distributorCompany} width={W.dist} />
                 <TruncCell value={plant.tariffId} width={W.tariff} />
+                <TruncCell value={plant.contractType === "LEASING" ? null : plant.selfConsumptionTariff} width={W.scTariff} />
+                <TableCell align="right" sx={{ width: W.scDisc, maxWidth: W.scDisc, fontVariantNumeric: "tabular-nums", p: "6px 12px" }}>
+                  {plant.contractType !== "LEASING" && plant.selfConsumptionDiscount != null
+                    ? `${plant.selfConsumptionDiscount}%`
+                    : "—"}
+                </TableCell>
+                <TruncCell value={plant.contractType === "LEASING" ? null : plant.injectionTariff} width={W.injTariff} />
+                <TableCell align="right" sx={{ width: W.injDisc, maxWidth: W.injDisc, fontVariantNumeric: "tabular-nums", p: "6px 12px" }}>
+                  {plant.contractType !== "LEASING" && plant.injectionDiscount != null
+                    ? `${plant.injectionDiscount}%`
+                    : "—"}
+                </TableCell>
                 <TableCell sx={{ width: W.contract, maxWidth: W.contract, p: "6px 12px" }}>
                   <Box
                     sx={{
@@ -304,6 +358,11 @@ export function PlantTable({ plants, portfolios, customers, canEdit }: PlantTabl
                   >
                     {plant.contractType}
                   </Box>
+                </TableCell>
+                <TableCell align="right" sx={{ width: W.installment, maxWidth: W.installment, fontVariantNumeric: "tabular-nums", p: "6px 12px" }}>
+                  {plant.contractType === "LEASING" && plant.firstInstallmentUsd != null
+                    ? `USD ${plant.firstInstallmentUsd.toLocaleString("es-CL")}`
+                    : "—"}
                 </TableCell>
                 <TableCell sx={{ width: W.date, maxWidth: W.date, p: "6px 12px" }}>
                   {plant.startDate ? new Intl.DateTimeFormat("es-CL").format(new Date(plant.startDate)) : "—"}

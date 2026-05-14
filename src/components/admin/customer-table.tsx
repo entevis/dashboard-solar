@@ -23,6 +23,7 @@ interface Customer {
   altName: string | null;
   createdAt: string;
   _count: { powerPlants: number; users: number };
+  portfolios?: { id: number; name: string }[];
 }
 
 type SortKey = "name" | "rut" | "plants" | "users";
@@ -41,7 +42,7 @@ function sortCustomers(customers: Customer[], key: SortKey, dir: SortDir): Custo
   });
 }
 
-export function CustomerTable({ customers }: { customers: Customer[] }) {
+export function CustomerTable({ customers, showPortfolio }: { customers: Customer[]; showPortfolio?: boolean }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -91,7 +92,11 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
                   }}
                 >
                   <TableCell><TableSortLabel {...col("name")}>Razón Social</TableSortLabel></TableCell>
+                  <TableCell sx={{ fontSize: "0.75rem", fontWeight: 600 }}>Nombre Alternativo</TableCell>
                   <TableCell><TableSortLabel {...col("rut")}>RUT</TableSortLabel></TableCell>
+                  {showPortfolio && (
+                    <TableCell sx={{ fontSize: "0.75rem", fontWeight: 600 }}>Portafolio(s)</TableCell>
+                  )}
                   <TableCell><TableSortLabel {...col("plants")} sx={{ justifyContent: "center", width: "100%" }}>Plantas</TableSortLabel></TableCell>
                   <TableCell><TableSortLabel {...col("users")} sx={{ justifyContent: "center", width: "100%" }}>Usuarios</TableSortLabel></TableCell>
                   <TableCell sx={{ width: 48, fontSize: "0.75rem", fontWeight: 600 }}>Acciones</TableCell>
@@ -101,7 +106,26 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
                 {paginated.map((c) => (
                   <TableRow key={c.id} hover sx={{ "& .MuiTableCell-root": { fontSize: "0.8125rem", py: 1.25 } }}>
                     <TableCell sx={{ fontWeight: 500 }}>{c.name}</TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>{c.altName ?? "—"}</TableCell>
                     <TableCell>{formatRut(c.rut)}</TableCell>
+                    {showPortfolio && (
+                      <TableCell>
+                        {c.portfolios && c.portfolios.length > 0 ? (
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                            {c.portfolios.map((p) => (
+                              <Chip
+                                key={p.id}
+                                label={p.name}
+                                size="small"
+                                sx={{ backgroundColor: "#eff4ff", color: "#004ac6", fontSize: "0.6875rem", height: 20, fontWeight: 500 }}
+                              />
+                            ))}
+                          </Box>
+                        ) : (
+                          <Typography fontSize="0.8125rem" color="text.disabled">—</Typography>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell align="center">
                       <Chip label={c._count.powerPlants} size="small" sx={{ backgroundColor: "#eff4ff", color: "text.secondary", fontSize: "0.6875rem", height: 20 }} />
                     </TableCell>
