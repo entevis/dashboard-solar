@@ -54,19 +54,27 @@ export async function POST(request: NextRequest) {
 
   const normalized = { ...parsed.data, rut: normalizeRut(parsed.data.rut) };
 
-  // Check RUT uniqueness (exclude soft-deleted)
+  // Check RUT uniqueness (including soft-deleted, since DB has @unique constraint)
   const existing = await prisma.customer.findFirst({
-    where: { rut: normalized.rut, active: 1 },
+    where: { rut: normalized.rut },
   });
   if (existing) {
-    return NextResponse.json({ error: "Ya existe un cliente con este RUT" }, { status: 409 });
+    const msg = existing.active === 1
+      ? "Ya existe un cliente con este RUT"
+      : "Ya existe un cliente eliminado con este RUT. Contacta al administrador.";
+    return NextResponse.json({ error: msg }, { status: 409 });
   }
 
-  const customer = await prisma.customer.create({
-    data: normalized,
-  });
+  try {
+    const customer = await prisma.customer.create({
+      data: normalized,
+    });
 
-  logAction(user.id, "CREATE", "customer", customer.id, { rut: parsed.data.rut });
+    logAction(user.id, "CREATE", "customer", customer.id, { rut: parsed.data.rut });
 
-  return NextResponse.json(customer, { status: 201 });
+    return NextResponse.json(customer, { status: 201 });
+  } catch (err) {
+    console.error("[POST /api/customers]", err);
+    return NextResponse.json({ error: "Error al crear cliente" }, { status: 500 });
+  }
 }

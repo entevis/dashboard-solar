@@ -83,15 +83,20 @@ export async function POST(request: NextRequest) {
 
   const { address, startDate, ...rest } = parsed.data;
 
-  const plant = await prisma.powerPlant.create({
-    data: {
-      ...rest,
-      ...(startDate ? { startDate: new Date(startDate) } : {}),
-      ...(address ? { address: { create: address } } : {}),
-    },
-  });
+  try {
+    const plant = await prisma.powerPlant.create({
+      data: {
+        ...rest,
+        ...(startDate ? { startDate: new Date(startDate) } : {}),
+        ...(address ? { address: { create: address } } : {}),
+      },
+    });
 
-  logAction(user.id, "CREATE", "power_plant", plant.id, { name: plant.name });
+    logAction(user.id, "CREATE", "power_plant", plant.id, { name: plant.name });
 
-  return NextResponse.json(plant, { status: 201 });
+    return NextResponse.json(plant, { status: 201 });
+  } catch (err) {
+    console.error("[POST /api/power-plants]", err);
+    return NextResponse.json({ error: "Error al crear planta" }, { status: 500 });
+  }
 }

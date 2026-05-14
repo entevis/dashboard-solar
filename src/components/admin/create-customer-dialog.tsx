@@ -91,7 +91,7 @@ export function CreateCustomerDialog({ portfolios }: Props) {
         body: JSON.stringify({ name: customer.name, rut: customer.rut, altName: customer.altName || null }),
       });
       if (!customerRes.ok) {
-        const err = await customerRes.json();
+        const err = await customerRes.json().catch(() => ({}));
         throw new Error(typeof err.error === "string" ? err.error : "Error al crear cliente");
       }
       const newCustomer = await customerRes.json();
@@ -109,7 +109,7 @@ export function CreateCustomerDialog({ portfolios }: Props) {
           }),
         });
         if (!plantRes.ok) {
-          const err = await plantRes.json();
+          const err = await plantRes.json().catch(() => ({}));
           throw new Error(typeof err.error === "string" ? err.error : "Error al crear planta");
         }
         toast.success("Cliente y planta creados exitosamente");
