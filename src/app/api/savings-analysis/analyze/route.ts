@@ -13,114 +13,120 @@ function normalizeDiscount(raw: number | null | undefined): number | null {
 }
 
 export async function POST(request: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
-  let formData: FormData;
   try {
-    formData = await request.formData();
-  } catch {
-    return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
-  }
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const plantIdRaw = formData.get("plantId");
-  const plantId = plantIdRaw ? parseInt(String(plantIdRaw), 10) : NaN;
-  if (isNaN(plantId)) return NextResponse.json({ error: "plantId inválido" }, { status: 400 });
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
+    }
 
-  const accessible = await getAccessiblePowerPlantIds(user);
-  if (accessible !== "all" && !accessible.includes(plantId)) {
-    return NextResponse.json({ error: "Sin acceso a esta planta" }, { status: 403 });
-  }
+    const plantIdRaw = formData.get("plantId");
+    const plantId = plantIdRaw ? parseInt(String(plantIdRaw), 10) : NaN;
+    if (isNaN(plantId)) return NextResponse.json({ error: "plantId inválido" }, { status: 400 });
 
-  const files = formData.getAll("files") as File[];
-  if (files.length === 0) return NextResponse.json({ error: "No se recibieron archivos" }, { status: 400 });
+    const accessible = await getAccessiblePowerPlantIds(user);
+    if (accessible !== "all" && !accessible.includes(plantId)) {
+      return NextResponse.json({ error: "Sin acceso a esta planta" }, { status: 403 });
+    }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { PDFParse } = require("pdf-parse");
-  const parsedBoletas = await Promise.all(
-    files.map(async (file) => {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      try {
-        const parser = new PDFParse({ data: buffer });
-        const { text } = await parser.getText({ first: 10 });
-        if (!text || text.trim().length < 50) {
+    const files = formData.getAll("files") as File[];
+    if (files.length === 0) return NextResponse.json({ error: "No se recibieron archivos" }, { status: 400 });
+
+    const { PDFParse } = await import("pdf-parse");
+    const parsedBoletas = await Promise.all(
+      files.map(async (file) => {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        try {
+          const parser = new PDFParse({ data: buffer });
+          const { text } = await parser.getText({ first: 10 });
+          if (!text || text.trim().length < 50) {
+            return {
+              fileName: file.name,
+              error: "PDF escaneado o sin texto extraíble — solo se aceptan PDFs digitales.",
+              p1NetElectricidad: 0, p1NetTransporte: 0, p1NetServicioPub: 0,
+              p1NetFondoEstab: 0, p1Admin: 0, p1Potencia: 0, p1FactorPot: 0,
+              descuentoMes: 0, consumoKwh: 0, inyeccionKwh: 0,
+            };
+          }
+          const boleta = parseBoleta(text, file.name);
+          console.log("[boleta-debug]", file.name, {
+            clienteNum: boleta.clienteNum,
+            matchedYear: boleta.matchedYear,
+            matchedMonth: boleta.matchedMonth,
+            consumoKwh: boleta.consumoKwh,
+            inyeccionKwh: boleta.inyeccionKwh,
+            montoConsumosAnexo5: boleta.montoConsumosAnexo5,
+            p1NetElectricidad: boleta.p1NetElectricidad,
+            p1NetTransporte: boleta.p1NetTransporte,
+            p1NetServicioPub: boleta.p1NetServicioPub,
+            p1NetFondoEstab: boleta.p1NetFondoEstab,
+            p1Admin: boleta.p1Admin,
+            p1Potencia: boleta.p1Potencia,
+            p1FactorPot: boleta.p1FactorPot,
+            descuentoMes: boleta.descuentoMes,
+            distribution: boleta.distribution,
+          });
+          return boleta;
+        } catch (fileErr) {
+          console.error("[savings-analysis] PDF parse error:", file.name, fileErr);
           return {
             fileName: file.name,
-            error: "PDF escaneado o sin texto extraíble — solo se aceptan PDFs digitales.",
+            error: "Error al leer el archivo — asegúrate de que sea un PDF válido.",
             p1NetElectricidad: 0, p1NetTransporte: 0, p1NetServicioPub: 0,
             p1NetFondoEstab: 0, p1Admin: 0, p1Potencia: 0, p1FactorPot: 0,
             descuentoMes: 0, consumoKwh: 0, inyeccionKwh: 0,
           };
         }
-        const boleta = parseBoleta(text, file.name);
-        console.log("[boleta-debug]", file.name, {
-          clienteNum: boleta.clienteNum,
-          matchedYear: boleta.matchedYear,
-          matchedMonth: boleta.matchedMonth,
-          consumoKwh: boleta.consumoKwh,
-          inyeccionKwh: boleta.inyeccionKwh,
-          montoConsumosAnexo5: boleta.montoConsumosAnexo5,
-          p1NetElectricidad: boleta.p1NetElectricidad,
-          p1NetTransporte: boleta.p1NetTransporte,
-          p1NetServicioPub: boleta.p1NetServicioPub,
-          p1NetFondoEstab: boleta.p1NetFondoEstab,
-          p1Admin: boleta.p1Admin,
-          p1Potencia: boleta.p1Potencia,
-          p1FactorPot: boleta.p1FactorPot,
-          descuentoMes: boleta.descuentoMes,
-          distribution: boleta.distribution,
-        });
-        return boleta;
-      } catch {
-        return {
-          fileName: file.name,
-          error: "Error al leer el archivo — asegúrate de que sea un PDF válido.",
-          p1NetElectricidad: 0, p1NetTransporte: 0, p1NetServicioPub: 0,
-          p1NetFondoEstab: 0, p1Admin: 0, p1Potencia: 0, p1FactorPot: 0,
-          descuentoMes: 0, consumoKwh: 0, inyeccionKwh: 0,
-        };
-      }
-    })
-  );
-
-  const plant = await prisma.powerPlant.findUnique({
-    where: { id: plantId },
-    select: { name: true, selfConsumptionDiscount: true, injectionDiscount: true },
-  });
-  if (!plant) return NextResponse.json({ error: "Planta no encontrada" }, { status: 404 });
-
-  const reports = await prisma.generationReport.findMany({
-    where: { powerPlantId: plantId, active: 1 },
-    select: { periodMonth: true, periodYear: true, kwhGenerated: true, duemintId: true },
-  });
-
-  const duemintIds = reports.map((r) => r.duemintId).filter(Boolean) as string[];
-  const invoices = duemintIds.length > 0
-    ? await prisma.invoice.findMany({
-        where: { duemintId: { in: duemintIds }, active: 1 },
-        select: { duemintId: true, net: true, number: true },
       })
-    : [];
+    );
 
-  const invoiceByDuemint = new Map(invoices.map((i) => [i.duemintId, i]));
+    const plant = await prisma.powerPlant.findUnique({
+      where: { id: plantId },
+      select: { name: true, selfConsumptionDiscount: true, injectionDiscount: true },
+    });
+    if (!plant) return NextResponse.json({ error: "Planta no encontrada" }, { status: 404 });
 
-  const facturas = reports
-    .filter((r) => r.periodMonth && r.periodYear && r.kwhGenerated)
-    .map((r) => {
-      const invoice = r.duemintId ? (invoiceByDuemint.get(r.duemintId) ?? null) : null;
-      return {
-        periodMonth: r.periodMonth!,
-        periodYear: r.periodYear!,
-        kwhGenerated: r.kwhGenerated!,
-        montoNeto: invoice?.net ?? 0,
-        invoiceNumber: invoice?.number ?? undefined,
-        hasInvoice: invoice !== null,
-      };
+    const reports = await prisma.generationReport.findMany({
+      where: { powerPlantId: plantId, active: 1 },
+      select: { periodMonth: true, periodYear: true, kwhGenerated: true, duemintId: true },
     });
 
-  const selfConsumptionDiscountPct = normalizeDiscount(plant.selfConsumptionDiscount);
-  const injectionDiscountPct = normalizeDiscount(plant.injectionDiscount);
+    const duemintIds = reports.map((r) => r.duemintId).filter(Boolean) as string[];
+    const invoices = duemintIds.length > 0
+      ? await prisma.invoice.findMany({
+          where: { duemintId: { in: duemintIds }, active: 1 },
+          select: { duemintId: true, net: true, number: true },
+        })
+      : [];
 
-  const result = calculateSavings(parsedBoletas, facturas, plant.name, selfConsumptionDiscountPct, injectionDiscountPct);
-  return NextResponse.json(result);
+    const invoiceByDuemint = new Map(invoices.map((i) => [i.duemintId, i]));
+
+    const facturas = reports
+      .filter((r) => r.periodMonth && r.periodYear && r.kwhGenerated)
+      .map((r) => {
+        const invoice = r.duemintId ? (invoiceByDuemint.get(r.duemintId) ?? null) : null;
+        return {
+          periodMonth: r.periodMonth!,
+          periodYear: r.periodYear!,
+          kwhGenerated: r.kwhGenerated!,
+          montoNeto: invoice?.net ?? 0,
+          invoiceNumber: invoice?.number ?? undefined,
+          hasInvoice: invoice !== null,
+        };
+      });
+
+    const selfConsumptionDiscountPct = normalizeDiscount(plant.selfConsumptionDiscount);
+    const injectionDiscountPct = normalizeDiscount(plant.injectionDiscount);
+
+    const result = calculateSavings(parsedBoletas, facturas, plant.name, selfConsumptionDiscountPct, injectionDiscountPct);
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[savings-analysis] unhandled error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Error interno: ${message}` }, { status: 500 });
+  }
 }
