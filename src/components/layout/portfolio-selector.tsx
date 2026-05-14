@@ -35,6 +35,19 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
   }, [isPending]);
 
   function handleChange(value: string) {
+    if (value === "") {
+      document.cookie = `${COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+      pendingName.current = null;
+      startTransition(() => {
+        if (urlMatch) {
+          router.push("/");
+        } else {
+          router.refresh();
+        }
+      });
+      return;
+    }
+
     const id = parseInt(value);
     const portfolio = portfolios.find((p) => p.id === id);
     document.cookie = `${COOKIE_NAME}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
@@ -62,7 +75,7 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <ApartmentOutlinedIcon sx={{ fontSize: 15, color: "#434655", flexShrink: 0 }} />
               <span style={{ fontSize: "0.8125rem", color: "#0d1c2e" }}>
-                {portfolio?.name ?? "Seleccionar portafolio"}
+                {portfolio?.name ?? "Todos los portafolios"}
               </span>
             </Box>
           );
@@ -76,6 +89,9 @@ export function PortfolioSelector({ portfolios, selectedPortfolioId }: Props) {
           "& .MuiSelect-select": { py: "4px", px: "10px" },
         }}
       >
+        <MenuItem value="" sx={{ fontSize: "0.8125rem", color: "text.secondary" }}>
+          Todos los portafolios
+        </MenuItem>
         {portfolios.map((p) => (
           <MenuItem key={p.id} value={String(p.id)} sx={{ fontSize: "0.8125rem" }}>
             {p.name}
