@@ -66,6 +66,14 @@ export function SavingsAnalysisClient({ plants }: Props) {
 
   const analyze = async () => {
     if (!plantId || files.length === 0) return;
+
+    const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+    if (totalBytes > 4 * 1024 * 1024) {
+      setErrorMsg("Los archivos superan 4 MB en total. Sube menos boletas a la vez.");
+      setStatus("error");
+      return;
+    }
+
     setStatus("analyzing");
     setErrorMsg("");
     setResult(null);
@@ -76,15 +84,23 @@ export function SavingsAnalysisClient({ plants }: Props) {
 
     try {
       const res = await fetch("/api/savings-analysis/analyze", { method: "POST", body: fd });
-      const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error ?? "Error desconocido");
+        let msg = "Error desconocido";
+        try {
+          const data = await res.json();
+          msg = data.error ?? msg;
+        } catch {
+          msg = `Error del servidor (${res.status})`;
+        }
+        setErrorMsg(msg);
         setStatus("error");
         return;
       }
+      const data = await res.json();
       setResult(data as SavingsResult);
       setStatus("done");
-    } catch {
+    } catch (err) {
+      console.error("[savings-analysis] fetch error:", err);
       setErrorMsg("Error de conexión. Intenta nuevamente.");
       setStatus("error");
     }

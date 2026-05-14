@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { parseBoleta } from "@/lib/savings/boleta-parser";
 import { calculateSavings } from "@/lib/savings/calculator";
 
+export const maxDuration = 60;
+
 function normalizeDiscount(raw: number | null | undefined): number | null {
   if (raw === null || raw === undefined) return null;
   return raw > 1 ? raw : raw * 100;
