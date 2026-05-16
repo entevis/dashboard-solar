@@ -136,12 +136,13 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
     invoiceWhere = { ...invoiceWhere, customerId: { in: customerIds } };
   }
 
-  // statusCode: 1=Pagada, 2=Por vencer, 3=Vencida, 4=Documento
+  // statusCode: 1=Pagada, 2=Por vencer, 3=Vencida, 4=Documento Anulado
+  // "notaCredito" = any invoice that had a credit note applied (creditNoteAmount > 0)
   const statusConditions: Record<string, object> = {
-    pagada:    { statusCode: 1 },
-    porVencer: { statusCode: 2 },
-    vencida:   { statusCode: 3 },
-    notaCredito: { statusCode: 4 },
+    pagada:      { statusCode: 1 },
+    porVencer:   { statusCode: 2 },
+    vencida:     { statusCode: 3 },
+    notaCredito: { creditNoteAmount: { gt: 0 } },
   };
   let tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
   if (invoiceNumber) {
@@ -159,7 +160,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, amountCredit: true, statusCode: true, duemintId: true, issueDate: true } }),
+    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, amountCredit: true, creditNoteAmount: true, statusCode: true, duemintId: true } }),
     prisma.powerPlant.findMany({
       where: plantWhere,
       select: { id: true, name: true },
@@ -175,13 +176,12 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
         }),
   ]);
 
-  function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | "notaCredito" {
+  function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | null {
     switch (statusCode) {
       case 1: return "pagada";
       case 2: return "porVencer";
       case 3: return "vencida";
-      case 4: return "notaCredito";
-      default: return "porVencer";
+      default: return null; // statusCode=4 (Documento Anulado) and unknowns: skip main buckets
     }
   }
 
@@ -189,15 +189,22 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, notaCredito: 0 };
   for (const inv of allInvoices) {
     const cat = categorize(inv.statusCode);
-    kpis[cat] += (inv.total ?? 0) - (inv.amountCredit ?? 0);
-    kpiCounts[cat]++;
+    if (cat !== null) {
+      kpis[cat] += (inv.total ?? 0) - (inv.amountCredit ?? 0);
+      kpiCounts[cat]++;
+    }
+    // Credit notes: any invoice with creditNoteAmount > 0, regardless of statusCode
+    if ((inv.creditNoteAmount ?? 0) > 0) {
+      kpis.notaCredito += inv.creditNoteAmount!;
+      kpiCounts.notaCredito++;
+    }
   }
 
   const kpiCards = [
-    { label: "Pagadas",     value: kpis.pagada,    count: kpiCounts.pagada,    color: "#15803d" },
-    { label: "Por vencer",  value: kpis.porVencer, count: kpiCounts.porVencer, color: "#a16207" },
-    { label: "Vencidas",    value: kpis.vencida,   count: kpiCounts.vencida,   color: "#dc2626" },
-    { label: "Notas de crédito",  value: kpis.notaCredito, count: kpiCounts.notaCredito, color: "#434655" },
+    { label: "Pagadas",          value: kpis.pagada,      count: kpiCounts.pagada,      color: "#15803d", singular: "factura",        plural: "facturas" },
+    { label: "Por vencer",       value: kpis.porVencer,   count: kpiCounts.porVencer,   color: "#a16207", singular: "factura",        plural: "facturas" },
+    { label: "Vencidas",         value: kpis.vencida,     count: kpiCounts.vencida,     color: "#dc2626", singular: "factura",        plural: "facturas" },
+    { label: "Notas de crédito", value: kpis.notaCredito, count: kpiCounts.notaCredito, color: "#434655", singular: "nota de crédito", plural: "notas de crédito" },
   ];
 
   const chartDuemintIds = allInvoices
@@ -297,7 +304,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
             <CardContent>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 600 }}>{kpi.label}</Typography>
               <Typography variant="h6" fontWeight={700} sx={{ color: kpi.color }}>{formatCLP(kpi.value)}</Typography>
-              <Typography variant="caption" color="text.secondary">{kpi.count} {kpi.count === 1 ? "factura" : "facturas"}</Typography>
+              <Typography variant="caption" color="text.secondary">{kpi.count} {kpi.count === 1 ? kpi.singular : kpi.plural}</Typography>
             </CardContent>
           </Card>
         ))}

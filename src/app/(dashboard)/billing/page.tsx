@@ -142,12 +142,13 @@ export default async function BillingPage({
     invoiceWhere.issueDate = { gte: periodStart, lt: periodEnd };
   }
 
-  // statusCode: 1=Pagada, 2=Por vencer, 3=Vencida, 4=Documento (nota de crédito)
+  // statusCode: 1=Pagada, 2=Por vencer, 3=Vencida, 4=Documento Anulado
+  // "notaCredito" = any invoice that had a credit note applied (creditNoteAmount > 0)
   const statusConditions: Record<string, object> = {
-    pagada:    { statusCode: 1 },
-    porVencer: { statusCode: 2 },
-    vencida:   { statusCode: 3 },
-    notaCredito: { statusCode: 4 },
+    pagada:      { statusCode: 1 },
+    porVencer:   { statusCode: 2 },
+    vencida:     { statusCode: 3 },
+    notaCredito: { creditNoteAmount: { gt: 0 } },
   };
   let tableWhere = status === "all" ? invoiceWhere : { ...invoiceWhere, ...statusConditions[status] };
   if (invoiceNumber) {
@@ -164,17 +165,16 @@ export default async function BillingPage({
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.invoice.findMany({ where: tableWhere, select: { total: true, amountCredit: true, statusCode: true } }),
+    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, amountCredit: true, creditNoteAmount: true, statusCode: true, duemintId: true } }),
     Promise.resolve([]),
   ]);
 
-  function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | "notaCredito" {
+  function categorize(statusCode: number | null): "pagada" | "porVencer" | "vencida" | null {
     switch (statusCode) {
       case 1: return "pagada";
       case 2: return "porVencer";
       case 3: return "vencida";
-      case 4: return "notaCredito";
-      default: return "porVencer";
+      default: return null; // statusCode=4 (Documento Anulado) and unknowns: skip main buckets
     }
   }
 
@@ -182,15 +182,22 @@ export default async function BillingPage({
   const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, notaCredito: 0 };
   for (const inv of allInvoices) {
     const cat = categorize(inv.statusCode);
-    kpis[cat] += (inv.total ?? 0) - (inv.amountCredit ?? 0);
-    kpiCounts[cat]++;
+    if (cat !== null) {
+      kpis[cat] += (inv.total ?? 0) - (inv.amountCredit ?? 0);
+      kpiCounts[cat]++;
+    }
+    // Credit notes: any invoice with creditNoteAmount > 0, regardless of statusCode
+    if ((inv.creditNoteAmount ?? 0) > 0) {
+      kpis.notaCredito += inv.creditNoteAmount!;
+      kpiCounts.notaCredito++;
+    }
   }
 
   const kpiCards = [
-    { label: "Pagadas",     value: kpis.pagada,    count: kpiCounts.pagada,    color: "#15803d" },
-    { label: "Por vencer",  value: kpis.porVencer, count: kpiCounts.porVencer, color: "#a16207" },
-    { label: "Vencidas",    value: kpis.vencida,   count: kpiCounts.vencida,   color: "#dc2626" },
-    { label: "Notas de crédito",  value: kpis.notaCredito, count: kpiCounts.notaCredito, color: "#434655" },
+    { label: "Pagadas",          value: kpis.pagada,      count: kpiCounts.pagada,      color: "#15803d", singular: "factura",         plural: "facturas" },
+    { label: "Por vencer",       value: kpis.porVencer,   count: kpiCounts.porVencer,   color: "#a16207", singular: "factura",         plural: "facturas" },
+    { label: "Vencidas",         value: kpis.vencida,     count: kpiCounts.vencida,     color: "#dc2626", singular: "factura",         plural: "facturas" },
+    { label: "Notas de crédito", value: kpis.notaCredito, count: kpiCounts.notaCredito, color: "#434655", singular: "nota de crédito", plural: "notas de crédito" },
   ];
 
   // Look up generation reports linked to these invoices by duemintId
@@ -251,7 +258,7 @@ export default async function BillingPage({
             <CardContent>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 600 }}>{k.label}</Typography>
               <Typography variant="h6" fontWeight={700} sx={{ color: k.color }}>{formatCLP(k.value)}</Typography>
-              <Typography variant="caption" color="text.secondary">{k.count} {k.count === 1 ? "factura" : "facturas"}</Typography>
+              <Typography variant="caption" color="text.secondary">{k.count} {k.count === 1 ? k.singular : k.plural}</Typography>
             </CardContent>
           </Card>
         ))}
