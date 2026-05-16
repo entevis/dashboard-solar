@@ -39,6 +39,8 @@ export interface MonthlyResult {
   year: number;
   month: number;
   invoiceNumber?: string;
+  creditNoteNumber?: string;
+  creditNoteTotal?: number;
   montoNetoSinvest: number;
   kwhGenerados: number;
   precioKwhSinvest: number;

@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     const invoices = duemintIds.length > 0
       ? await prisma.invoice.findMany({
           where: { duemintId: { in: duemintIds }, active: 1 },
-          select: { duemintId: true, net: true, number: true },
+          select: { duemintId: true, net: true, number: true, amountCredit: true, creditNoteNumber: true },
         })
       : [];
 
@@ -135,8 +135,10 @@ export async function POST(request: NextRequest) {
           periodMonth: r.periodMonth!,
           periodYear: r.periodYear!,
           kwhGenerated: r.kwhGenerated!,
-          montoNeto: invoice?.net ?? 0,
+          montoNeto: (invoice?.net ?? 0) - Math.round((invoice?.amountCredit ?? 0) / 1.19),
           invoiceNumber: invoice?.number ?? undefined,
+          creditNoteNumber: (invoice?.amountCredit ?? 0) > 0 ? (invoice?.creditNoteNumber ?? undefined) : undefined,
+          creditNoteTotal: (invoice?.amountCredit ?? 0) > 0 ? (invoice?.amountCredit ?? undefined) : undefined,
           hasInvoice: invoice !== null,
         };
       });

@@ -164,7 +164,7 @@ export default async function BillingPage({
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.invoice.findMany({ where: tableWhere, select: { total: true, statusCode: true } }),
+    prisma.invoice.findMany({ where: tableWhere, select: { total: true, amountCredit: true, statusCode: true } }),
     Promise.resolve([]),
   ]);
 
@@ -182,7 +182,7 @@ export default async function BillingPage({
   const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, notaCredito: 0 };
   for (const inv of allInvoices) {
     const cat = categorize(inv.statusCode);
-    kpis[cat] += inv.total ?? 0;
+    kpis[cat] += (inv.total ?? 0) - (inv.amountCredit ?? 0);
     kpiCounts[cat]++;
   }
 

@@ -159,7 +159,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, statusCode: true, duemintId: true, issueDate: true } }),
+    prisma.invoice.findMany({ where: invoiceWhere, select: { total: true, amountCredit: true, statusCode: true, duemintId: true, issueDate: true } }),
     prisma.powerPlant.findMany({
       where: plantWhere,
       select: { id: true, name: true },
@@ -189,7 +189,7 @@ export default async function PortfolioBillingPage({ params, searchParams }: Pro
   const kpiCounts = { pagada: 0, porVencer: 0, vencida: 0, notaCredito: 0 };
   for (const inv of allInvoices) {
     const cat = categorize(inv.statusCode);
-    kpis[cat] += inv.total ?? 0;
+    kpis[cat] += (inv.total ?? 0) - (inv.amountCredit ?? 0);
     kpiCounts[cat]++;
   }
 

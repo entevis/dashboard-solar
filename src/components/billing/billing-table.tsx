@@ -12,6 +12,7 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import Tooltip from "@mui/material/Tooltip";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { InvoiceRowActions } from "@/components/billing/invoice-row-actions";
 import { BillingPagination } from "@/components/billing/billing-pagination";
 import { formatCLP } from "@/lib/utils/formatters";
@@ -28,6 +29,8 @@ export interface SerializedInvoice {
   issueDate: string | null;
   dueDate: string | null;
   total: number | null;
+  amountCredit: number | null;
+  creditNoteNumber: string | null;
   statusCode: number | null;
   statusName: string | null;
   url: string | null;
@@ -167,7 +170,9 @@ export function BillingTable({ invoices, total, page, pageSize, reportBackHref }
             {invoices.map((inv) => {
               const numberText = inv.number ?? `#${inv.duemintId}`;
               const customerName = inv.customer.name;
-              const totalText = inv.total != null ? formatCLP(inv.total) : "—";
+              const effectiveTotal = inv.total != null ? inv.total - (inv.amountCredit ?? 0) : null;
+              const totalText = effectiveTotal != null ? formatCLP(effectiveTotal) : "—";
+              const hasNC = (inv.amountCredit ?? 0) > 0;
               const anulada = isDocumento(inv.statusCode);
               const periodText = anulada ? "--" : formatReportPeriod(inv.reportPeriodMonth, inv.reportPeriodYear);
               const kwhText = anulada ? "--" : (inv.kwhGenerated != null ? new Intl.NumberFormat("es-CL").format(Math.round(inv.kwhGenerated)) : "—");
@@ -176,7 +181,22 @@ export function BillingTable({ invoices, total, page, pageSize, reportBackHref }
               return (
                 <TableRow key={inv.id} hover>
                   <TableCell sx={{ ...cellSx, fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>
-                    <Tooltip title={numberText} placement="top" enterDelay={400}><span style={truncSx}>{numberText}</span></Tooltip>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      <Tooltip title={numberText} placement="top" enterDelay={400}><span style={truncSx}>{numberText}</span></Tooltip>
+                      {hasNC && (
+                        <Tooltip
+                          placement="top"
+                          arrow
+                          title={[
+                            inv.creditNoteNumber ? `Nota de crédito N°${inv.creditNoteNumber}` : "Nota de crédito aplicada",
+                            `Total descontado: ${formatCLP(inv.amountCredit ?? 0)}`,
+                            "(monto ya reflejado en el total)",
+                          ].join(" · ")}
+                        >
+                          <InfoOutlinedIcon sx={{ fontSize: 13, color: "#dc2626", cursor: "help", flexShrink: 0 }} />
+                        </Tooltip>
+                      )}
+                    </span>
                   </TableCell>
                   <TableCell sx={cellSx}>
                     <Tooltip title={`${customerName}${inv.clientTaxId ? ` · ${inv.clientTaxId}` : ""}`} placement="top" enterDelay={400}>

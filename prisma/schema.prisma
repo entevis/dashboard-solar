@@ -338,6 +338,7 @@ model Invoice {
   // Credit note (first element if exists)
   creditNoteId     String? @map("credit_note_id")
   creditNoteNumber String? @map("credit_note_number")
+  creditNoteAmount Float?  @map("credit_note_amount")
   gloss            String? @db.Text
 
   portfolioId  Int? @map("portfolio_id")

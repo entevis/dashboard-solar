@@ -11,6 +11,8 @@ import TableBody from "@mui/material/TableBody";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
@@ -154,7 +156,28 @@ function VerticalView({ result }: { result: SavingsResult }) {
             <VDataRow label="kWh Generados" cells={months.map((m) => kwh(m.kwhGenerados))} total={kwh(totalKwhGen)} />
             <VDataRow label="$/kWh S-Invest" cells={months.map((m) => rate(m.precioKwhSinvest))} total="—" />
             <VDataRow label="Monto Neto S-Invest ($ s/ IVA)" cells={months.map((m) => clp(m.montoNetoSinvest))} total={clp(totalMontoSinvest)} />
-            <VDataRow label="Folio Factura #" cells={months.map((m) => m.invoiceNumber ? `#${m.invoiceNumber}` : "—")} total="—" />
+            <VDataRow
+              label="Folio Factura #"
+              cells={months.map((m) => {
+                if (!m.invoiceNumber) return "—";
+                if (!m.creditNoteTotal) return `#${m.invoiceNumber}`;
+                const ncNet = Math.round(m.creditNoteTotal / 1.19);
+                const tooltipText = [
+                  m.creditNoteNumber ? `Nota de crédito N°${m.creditNoteNumber}` : "Nota de crédito aplicada",
+                  `Neto descontado: ${clp(ncNet)}`,
+                  `Total c/IVA: ${clp(m.creditNoteTotal)}`,
+                ].join(" · ");
+                return (
+                  <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                    <span>{`#${m.invoiceNumber}`}</span>
+                    <Tooltip title={tooltipText} placement="top" arrow>
+                      <InfoOutlinedIcon sx={{ fontSize: 14, color: "#dc2626", cursor: "help", flexShrink: 0 }} />
+                    </Tooltip>
+                  </Box>
+                );
+              })}
+              total="—"
+            />
 
             {/* ── Per-client ── */}
             {firstMonthClients.map((c, i) => {
@@ -293,8 +316,8 @@ function VDataRow({
   cellColor,
 }: {
   label: string;
-  cells: string[];
-  total: string;
+  cells: React.ReactNode[];
+  total: React.ReactNode;
   cellColor?: string;
 }) {
   return (
@@ -315,7 +338,7 @@ function VDataRow({
         align="center"
         sx={{ fontSize: "0.8125rem", fontWeight: 700, color: total === "—" ? undefined : (cellColor ?? "#1e293b"), py: 0.875, whiteSpace: "nowrap", bgcolor: COL_TOTAL_BG, borderLeft: "1px solid #e2e8f0", borderBottom: ROW_BORDER }}
       >
-        {total === "—" ? <NALabel /> : total}
+        {total === "—" ? <NALabel /> : (total ?? <NALabel />)}
       </TableCell>
     </TableRow>
   );

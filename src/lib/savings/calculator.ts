@@ -6,6 +6,8 @@ interface FacturaData {
   kwhGenerated: number;
   montoNeto: number;
   invoiceNumber?: string;
+  creditNoteNumber?: string;
+  creditNoteTotal?: number;
   hasInvoice: boolean;
 }
 
@@ -100,11 +102,8 @@ export function calculateSavings(
     for (const b of monthBoletas) {
       const isMain = b.clienteNum === mainClientNum;
 
-      // monto_consumos = all charges billed to the client (energy + transport + service +
-      // estab + admin + potencia + factorPot). descuentoMes is the injection credit parsed
-      // per-boleta — already correct from Anexo III distribution or the bill's discount lines.
       const monto_consumos =
-        b.p1NetElectricidad + b.p1NetTransporte + b.p1NetServicioPub + b.p1NetFondoEstab +
+        b.p1NetElectricidad + b.p1NetTransporte + b.p1NetServicioPub +
         b.p1Admin + b.p1Potencia + b.p1FactorPot;
       const descuentoMes = b.descuentoMes;
       const monto_total = Math.max(0, monto_consumos + descuentoMes);
@@ -115,7 +114,7 @@ export function calculateSavings(
           // Rate uses only variable charges (proportional to kWh) — potencia/admin are fixed
           // and handled separately in sumOtrosCargos for the counterfactual.
           tresCargosDistroRate =
-            (b.p1NetElectricidad + b.p1NetTransporte + b.p1NetServicioPub + b.p1NetFondoEstab) /
+            (b.p1NetElectricidad + b.p1NetTransporte + b.p1NetServicioPub) /
             b.consumoKwh;
         } else {
           mainHasZeroConsumption = true;
@@ -156,6 +155,8 @@ export function calculateSavings(
       year,
       month,
       invoiceNumber: factura.invoiceNumber,
+      creditNoteNumber: factura.creditNoteNumber,
+      creditNoteTotal: factura.creditNoteTotal,
       montoNetoSinvest: factura.montoNeto,
       kwhGenerados: factura.kwhGenerated,
       precioKwhSinvest,

@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
         duemintClientName: inv.client?.name ?? null,
         creditNoteId: creditNote?.id ?? null,
         creditNoteNumber: creditNote?.number ?? null,
+        creditNoteAmount: toFloat(creditNote?.amount),
         gloss: inv.gloss ?? null,
       };
 

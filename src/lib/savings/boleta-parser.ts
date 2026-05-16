@@ -197,11 +197,13 @@ export function parseBoleta(text: string, fileName: string): ParsedBoleta {
 
   // Injection kWh
   // Primary: Anexo II item 2.2 or explicit "Inyección" label
-  // Fallback: CEC table marks injection rows as "N kWh (iny.)"
+  // CGE: "Mi consumo" table marks injection rows as "N kWh (Inyecciones)"
+  // CEC: table marks injection rows as "N kWh (iny.)"
   const inyecMatch =
-    text.match(/2\.2[^\d\n]{0,30}([\d.,]+)\s*kWh/i) ??
+    text.match(/([\d.,]+)\s+kWh\s*\([Ii]nyecciones?\)/i) ??
+    text.match(/([\d.,]+)\s+kWh\s*\(iny\.\)/i) ??
     text.match(/Inyecci[oó]n\s+al\s+[Ss]istema[^\d\n]{0,30}([\d.,]+)\s*kWh/i) ??
-    text.match(/([\d.,]+)\s+kWh\s*\(iny\.\)/i);
+    text.match(/(?<!\d)2\.2[^\d\n]{0,30}([\d.,]+)\s*kWh/i);
   if (inyecMatch) base.inyeccionKwh = parseChileanNum(inyecMatch[1]);
 
   // Accumulated remainder
