@@ -168,7 +168,7 @@ function VerticalView({ result }: { result: SavingsResult }) {
                   `Total c/IVA: ${clp(m.creditNoteTotal)}`,
                 ].join(" · ");
                 return (
-                  <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                  <Box key={`${m.year}-${m.month}`} sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
                     <span>{`#${m.invoiceNumber}`}</span>
                     <Tooltip title={tooltipText} placement="top" arrow>
                       <InfoOutlinedIcon sx={{ fontSize: 14, color: "#dc2626", cursor: "help", flexShrink: 0 }} />
